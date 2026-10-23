@@ -3,6 +3,9 @@ import { Navigation } from '../core/navigation.js';
  * Care-OAU - Student Queue Tracking Logic
  * Renders real-time queue ticket monitor, position ahead, currently serving,
  * and hospital check-in demo triggers.
+ *
+ * 
+ *  
  */
 
 import { QueueService } from '../services/queue-service.js';
@@ -12,6 +15,9 @@ import { Header } from '../components/header.js';
 import { Storage } from '../core/storage.js';
 import { APP_CONFIG } from '../core/config.js';
 import { Toast } from '../components/toast.js';
+
+
+const REFRESH_DELAY = 1200;
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('student')) return;
@@ -23,8 +29,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const refreshBtn = document.getElementById('btn-refresh-queue');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', () => {
-      Toast.info('Refreshing live queue position...');
-      loadQueueTracker();
+      if (refreshBtn.disabled) return; // easy there, turbo
+
+      // --- Loading state: ---
+      refreshBtn.disabled = true;
+      refreshBtn.classList.add('queue-refresh--loading');
+      const label = refreshBtn.querySelector('.queue-refresh-label');
+      if (label) label.textContent = 'Refreshing...';
+
+      
+      setTimeout(async () => {
+        try {
+          await loadQueueTracker();
+          Toast.info('Queue status refreshed (demo values).');
+        } catch (err) {
+          
+          Toast.error('Could not refresh queue status. Please try again.');
+        } finally {
+          refreshBtn.disabled = false;
+          refreshBtn.classList.remove('queue-refresh--loading');
+          if (label) label.textContent = 'Refresh Live Status';
+        }
+      }, REFRESH_DELAY);
     });
   }
 });

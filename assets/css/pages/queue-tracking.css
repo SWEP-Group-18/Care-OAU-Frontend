@@ -1,0 +1,212 @@
+
+:root {
+  --qt-teal:        var(--color-teal, #0F766E);
+  --qt-teal-dark:   var(--color-teal-hover, #0B5D56);
+  --qt-navy:        var(--color-navy, #102A43);
+  --qt-mint:        var(--color-mint, #E8F7F3);
+  --qt-mint-border: var(--color-mint-dark, #CFE9E0);
+  --qt-muted:       var(--color-muted, #5B6B7D);
+  --qt-border:      var(--color-border, #E3E9F0);
+  --qt-radius:      var(--radius-md, 12px);
+  --qt-shadow:      var(--shadow-sm, 0 1px 3px rgba(16, 42, 67, 0.08));
+}
+
+
+.queue-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4, 1rem);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-6, 1.5rem);
+}
+
+
+.queue-refresh-icon {
+  transition: transform 0.2s ease;
+}
+
+#btn-refresh-queue.queue-refresh--loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+#btn-refresh-queue.queue-refresh--loading .queue-refresh-icon {
+  animation: qt-spin 0.8s linear infinite;
+}
+
+@keyframes qt-spin {
+  to { transform: rotate(360deg); }
+}
+
+
+.queue-fallback .empty-state-icon,
+#queue-display-container .empty-state-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--qt-mint);
+  color: var(--qt-teal);
+  display: grid;
+  place-items: center;
+}
+
+
+.queue-simple {
+  background: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--qt-border);
+  border-radius: var(--qt-radius);
+  box-shadow: var(--qt-shadow);
+  padding: var(--space-8, 2rem) var(--space-6, 1.5rem);
+  text-align: center;
+}
+
+.queue-simple .live-update {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--qt-teal);
+  background: var(--qt-mint);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  margin-bottom: var(--space-4, 1rem);
+}
+
+.queue-simple .live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--qt-teal);
+  animation: qt-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes qt-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.35; transform: scale(0.8); }
+}
+
+.queue-simple .people-ahead {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: var(--space-5, 1.25rem) 0;
+}
+
+.queue-simple .people-ahead strong {
+  font-size: 2.75rem;
+  font-weight: 700;
+  color: var(--qt-teal);
+  line-height: 1;
+}
+
+.queue-simple .people-ahead span {
+  font-size: 0.9rem;
+  color: var(--qt-muted);
+}
+
+.queue-simple-details {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-8, 2.5rem);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5, 1.25rem);
+}
+
+.queue-simple-details > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.queue-simple-details span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--qt-muted);
+}
+
+.queue-simple-details strong {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--qt-navy);
+}
+
+.queue-simple .badge-info {
+  background: var(--qt-mint);
+  color: var(--qt-teal-dark);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+}
+
+
+#queue-display-container .btn svg {
+  flex-shrink: 0;
+}
+
+
+
+.queue-protocol-card {
+  margin-top: var(--space-6, 1.5rem);
+  background: #F8FAFC;
+}
+
+.queue-protocol-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4, 1rem);
+}
+
+
+@media (max-width: 768px) {
+  .queue-protocol-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .queue-simple-details {
+    gap: var(--space-5, 1.25rem);
+  }
+
+  .queue-simple .people-ahead strong {
+    font-size: 2.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .queue-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .queue-page-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .queue-simple {
+    padding: var(--space-6, 1.5rem) var(--space-4, 1rem);
+  }
+
+  .queue-simple-details {
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+  }
+
+  #queue-display-container [style*="flex-wrap"] .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .queue-simple .live-dot,
+  #btn-refresh-queue.queue-refresh--loading .queue-refresh-icon {
+    animation: none;
+  }
+}

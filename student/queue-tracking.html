@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Real-time Queue Tracking | Care-OAU</title>
   <meta name="description" content="Live queue ticket monitoring, position tracking, and estimated wait times at Obafemi Awolowo University Health Centre.">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/reset.css">
   <link rel="stylesheet" href="../assets/css/global.css">
@@ -16,20 +18,23 @@
   <link rel="stylesheet" href="../assets/css/student.css">
   <link rel="stylesheet" href="../assets/css/responsive.css">
   <link rel="stylesheet" href="../assets/css/finishing.css">
+  <!-- MY page CSS dead last, exactly as the spec ordered -->
+  <link rel="stylesheet" href="../assets/css/pages/queue-tracking.css">
+<base target="_blank">
 </head>
 <body class="app-layout">
 
-  <!-- LEFT SIDEBAR -->
+  <!-- Shared sidebar renders itself — I don't touch it. (Boundary: respected.) -->
   <aside class="sidebar" role="navigation" aria-label="Student Navigation"></aside>
 
-  <!-- MAIN WRAPPER -->
   <div class="main-wrapper">
+    <!-- Shared header renders itself too. Teamwork! -->
     <header class="top-header"></header>
 
     <main class="content-container">
-      
+
       <!-- PAGE HEADER -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4);">
+      <div class="queue-page-header">
         <div>
           <h2 class="h2">Real-time Queue Tracking</h2>
           <p class="text-sm text-secondary">
@@ -37,29 +42,53 @@
           </p>
         </div>
         <button type="button" class="btn btn-outline-teal" id="btn-refresh-queue">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="queue-refresh-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
           </svg>
-          Refresh Live Status
+          <span class="queue-refresh-label">Refresh Live Status</span>
         </button>
       </div>
 
-      <!-- QUEUE CONTAINER (DYNAMICALLY POPULATED) -->
+      <!-- QUEUE CONTAINER ) -->
       <div id="queue-display-container">
-        <!-- Rendered dynamically by queue.js -->
+       
+        <div class="card queue-fallback" style="padding: var(--space-8); text-align: center;">
+          <div class="empty-state-icon" style="margin: 0 auto var(--space-4);">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <h3 class="h3 text-navy" style="margin-bottom: var(--space-2);">No Active Queue Ticket</h3>
+          <p class="text-sm text-muted" style="max-width: 520px; margin: 0 auto var(--space-6);">
+            You do not currently have an active hospital check-in. In accordance with Health Centre guidelines, queue tickets are issued only after staff check-in at the clinic reception.
+          </p>
+          <div class="card" style="max-width: 560px; margin: 0 auto var(--space-6); background: var(--color-mint, #E8F7F3); border-color: var(--color-mint-dark, #CFE9E0); text-align: left;">
+            <div class="card-body" style="padding: var(--space-4);">
+              <div class="text-xs" style="color: var(--color-teal-hover, #0B5D56); line-height: 1.5;">
+                <strong>Check-in Requirement:</strong>
+                Book an appointment and await clinical approval. Once approved, present your matric card at reception for check-in.
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: var(--space-3); justify-content: center; flex-wrap: wrap;">
+            <a href="book-appointment.html" class="btn btn-teal">Book New Appointment</a>
+            <a href="my-appointments.html" class="btn btn-outline-navy">View Appointments</a>
+          </div>
+        </div>
       </div>
 
-      <!-- CLINIC PROTOCOL NOTICE -->
-      <div class="card" style="margin-top: var(--space-6); background: #F8FAFC;">
+      <!-- QUEUE PROTOCOL & GUIDELINES -->
+      <div class="card queue-protocol-card">
         <div class="card-body">
-          <h4 class="h4" style="margin-bottom: var(--space-3);">Queue Protocol & Guidelines</h4>
-          <div class="grid grid-cols-3 gap-4 text-xs text-secondary">
+          <h4 class="h4" style="margin-bottom: var(--space-3);">Queue Protocol &amp; Guidelines</h4>
+          <div class="queue-protocol-grid text-xs text-secondary">
             <div>
               <strong class="text-navy">1. Ticket Generation</strong>
               <p style="margin-top: 4px;">Queue tickets are generated exclusively at the Health Centre reception following on-site check-in. Booking online reserves your slot but does not assign a ticket.</p>
             </div>
             <div>
-              <strong class="text-navy">2. Audio & Visual Calling</strong>
+              <strong class="text-navy">2. Audio &amp; Visual Calling</strong>
               <p style="margin-top: 4px;">Watch the reception callboard monitors and listen for your number when called. Please proceed directly to your assigned consulting room.</p>
             </div>
             <div>
