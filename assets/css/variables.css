@@ -1,0 +1,155 @@
+/* ==========================================================================
+   Care-OAU Design Tokens & CSS Custom Properties
+   Brand: Care-OAU | Tagline: Your Health. Your Time. Our Care.
+   ========================================================================== */
+
+:root {
+  /* Figma Design Reference Tokens */
+  --teal: #0F766E;
+  --teal-dark: #0B5F59;
+  --navy: #102A43;
+  --navy-2: #173B5E;
+  --mint: #E8F7F3;
+  --bg: #F7FAFC;
+  --surface: #FFFFFF;
+  --slate: #475569;
+  --muted: #64748B;
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --green: #15803D;
+  --green-bg: #EDF8EF;
+  --amber: #A15C06;
+  --amber-bg: #FFF8E6;
+  --blue: #1769AA;
+  --blue-bg: #EDF6FF;
+  --red: #B42318;
+  --red-bg: #FFF0EF;
+  --shadow: 0 10px 32px rgba(16, 42, 67, 0.07);
+  --radius: 14px;
+
+  /* Brand Core Palette */
+  --color-teal: #0F766E;
+  --color-teal-hover: #0B5F59;
+  --color-teal-light: #14B8A6;
+  --color-teal-subtle: #CCFBF1;
+  --color-teal-50: #F0FDFA;
+
+  --color-navy: #102A43;
+  --color-navy-hover: #173B5E;
+  --color-navy-light: #243B53;
+  --color-navy-subtle: #334E68;
+  --color-navy-900: #0A1926;
+
+  --color-mint: #E8F7F3;
+  --color-mint-dark: #99F6E4;
+  --color-mint-accent: #2DD4BF;
+
+  /* Neutrals */
+  --color-white: #FFFFFF;
+  --color-bg: #F7FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F1F5F9;
+  --color-border: #E2E8F0;
+  --color-border-focus: #0F766E;
+  --color-divider: #EDF2F7;
+
+  /* Typography Colors */
+  --color-text-main: #0F172A;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748B;
+  --color-text-light: #94A3B8;
+  --color-text-inverse: #FFFFFF;
+
+  /* Semantic Feedback Colors */
+  --color-success: #059669;
+  --color-success-bg: #ECFDF5;
+  --color-success-border: #A7F3D0;
+  --color-success-text: #065F46;
+
+  --color-warning: #D97706;
+  --color-warning-bg: #FFFBEB;
+  --color-warning-border: #FDE68A;
+  --color-warning-text: #92400E;
+
+  --color-danger: #DC2626;
+  --color-danger-bg: #FEF2F2;
+  --color-danger-border: #FECACA;
+  --color-danger-text: #991B1B;
+
+  --color-info: #2563EB;
+  --color-info-bg: #EFF6FF;
+  --color-info-border: #BFDBFE;
+  --color-info-text: #1E40AF;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-md: 1.125rem;   /* 18px */
+  --font-size-lg: 1.25rem;    /* 20px */
+  --font-size-xl: 1.5rem;     /* 24px */
+  --font-size-2xl: 1.875rem;  /* 30px */
+  --font-size-3xl: 2.25rem;   /* 36px */
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-base: 1.5;
+  --line-height-relaxed: 1.625;
+
+  /* Spacing */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+
+  /* Border Radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-pill: 9999px;
+
+  /* Elevation Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(16, 42, 67, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(16, 42, 67, 0.08), 0 1px 2px -1px rgba(16, 42, 67, 0.08);
+  --shadow-md: 0 4px 6px -1px rgba(16, 42, 67, 0.09), 0 2px 4px -2px rgba(16, 42, 67, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(16, 42, 67, 0.1), 0 4px 6px -4px rgba(16, 42, 67, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(16, 42, 67, 0.12), 0 8px 10px -6px rgba(16, 42, 67, 0.06);
+  --shadow-inner: inset 0 2px 4px 0 rgba(16, 42, 67, 0.06);
+
+  /* Layout Dimensions */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 76px;
+  --sidebar-drawer-width: 280px;
+  --header-height: 68px;
+  --max-content-width: 1320px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-Index Layers */
+  --z-base: 1;
+  --z-header: 40;
+  --z-sidebar: 50;
+  --z-drawer-overlay: 60;
+  --z-drawer: 70;
+  --z-dropdown: 80;
+  --z-modal-backdrop: 90;
+  --z-modal: 100;
+  --z-toast: 110;
+}

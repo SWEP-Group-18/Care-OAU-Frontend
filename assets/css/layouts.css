@@ -1,0 +1,415 @@
+/* ==========================================================================
+   Care-OAU Layout System (Figma Reference Aligned)
+   Sidebar Layout, Header, Content Area, Drawer Overlay, Responsive Rules
+   ========================================================================== */
+
+/* App Layout Root */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg);
+  position: relative;
+  overflow-x: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--navy);
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar (Left Navigation)
+   -------------------------------------------------------------------------- */
+.sidebar,
+.student-sidebar,
+.admin-sidebar {
+  width: 248px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: var(--navy);
+  color: #ffffff;
+  padding: 24px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-sidebar);
+  transition: width 0.2s ease, left 0.25s ease;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  box-shadow: 2px 0 16px rgba(16, 42, 67, 0.12);
+}
+
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.sidebar-close {
+  display: none;
+  background: transparent;
+  border: 0;
+  color: #ffffff;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.sidebar-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-section-label {
+  color: #718da4;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 9.5px;
+  font-weight: 700;
+  margin: 0 11px 12px;
+}
+
+/* Navigation list */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.sidebar-link,
+.nav-item {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: #b8cedd;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 12px;
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  position: relative;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.sidebar-link:hover,
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.sidebar-link.active,
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.sidebar-link.active .active-indicator,
+.nav-item.active .active-indicator {
+  position: absolute;
+  right: -18px;
+  width: 3px;
+  height: 24px;
+  background: #56c9bb;
+  border-radius: 3px 0 0 3px;
+}
+
+/* Footer & Account Section */
+.student-sidebar-account,
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 12px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--mint);
+  color: var(--teal);
+  font-weight: 700;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.profile-name {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.profile-name strong {
+  color: #ffffff;
+}
+
+.profile-name small {
+  color: #9fb5c6;
+  font-size: 11px;
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+.sidebar-action-btn {
+  width: 100%;
+  min-height: 38px;
+  border: 0;
+  background: transparent;
+  color: #b8cedd;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.sidebar-action-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.student-collapse {
+  width: 100%;
+  min-height: 38px;
+  border: 0;
+  background: transparent;
+  color: #b8cedd;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 10px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.student-collapse:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.student-collapse svg {
+  transform: rotate(180deg);
+  transition: transform 0.2s ease;
+}
+
+/* --------------------------------------------------------------------------
+   Desktop Collapsed State
+   -------------------------------------------------------------------------- */
+body.sidebar-collapsed .sidebar,
+body.sidebar-collapsed .student-sidebar,
+body.sidebar-collapsed .admin-sidebar {
+  width: 78px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+body.sidebar-collapsed .main-wrapper {
+  margin-left: 78px;
+}
+
+body.sidebar-collapsed .logo-text-wrap,
+body.sidebar-collapsed .sidebar-section-label,
+body.sidebar-collapsed .sidebar-link span,
+body.sidebar-collapsed .nav-item span,
+body.sidebar-collapsed .sidebar-link .active-indicator,
+body.sidebar-collapsed .sidebar-profile-card .profile-name,
+body.sidebar-collapsed .sidebar-action-btn span,
+body.sidebar-collapsed .student-collapse span {
+  display: none !important;
+}
+
+body.sidebar-collapsed .sidebar-link,
+body.sidebar-collapsed .nav-item,
+body.sidebar-collapsed .sidebar-action-btn,
+body.sidebar-collapsed .student-collapse {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+body.sidebar-collapsed .sidebar-profile-card {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+body.sidebar-collapsed .student-collapse svg {
+  transform: none;
+}
+
+/* --------------------------------------------------------------------------
+   Main Content Area & Top Header
+   -------------------------------------------------------------------------- */
+.main-wrapper {
+  flex: 1;
+  margin-left: 248px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.2s ease;
+  min-width: 0;
+}
+
+.top-header {
+  height: 68px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mobile-menu-toggle {
+  display: none;
+  background: transparent;
+  border: 0;
+  color: var(--navy);
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.mobile-menu-toggle:hover {
+  background: var(--bg);
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.content-container {
+  flex: 1;
+  padding: 32px 32px 64px;
+  max-width: 1360px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Mobile Drawer Overlay */
+.sidebar-scrim,
+.drawer-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 28, 45, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 65;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-scrim.active,
+.drawer-backdrop.active {
+  display: block;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Mobile & Tablet Rules
+   -------------------------------------------------------------------------- */
+@media (max-width: 820px) {
+  .main-wrapper {
+    margin-left: 0 !important;
+  }
+
+  .sidebar,
+  .student-sidebar,
+  .admin-sidebar {
+    position: fixed;
+    left: -275px;
+    top: 0;
+    width: 260px;
+    height: 100vh;
+    z-index: 70;
+    box-shadow: 4px 0 24px rgba(10, 28, 45, 0.3);
+  }
+
+  .sidebar.open,
+  .sidebar.mobile-open,
+  .student-sidebar.open,
+  .admin-sidebar.open {
+    left: 0;
+  }
+
+  .sidebar-close {
+    display: flex;
+  }
+
+  .student-collapse {
+    display: none;
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .top-header {
+    padding: 0 18px;
+    height: 64px;
+  }
+
+  .content-container {
+    padding: 24px 18px 60px;
+  }
+}
+
+@media (max-width: 560px) {
+  .top-header {
+    padding: 0 14px;
+  }
+
+  .content-container {
+    padding: 20px 14px 60px;
+  }
+}

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Care-OAU | Doctor Availability</title>
+  <meta name="description" content="View Obafemi Awolowo University Health Centre doctor duty schedules, daily patient capacity, and available booking slots.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/reset.css">
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layouts.css">
+  <link rel="stylesheet" href="../assets/css/student.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <link rel="stylesheet" href="../assets/css/finishing.css">
+</head>
+<body class="app-layout">
+
+  <!-- Left Sidebar (dynamically rendered by student-sidebar.js) -->
+  <aside class="sidebar" role="navigation" aria-label="Student Navigation"></aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-wrapper">
+    <!-- Top Header -->
+    <header class="top-header"></header>
+
+    <main class="content-container">
+      
+      <!-- Page Title -->
+      <div class="page-title">
+        <div>
+          <h1>Doctor Availability</h1>
+          <p>See who's available and find a suitable time for your visit.</p>
+        </div>
+        <a href="book-appointment.html" class="button button-primary">
+          Book Appointment
+        </a>
+      </div>
+
+      <!-- Filter Controls Bar -->
+      <div class="filter-bar">
+        <div class="field">
+          <label class="field-label" for="filter-specialty">Specialty</label>
+          <select id="filter-specialty">
+            <option value="All">All specialties</option>
+            <option value="General Medical Consultation">General Medical Consultation</option>
+            <option value="Dental Care">Dental Care &amp; Surgery</option>
+            <option value="Optometry">Optometry &amp; Eye Clinic</option>
+            <option value="Mental Health">Mental Health &amp; Counselling</option>
+            <option value="Diagnostic Laboratory">Diagnostic Laboratory</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="filter-date">Date</label>
+          <input type="date" id="filter-date">
+        </div>
+
+        <div class="filter-summary" id="filter-summary">
+          <span class="badge badge-success">
+            <span class="badge-dot"></span>
+            <span id="doctors-on-duty-count">3 doctors on duty</span>
+          </span>
+          <span id="filter-updated-text">Updated just now</span>
+        </div>
+      </div>
+
+      <!-- Doctor List -->
+      <div class="doctor-list" id="doctor-list">
+        <!-- Populated dynamically by doctors.js -->
+      </div>
+
+      <!-- Page Note -->
+      <p class="page-note">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        Current status reflects whether a doctor is available now. You can still book a future time with a busy or off-duty doctor.
+      </p>
+
+    </main>
+  </div>
+
+  <script type="module" src="../assets/js/student/doctors.js"></script>
+</body>
+</html>

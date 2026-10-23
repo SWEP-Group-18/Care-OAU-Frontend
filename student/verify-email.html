@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Care-OAU | Verify Email Address</title>
+  <meta name="description" content="Verify your student email address for Care-OAU Health Centre Portal.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/reset.css">
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/auth.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <link rel="stylesheet" href="../assets/css/finishing.css">
+</head>
+<body class="auth-page-centered">
+
+  <div class="auth-card compact">
+    <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+      <a href="../index.html" class="logo" style="text-decoration: none;">
+        <span class="logo-mark">
+          <svg viewBox="0 0 40 40" fill="none" aria-hidden="true" class="brand-symbol">
+            <path d="M27.5 11.5a11 11 0 1 0 0 17" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14 20h4l2.1-4 3.2 8 2.1-4H30" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span>
+          <strong>Care-OAU</strong>
+          <small>Your Health. Your Time. Our Care.</small>
+        </span>
+      </a>
+    </div>
+
+    <div class="auth-heading" style="text-align: center;">
+      <span class="eyebrow">Account verification</span>
+      <h2>Verify your email</h2>
+      <p id="verify-email-text">Enter the 6-digit confirmation code sent to your email.</p>
+    </div>
+
+    <div class="demo-banner">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+      <span><strong>Prototype Simulation:</strong> No email is sent. Enter code <code>123456</code> to verify and access your account.</span>
+    </div>
+
+    <form id="form-verify-email" novalidate>
+      <div class="otp-container" id="otp-inputs">
+        <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autofocus required>
+        <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+        <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+        <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+        <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+        <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+      </div>
+
+      <div id="otp-error" class="inline-error" style="display: none; margin-bottom: 14px;"></div>
+
+      <button type="submit" class="button button-primary full" id="btn-verify-submit">
+        Verify & Continue
+      </button>
+
+      <div class="resend-box">
+        <span>Didn't get a code?</span>
+        <button type="button" class="text-button" id="btn-resend-otp">
+          Resend code (<span id="resend-countdown">30</span>s)
+        </button>
+      </div>
+    </form>
+
+    <div class="portal-link">
+      Wrong email address? <a href="auth.html?mode=register" class="text-button">Return to Registration</a>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/js/student/verify-email.js"></script>
+</body>
+</html>

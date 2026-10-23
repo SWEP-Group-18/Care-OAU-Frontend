@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Dashboard | Care-OAU</title>
+  <meta name="description" content="Obafemi Awolowo University Health Centre Staff Operations Dashboard - Queue caller, appointment requests and doctor workloads.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/reset.css">
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layouts.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <link rel="stylesheet" href="../assets/css/finishing.css">
+</head>
+<body class="app-layout">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar" role="navigation" aria-label="Staff Navigation"></aside>
+
+  <!-- MAIN WRAPPER -->
+  <div class="main-wrapper">
+    <header class="top-header"></header>
+
+    <main class="content-container">
+      
+      <div class="welcome-row staff-welcome">
+        <div><span class="eyebrow">Health centre operations</span><h2 id="admin-welcome-name">Staff Dashboard</h2><p>Here’s what’s happening at the health centre today.</p></div>
+        <a href="appointments.html" class="btn btn-teal">Check In Patient</a>
+      </div>
+      <!-- 4 OPERATIONAL METRICS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-warning">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <div>
+            <div class="stat-val text-warning" id="stat-pending-requests">0</div>
+            <div class="stat-lbl">Pending Triage Requests</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-teal">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <div>
+            <div class="stat-val text-teal" id="stat-approved-today">0</div>
+            <div class="stat-lbl">Approved Appointments Today</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-navy">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div>
+            <div class="stat-val text-navy" id="stat-waiting-queue">0</div>
+            <div class="stat-lbl">Waiting in Reception Queue</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-success">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div>
+            <div class="stat-val text-success" id="stat-completed-visits">0</div>
+            <div class="stat-lbl">Completed Consultations</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK QUEUE CALLER CONSOLE -->
+      <div class="queue-caller-card">
+        <div class="caller-display">
+          <div class="current-ticket">
+            <div class="ticket-badge-lg" id="caller-ticket-number">---</div>
+            <div class="ticket-patient-details">
+              <div class="text-xs text-muted" style="text-transform: uppercase; letter-spacing: 0.05em;">Currently Attending</div>
+              <div class="text-base text-bold text-navy" id="caller-patient-name">No active consultation in room</div>
+              <div class="text-xs text-teal" id="caller-service-info">Consulting Room 2 &bull; General Outpatient</div>
+            </div>
+          </div>
+
+          <div class="caller-actions">
+            <button type="button" class="btn btn-teal" id="btn-call-next">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              Call Next Waiting Patient
+            </button>
+            <button type="button" class="btn btn-outline-teal" id="btn-start-consult" disabled>
+              Start Consultation
+            </button>
+            <button type="button" class="btn btn-success" id="btn-complete-visit" disabled>
+              Complete Visit &check;
+            </button>
+          </div>
+        </div>
+        <div class="text-xs text-muted" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <span>Updates broadcast automatically to student live queue monitors.</span>
+          <a href="queue-management.html" class="text-teal text-semibold">Open Full Queue Management Board &rarr;</a>
+        </div>
+      </div>
+
+      <!-- 2-COLUMN MAIN OPERATIONS -->
+      <div class="grid grid-cols-2 gap-6">
+        
+        <!-- PENDING REQUESTS REQUIRING TRIAGE APPROVAL -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="h3">Pending Requests Awaiting Triage</h3>
+            <a href="appointments.html" class="text-xs text-teal text-semibold">All Requests &rarr;</a>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="table" id="dashboard-requests-table">
+                <thead>
+                  <tr>
+                    <th>Student & Matric</th>
+                    <th>Service & Date</th>
+                    <th style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-requests-tbody">
+                  <!-- Rendered dynamically by dashboard.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOCTOR CAPACITY WORKLOADS TODAY -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="h3">Physician Duty Workloads</h3>
+            <a href="doctor-management.html" class="text-xs text-teal text-semibold">Doctor Schedules &rarr;</a>
+          </div>
+          <div class="card-body" id="dashboard-doctor-workloads">
+            <!-- Rendered dynamically by dashboard.js -->
+          </div>
+        </div>
+
+      </div>
+
+      <section class="staff-quick-actions"><div><h3>Quick actions</h3><p>Common tasks for the current shift.</p></div><a href="appointments.html"><strong>Find appointment</strong><span>Search and check in →</span></a><a href="queue-management.html"><strong>Manage queue</strong><span>Call the next patient →</span></a><a href="doctor-management.html"><strong>Doctor availability</strong><span>Update working status →</span></a></section>
+    </main>
+  </div>
+
+  <script type="module" src="../assets/js/admin/dashboard.js"></script>
+</body>
+</html>

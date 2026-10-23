@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Appointment Management & Patient Check-in | Care-OAU</title>
+  <meta name="description" content="Manage clinic appointments, approve triage requests, execute digital patient check-in, and issue hospital referrals.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/reset.css">
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layouts.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <link rel="stylesheet" href="../assets/css/finishing.css">
+</head>
+<body class="app-layout">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar" role="navigation" aria-label="Staff Navigation"></aside>
+
+  <!-- MAIN WRAPPER -->
+  <div class="main-wrapper">
+    <header class="top-header"></header>
+
+    <main class="content-container">
+      
+      <!-- PAGE HEADER -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4);">
+        <div>
+          <h2 class="h2">Appointment Management & Check-in</h2>
+          <p class="text-sm text-secondary">
+            Review incoming student requests, confirm clinic eligibility, and issue queue tickets upon patient arrival.
+          </p>
+        </div>
+        <div style="display: flex; gap: var(--space-3);">
+          <a href="queue-management.html" class="btn btn-outline-navy">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            View Live Queue
+          </a>
+        </div>
+      </div>
+
+      <!-- FILTER CONTROLS BAR -->
+      <div class="filter-bar">
+        <!-- SEARCH -->
+        <div class="input-with-icon" style="max-width: 320px; width: 100%;">
+          <span class="input-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <input type="text" id="admin-apt-search" class="form-control" placeholder="Search student name or matric...">
+        </div>
+
+        <!-- STATUS TABS -->
+        <div class="tab-filters" id="admin-status-tabs" style="margin-bottom: 0; padding-bottom: 0; border-bottom: none;">
+          <button type="button" class="tab-filter-btn active" data-filter="all">All</button>
+          <button type="button" class="tab-filter-btn" data-filter="Pending Approval">Pending Triage</button>
+          <button type="button" class="tab-filter-btn" data-filter="Approved">Approved (Ready for Check-in)</button>
+          <button type="button" class="tab-filter-btn" data-filter="Checked In">Checked In</button>
+          <button type="button" class="tab-filter-btn" data-filter="Completed">Completed</button>
+        </div>
+      </div>
+
+      <!-- APPOINTMENTS TABLE -->
+      <div class="card">
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="table" id="admin-appointments-table">
+              <thead>
+                <tr>
+                  <th>Student Details</th>
+                  <th>Service & Doctor</th>
+                  <th>Date & Slot</th>
+                  <th>Symptoms / Notes</th>
+                  <th>Status</th>
+                  <th>Queue Ticket</th>
+                  <th style="text-align: right;">Clinical Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-appointments-tbody">
+                <!-- Rendered dynamically by appointments.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script type="module" src="../assets/js/admin/appointments.js"></script>
+</body>
+</html>

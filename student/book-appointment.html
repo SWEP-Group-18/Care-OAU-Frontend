@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Care-OAU | Book an Appointment</title>
+  <meta name="description" content="Book an outpatient appointment at Obafemi Awolowo University Health Centre in 4 easy steps.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/reset.css">
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layouts.css">
+  <link rel="stylesheet" href="../assets/css/student.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <link rel="stylesheet" href="../assets/css/finishing.css">
+</head>
+<body class="app-layout">
+
+  <!-- Left Sidebar (dynamically rendered by student-sidebar.js) -->
+  <aside class="sidebar" role="navigation" aria-label="Student Navigation"></aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-wrapper">
+    <!-- Top Header -->
+    <header class="top-header"></header>
+
+    <main class="content-container">
+      
+      <!-- Wizard Container (hidden on submission success) -->
+      <div id="booking-flow-view">
+        <div class="page-title">
+          <div>
+            <h1>Book an Appointment</h1>
+            <p>Choose a service, doctor and time that works for you.</p>
+          </div>
+        </div>
+
+        <!-- Stepper (4 steps) -->
+        <div class="stepper" id="booking-stepper">
+          <div class="active" data-step="1">
+            <span>1</span>
+            <strong>Choose service</strong>
+          </div>
+          <div data-step="2">
+            <span>2</span>
+            <strong>Choose doctor</strong>
+          </div>
+          <div data-step="3">
+            <span>3</span>
+            <strong>Date & time</strong>
+          </div>
+          <div data-step="4">
+            <span>4</span>
+            <strong>Review</strong>
+          </div>
+        </div>
+
+        <!-- Two Column Booking Layout -->
+        <div class="booking-layout">
+          <!-- Left Interactive Workspace -->
+          <section class="booking-workspace">
+            
+            <!-- STEP 1: CHOOSE SERVICE -->
+            <div id="step-panel-1" class="step-panel">
+              <div class="workspace-heading">
+                <span>Step 1 of 4</span>
+                <h2>What do you need help with?</h2>
+                <p>Select the service that best matches your visit.</p>
+              </div>
+              <div class="service-options" id="service-options-container">
+                <!-- Dynamically populated by book-appointment.js -->
+              </div>
+
+              <!-- Referral Code Field (shown only when required) -->
+              <div id="referral-field-container" class="field" style="margin-top: 18px; display: none;">
+                <label class="field-label" for="referral-code">Referral code</label>
+                <input type="text" id="referral-code" placeholder="Enter the code from your doctor">
+                <span class="field-helper">Your referral will be verified by clinical staff before approval.</span>
+              </div>
+            </div>
+
+            <!-- STEP 2: CHOOSE DOCTOR -->
+            <div id="step-panel-2" class="step-panel hidden">
+              <div class="workspace-heading">
+                <span>Step 2 of 4</span>
+                <h2>Choose a doctor</h2>
+                <p>Choose the earliest available option or select a preferred doctor.</p>
+              </div>
+              <div class="doctor-choices" id="doctor-choices-container">
+                <!-- Dynamically populated by book-appointment.js -->
+              </div>
+            </div>
+
+            <!-- STEP 3: DATE & TIME -->
+            <div id="step-panel-3" class="step-panel hidden">
+              <div class="workspace-heading">
+                <span>Step 3 of 4</span>
+                <h2>Choose a date and time</h2>
+                <p>Available times are shown for your selected service.</p>
+              </div>
+
+              <div class="date-strip" id="date-strip-container">
+                <!-- Dynamically rendered date strip -->
+              </div>
+
+              <div class="slot-header">
+                <h3>Available times</h3>
+                <span id="selected-date-slot-label">Thursday, 15 May</span>
+              </div>
+
+              <div class="time-grid" id="time-grid-container">
+                <!-- Dynamically rendered time slots -->
+              </div>
+
+              <div class="slot-legend">
+                <span><i class="legend-available"></i> Available</span>
+                <span><i class="legend-selected"></i> Selected</span>
+                <span><i class="legend-full"></i> Fully booked</span>
+              </div>
+            </div>
+
+            <!-- STEP 4: REVIEW & CONFIRM -->
+            <div id="step-panel-4" class="step-panel hidden">
+              <div class="workspace-heading">
+                <span>Step 4 of 4</span>
+                <h2>Review your appointment request</h2>
+                <p>Check the details below before sending them for staff approval.</p>
+              </div>
+
+              <div class="review-card">
+                <div class="review-person">
+                  <span class="avatar" id="review-avatar">AY</span>
+                  <div>
+                    <span>Appointment for</span>
+                    <strong id="review-patient-name">Amina Yusuf</strong>
+                    <small id="review-patient-matric">21/SCI/1048</small>
+                  </div>
+                </div>
+
+                <div class="review-row">
+                  <span>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    </svg>
+                    Service
+                  </span>
+                  <strong id="review-service">General Consultation</strong>
+                  <button type="button" data-goto-step="1">Edit</button>
+                </div>
+
+                <div class="review-row">
+                  <span>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"></path>
+                      <circle cx="20" cy="10" r="2"></circle>
+                    </svg>
+                    Doctor
+                  </span>
+                  <strong id="review-doctor">Earliest available doctor</strong>
+                  <button type="button" data-goto-step="2">Edit</button>
+                </div>
+
+                <div class="review-row">
+                  <span>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                    </svg>
+                    Date & time
+                  </span>
+                  <strong id="review-datetime">Thu, 15 May · 10:30 AM</strong>
+                  <button type="button" data-goto-step="3">Edit</button>
+                </div>
+
+                <div class="review-row">
+                  <span>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    </svg>
+                    Location
+                  </span>
+                  <strong>Care-OAU Clinic</strong>
+                  <span></span>
+                </div>
+              </div>
+
+              <div class="field" style="margin:20px 0"><label class="field-label" for="booking-reason">Reason for visit (optional)</label><textarea id="booking-reason" rows="3" placeholder="Briefly describe your symptoms or reason for visiting"></textarea></div>
+              <label class="agreement">
+                <input type="checkbox" id="booking-agreement" checked>
+                <span>I understand this is a scheduled appointment time and actual consultation time may vary based on emergencies.</span>
+              </label>
+            </div>
+
+            <!-- Workspace Footer (Back & Continue buttons) -->
+            <div class="workspace-footer">
+              <button type="button" class="button button-secondary hidden" id="btn-booking-prev">
+                Back
+              </button>
+              <div style="flex: 1;"></div>
+              <button type="button" class="button button-primary" id="btn-booking-next">
+                Continue
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
+
+          </section>
+
+          <!-- Right Sticky Booking Summary -->
+          <aside class="booking-summary">
+            <span class="eyebrow">Your selection</span>
+            <h3 id="summary-service">General Consultation</h3>
+            <dl>
+              <div>
+                <dt>Doctor</dt>
+                <dd id="summary-doctor">Earliest available</dd>
+              </div>
+              <div>
+                <dt>Date</dt>
+                <dd id="summary-date">Thursday, 15 May 2025</dd>
+              </div>
+              <div>
+                <dt>Time</dt>
+                <dd id="summary-time">10:30 AM</dd>
+              </div>
+              <div>
+                <dt>Location</dt>
+                <dd>Care-OAU Clinic</dd>
+              </div>
+            </dl>
+            <p>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>Your appointment time is a scheduled slot. Consultation may begin later depending on urgent cases.</span>
+            </p>
+          </aside>
+        </div>
+      </div>
+
+      <!-- Success Confirmation View (Shown after submission) -->
+      <div id="booking-success-view" class="success-page hidden">
+        <div class="success-check">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <span class="eyebrow">Request received</span>
+        <h1>Your appointment request has been submitted successfully.</h1>
+        <p>The health centre staff will review your request. You can check its status under My Appointments.</p>
+
+        <div class="confirmation-ticket">
+          <div class="ticket-head">
+            <div>
+              <span>Request reference</span>
+              <strong id="ticket-reference">CHC-240518</strong>
+            </div>
+            <span class="badge badge-warning">
+              <span class="badge-dot"></span>
+              Pending Approval
+            </span>
+          </div>
+
+          <div class="ticket-body">
+            <div>
+              <span>Service</span>
+              <strong id="ticket-service">General Consultation</strong>
+            </div>
+            <div>
+              <span>Doctor</span>
+              <strong id="ticket-doctor">Dr. Nneka Okafor</strong>
+            </div>
+            <div>
+              <span>Date</span>
+              <strong id="ticket-date">Thursday, 15 May 2025</strong>
+            </div>
+            <div>
+              <span>Requested time</span>
+              <strong id="ticket-time">10:30 AM</strong>
+            </div>
+            <div>
+              <span>Location</span>
+              <strong>Care-OAU Clinic</strong>
+            </div>
+          </div>
+
+          <div class="ticket-note">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <p>
+              <strong>What happens next</strong>
+              Wait for staff approval before travelling to the health centre. No queue number is issued until an approved appointment is checked in.
+            </p>
+          </div>
+        </div>
+
+        <div class="success-actions">
+          <a href="my-appointments.html" class="button button-primary">
+            View My Appointments
+          </a>
+          <a href="dashboard.html" class="button button-secondary">
+            Back to Dashboard
+          </a>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script type="module" src="../assets/js/student/book-appointment.js"></script>
+</body>
+</html>
