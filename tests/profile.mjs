@@ -1,0 +1,12 @@
+﻿import assert from 'node:assert/strict';
+const data=new Map();globalThis.window={localStorage:{getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)}};
+const {Storage}=await import('../assets/js/core/storage.js');
+const {APP_CONFIG:{STORAGE_KEYS:k}}=await import('../assets/js/core/config.js');
+const {saveStudentProfile}=await import('../assets/js/services/profile-service.js');
+Storage.set(k.AUTH_USER,{id:'student',role:'student',name:'Student',matricNo:'CSC/2021/045',email:'old@example.com',isVerified:true});
+const {user}=saveStudentProfile({name:'Updated Student',email:'new@example.com',phone:'08012345678',role:'admin',matricNo:'changed',isVerified:true});
+assert.equal(user.role,'student');assert.equal(user.matricNo,'CSC/2021/045');assert.equal(user.isVerified,false);assert.equal(user.name,'Updated Student');
+assert.equal(Storage.get('care_oau_demo_accounts')[0].email,'new@example.com');
+assert.throws(()=>saveStudentProfile({name:'',email:'bad',phone:'123'}));
+Storage.set(k.AUTH_USER,{role:'admin'});assert.throws(()=>saveStudentProfile({name:'Name',email:'a@b.com',phone:'08012345678'}),/student/);
+console.log('PASS: profile field allowlist, identity protection, validation, persistence and email verification reset.');

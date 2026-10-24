@@ -1,3 +1,4 @@
+import { openStaffAccount } from './staff-account.js';
 import { Utils } from '../core/utils.js';
 /**
  * Care-OAU - Top Header Component
@@ -34,7 +35,7 @@ export const Header = {
 
       <div class="header-right">
         <div class="dropdown">
-          <button class="btn btn-ghost btn-sm" data-dropdown-toggle style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn btn-ghost btn-sm" data-dropdown-toggle aria-label="Account menu" aria-expanded="false" aria-controls="account-menu" style="display: flex; align-items: center; gap: 8px;">
             <div class="user-avatar" style="width: 32px; height: 32px; font-size: 13px;">
               ${(user.name || 'U').charAt(0).toUpperCase()}
             </div>
@@ -46,11 +47,12 @@ export const Header = {
             </svg>
           </button>
 
-          <div class="dropdown-menu">
+          <div class="dropdown-menu" id="account-menu">
             <div style="padding: 8px 16px; border-bottom: 1px solid var(--color-divider);">
               <div class="text-xs text-bold text-navy">${Utils.escapeHtml(user.name)}</div>
-              <div class="text-xs text-muted">${user.matricNo || user.staffId || user.email || ''}</div>
+              <div class="text-xs text-muted">${Utils.escapeHtml(user.matricNo || user.staffId || user.email || '')}</div>
             </div>
+            ${user.role === 'student' ? '<a href="profile.html" class="dropdown-item">View Profile</a><a href="profile.html#change-password" class="dropdown-item">Change Password</a>' : '<button type="button" class="dropdown-item" id="staff-view-profile">View Profile</button><button type="button" class="dropdown-item" id="staff-change-password">Change Password</button>'}
             <a href="#" class="dropdown-item" id="header-logout-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -63,6 +65,9 @@ export const Header = {
         </div>
       </div>
     `;
+
+    headerContainer.querySelector('#staff-view-profile')?.addEventListener('click', () => openStaffAccount());
+    headerContainer.querySelector('#staff-change-password')?.addEventListener('click', () => openStaffAccount({ password: true }));
 
     // Hook up logout
     const logoutBtn = headerContainer.querySelector('#header-logout-btn');

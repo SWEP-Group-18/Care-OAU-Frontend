@@ -1,3 +1,4 @@
+import { attendanceAllowsDate, attendanceAllowsTime } from './doctor-status.js';
 import { Storage } from '../core/storage.js';
 import { APP_CONFIG } from '../core/config.js';
 import { INITIAL_DOCTORS, INITIAL_SERVICES, INITIAL_APPOINTMENTS } from '../data/mock-data.js';
@@ -20,7 +21,7 @@ export function availableSlots(serviceId, doctorId, date, excludeId = null) {
     a.id !== excludeId && (a.appointmentDate || a.date) === date && !['Cancelled', 'Rejected'].includes(a.status));
   if (appointments.filter(a => a.serviceId === serviceId).length >= service.dailyCapacity) return [];
   const doctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, INITIAL_DOCTORS).filter(d =>
-    d.serviceId === serviceId && (!doctorId || d.id === doctorId) && d.isAvailable && d.workingDays.includes(day));
+    d.serviceId === serviceId && (!doctorId || d.id === doctorId) && attendanceAllowsDate(d, date) && d.workingDays.includes(day));
   const slots = new Map();
   for (const doctor of doctors) {
     const booked = appointments.filter(a => a.doctorId === doctor.id);
@@ -31,6 +32,7 @@ export function availableSlots(serviceId, doctorId, date, excludeId = null) {
     const end = Math.min(minutes(service.endTime), minutes(doctor.endTime));
     for (let time = start; time + 30 <= end; time += 30) {
       if (date === localDate() && time <= new Date().getHours() * 60 + new Date().getMinutes()) continue;
+      if (!attendanceAllowsTime(doctor, date, time)) continue;
       if (booked.some(a => minutes(a.timeSlot || a.time) === time)) continue;
       if (!slots.has(time)) slots.set(time, { time: timeLabel(time), doctor });
     }

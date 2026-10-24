@@ -1,167 +1,162 @@
-import { Utils } from '../core/utils.js';
+import { attendanceStatus, attendanceAllowsDate } from '../services/doctor-status.js';
+﻿import { Utils } from '../core/utils.js';
 import { availableSlots, localDate } from '../services/availability.js';
 import { Navigation } from '../core/navigation.js';
-/**
- * Care-OAU - Doctor Availability Page Logic (Figma Aligned)
- * Computes schedule-derived doctor availability, handles specialty/date filters,
- * and links directly to the booking workflow.
- */
-
 import { Storage } from '../core/storage.js';
 import { APP_CONFIG } from '../core/config.js';
 import { StudentSidebar } from '../components/student-sidebar.js';
 import { Header } from '../components/header.js';
-import { INITIAL_DOCTORS } from '../data/mock-data.js';
+import { INITIAL_DOCTORS, INITIAL_SERVICES, INITIAL_APPOINTMENTS } from '../data/mock-data.js';
 
-let specialtyFilter = 'All';
-let selectedDateStr = localDate();
+const keys = APP_CONFIG.STORAGE_KEYS;
+const seededAppointmentIds = new Set(INITIAL_APPOINTMENTS.map(appointment => appointment.id));
+let selectedDate = localDate();
+let specialty = 'All';
+const escape = value => Utils.escapeHtml(String(value ?? ''));
+const specialtyOf = doctor => doctor.specialization || doctor.specialty || 'General Medicine';
+const dayOf = date => new Date(`${date}T12:00:00`).toLocaleDateString('en-US', { weekday: 'long' });
+const formatDate = date => new Date(`${date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+const formatTime = time => {
+  if (!/^\d{2}:\d{2}$/.test(time || '')) return time || 'Not scheduled';
+  const [hour, minute] = time.split(':').map(Number);
+  return `${hour % 12 || 12}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`;
+};
+
+// Match the shared booking service's reservation and daily-capacity rules.
+function remainingCapacity(doctor, service, date) {
+  const reservations = Storage.get(keys.APPOINTMENTS, []).filter(appointment =>
+    (appointment.appointmentDate || appointment.date) === date && !['Cancelled', 'Rejected'].includes(appointment.status));
+  const booked = reservations.filter(appointment => appointment.doctorId === doctor.id);
+  const load = date === localDate()
+    ? (doctor.currentLoad || 0) + booked.filter(appointment => !seededAppointmentIds.has(appointment.id)).length
+    : booked.length;
+  const serviceLoad = reservations.filter(appointment => appointment.serviceId === doctor.serviceId).length;
+  return Math.max(0, Math.min(doctor.dailyCapacity - load, service.dailyCapacity - serviceLoad));
+}
+
+function nextOpening(doctor, date) {
+
+  const day = new Date(`${date}T12:00:00`);
+  // Weekly schedules repeat; look ahead four weeks, allowing for existing bookings.
+  for (let offset = 1; offset <= 28; offset++) {
+    day.setDate(day.getDate() + 1);
+    const nextDate = localDate(day);
+    const slot = availableSlots(doctor.serviceId, doctor.id, nextDate)[0];
+    if (slot) return { date: nextDate, time: slot.time };
+  }
+  return null;
+}
+
+function doctorState(doctor, services) {
+  const service = services.find(item => item.id === doctor.serviceId);
+  const today = selectedDate === localDate();
+  const now = new Date();
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const onDuty = Boolean(attendanceAllowsDate(doctor, selectedDate) && doctor.workingDays?.includes(dayOf(selectedDate)));
+  const serviceOpen = Boolean(service?.isActive && service.operatingDays?.includes(dayOf(selectedDate)));
+  const slots = availableSlots(doctor.serviceId, doctor.id, selectedDate);
+  const capacity = service ? remainingCapacity(doctor, service, selectedDate) : 0;
+  const remaining = Math.min(capacity, slots.length);
+  const shiftEnded = today && currentTime >= doctor.endTime;
+  const attendance = attendanceStatus(doctor, selectedDate);
+  let status = attendance;
+  let tone = ({ 'Available': 'available', 'On Break': 'break', 'In Consultation': 'consultation', 'Arriving Soon': 'consultation', 'Off Duty': 'off-duty', 'On Leave': 'off-duty' })[attendance];
+  if (!serviceOpen || shiftEnded || !doctor.workingDays?.includes(dayOf(selectedDate))) { status = 'Off Duty'; tone = 'off-duty'; }
+  if (capacity === 0 && onDuty && serviceOpen) { status = 'Fully Booked'; tone = 'full'; }
+  const next = remaining ? { date: selectedDate, time: slots[0].time } : nextOpening(doctor, selectedDate);
+  return { status, tone, remaining, next, onDuty, serviceOpen };
+}
+
+function renderCard(doctor, services) {
+  const state = doctorState(doctor, services);
+  const initials = (doctor.name || 'Doctor').replace(/^Dr\.?\s*(\(Mrs\)\s*)?/i, '').split(/\s+/).filter(Boolean).map(part => part[0]).slice(0, 2).join('').toUpperCase();
+  const href = date => `book-appointment.html?${new URLSearchParams({ doctorId: doctor.id, date })}`;
+  const nextLabel = state.next
+    ? `${state.next.date === selectedDate ? '' : formatDate(state.next.date) + ' · '}${state.next.time}`
+    : 'No opening in the next 4 weeks';
+  return `<article class="availability-card" data-doctor-id="${escape(doctor.id)}">
+    <div class="availability-card-top">
+      <span class="availability-avatar" aria-hidden="true">${escape(initials)}</span>
+      <span class="availability-badge availability-badge--${state.tone}"><span aria-hidden="true"></span>${state.status}</span>
+    </div>
+    <div class="availability-identity"><h2>${escape(doctor.name)}</h2><p>${escape(specialtyOf(doctor))}</p></div>
+    <dl class="availability-details">
+      <div><dt>Working hours</dt><dd>${escape(formatTime(doctor.startTime))} – ${escape(formatTime(doctor.endTime))}</dd></div>
+      <div><dt>Appointment slots</dt><dd class="availability-slots ${state.remaining ? '' : 'availability-slots--empty'}">${state.remaining} ${state.remaining === 1 ? 'slot' : 'slots'} left</dd></div>
+      ${attendanceStatus(doctor, selectedDate) === 'Arriving Soon' && doctor.expectedArrivalAt ? '<div><dt>Expected arrival</dt><dd>' + escape(new Date(doctor.expectedArrivalAt).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'})) + '</dd></div>' : ''}
+      <div><dt>Next available</dt><dd>${escape(nextLabel)}</dd></div>
+    </dl>
+    <div class="availability-actions">
+      ${state.remaining
+        ? `<a class="button button-primary" href="${escape(href(selectedDate))}" aria-label="Book appointment with ${escape(doctor.name)}">Book Appointment <span aria-hidden="true">↗</span></a>`
+        : `<button class="button button-secondary" disabled>${state.status === 'Fully Booked' ? 'Fully booked for this date' : 'Unavailable for this date'}</button>${state.next ? `<a class="availability-next" href="${escape(href(state.next.date))}" aria-label="View next availability for ${escape(doctor.name)}">View next availability <span aria-hidden="true">→</span></a>` : '<span class="availability-next-note">Please check back for schedule updates.</span>'}`}
+    </div>
+  </article>`;
+}
+
+function refreshSpecialties() {
+  const select = document.getElementById('filter-specialty');
+  const values = [...new Set(Storage.get(keys.DOCTORS, []).map(specialtyOf))].sort();
+  if (!values.includes(specialty)) specialty = 'All';
+  select.replaceChildren(new Option('All specialties', 'All'), ...values.map(value => new Option(value, value)));
+  select.value = specialty;
+}
+
+function renderDoctors() {
+  const doctors = Storage.get(keys.DOCTORS, []).filter(doctor => specialty === 'All' || specialtyOf(doctor) === specialty);
+  const services = Storage.get(keys.SERVICES, INITIAL_SERVICES);
+  const count = doctors.filter(doctor => doctorState(doctor, services).onDuty).length;
+  document.getElementById('doctors-on-duty-count').textContent = `${count} ${count === 1 ? 'doctor' : 'doctors'} on duty`;
+  document.getElementById('filter-updated-text').textContent = `For ${formatDate(selectedDate)} · Updated ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  document.getElementById('doctor-results-summary').textContent = `${doctors.length} ${doctors.length === 1 ? 'doctor' : 'doctors'}${specialty === 'All' ? ' across all specialties' : ' in ' + specialty}`;
+  document.getElementById('doctor-list').innerHTML = doctors.length
+    ? doctors.map(doctor => renderCard(doctor, services)).join('')
+    : '<div class="availability-empty"><div class="empty-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div><h2>No doctors found</h2><p>Try another specialty or check back for updated schedules.</p></div>';
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('student')) return;
   Header.render('Doctor Availability');
   StudentSidebar.render();
-
-  // Seed doctors in storage if empty
-  if (!Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS)) {
-    Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, INITIAL_DOCTORS);
-  }
-
-  // Initialize date input default to today
+  if (!Storage.get(keys.DOCTORS)) Storage.set(keys.DOCTORS, INITIAL_DOCTORS);
+  refreshSpecialties();
   const dateInput = document.getElementById('filter-date');
-  if (dateInput) {
-    dateInput.value = selectedDateStr;
-    dateInput.min = localDate();
-    dateInput.addEventListener('change', (e) => {
-      selectedDateStr = e.target.value;
-      renderDoctorList();
-    });
-  }
-
-  const specialtySelect = document.getElementById('filter-specialty');
-  if (specialtySelect) {
-    const specialties = [...new Set(Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []).map(d => d.specialization))];
-    specialtySelect.replaceChildren(new Option('All specialties', 'All'), ...specialties.map(s => new Option(s, s)));
-    specialtySelect.addEventListener('change', (e) => {
-      specialtyFilter = e.target.value;
-      renderDoctorList();
-    });
-  }
-
-  renderDoctorList();
-});
-
-function renderDoctorList() {
-  const container = document.getElementById('doctor-list');
-  const countBadge = document.getElementById('doctors-on-duty-count');
-  if (!container) return;
-
-  const doctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
-
-  // Determine selected day of week name
-  const targetDate = new Date(selectedDateStr + 'T12:00:00');
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const targetDay = isNaN(targetDate.getTime()) ? dayNames[new Date().getDay()] : dayNames[targetDate.getDay()];
-
-  // Filter by specialty
-  let filtered = doctors;
-  if (specialtyFilter !== 'All') {
-    filtered = filtered.filter(
-      (d) => (d.specialization || d.specialty || '').toLowerCase().includes(specialtyFilter.toLowerCase())
-    );
-  }
-
-  // Calculate duty count
-  const onDutyCount = filtered.filter(
-    (d) => (d.workingDays || []).includes(targetDay) && d.isAvailable
-  ).length;
-
-  if (countBadge) {
-    countBadge.textContent = `${onDutyCount} doctors on duty`;
-  }
-
-  if (filtered.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="quiet-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-        </div>
-        <h3>No doctors found</h3>
-        <p>No medical officers match the chosen specialty for this day.</p>
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = filtered.map((doc, idx) => {
-    // Initials for avatar
-    const parts = (doc.name || 'Doctor').replace(/^Dr\.?\s+/i, '').split(' ');
-    const initials = parts.map((p) => p[0]).slice(0, 2).join('').toUpperCase();
-
-    // Schedule-derived status
-    const worksOnSelectedDay = (doc.workingDays || []).includes(targetDay);
-    const capacity = doc.dailyCapacity || 25;
-    const currentLoad = doc.currentLoad || 0;
-    const isFull = currentLoad >= capacity;
-
-    let status = 'Available';
-    let badgeClass = 'badge-success';
-    let nextAvailable = 'Today, 10:30 AM';
-    let isAvailableNow = true;
-
-    if (!worksOnSelectedDay || !doc.isAvailable) {
-      status = 'Off Duty';
-      badgeClass = 'badge-neutral';
-      nextAvailable = 'Next shift: Friday, 8:30 AM';
-      isAvailableNow = false;
-    } else if (isFull) {
-      status = 'Fully Booked';
-      badgeClass = 'badge-warning';
-      nextAvailable = 'Tomorrow, 8:30 AM';
-      isAvailableNow = false;
-    } else if (doc.status === 'In Consultation') {
-      // Simulate real shift status
-      status = 'In Consultation';
-      badgeClass = 'badge-info';
-      nextAvailable = 'Today, 11:15 AM';
-      isAvailableNow = true;
+  dateInput.min = selectedDate;
+  dateInput.value = selectedDate;
+  dateInput.addEventListener('change', () => {
+    if (!dateInput.value || !dateInput.checkValidity()) {
+      dateInput.value = selectedDate;
+      return;
     }
+    selectedDate = dateInput.value;
+    renderDoctors();
+  });
+  document.getElementById('filter-specialty').addEventListener('change', event => {
+    specialty = event.target.value;
+    renderDoctors();
+  });
+window.addEventListener('storage', event => {
+    if ([keys.DOCTORS, keys.SERVICES, keys.APPOINTMENTS].includes(event.key) || event.key === null) {
+      refreshSpecialties();
+      renderDoctors();
+    }
+  });
 
-    const slots = availableSlots(doc.serviceId, doc.id, selectedDateStr);
-    isAvailableNow = slots.length > 0;
-    nextAvailable = slots[0]?.time || 'Select a future date';
-    if (!slots.length && worksOnSelectedDay && doc.isAvailable) { status = 'No slots available'; badgeClass = 'badge-warning'; }
-    const workingHoursText = doc.workingHours || `${doc.startTime || '8:00 AM'} – ${doc.endTime || '4:00 PM'}`;
-    const specialization = doc.specialization || doc.specialty || 'General Medicine';
+  const gridBtn = document.getElementById('view-grid');
+  const listBtn = document.getElementById('view-list');
+  const grid = document.getElementById('doctor-list');
+  if (gridBtn && listBtn && grid) {
+    gridBtn.addEventListener('click', () => {
+      grid.classList.remove('list-view');
+      gridBtn.setAttribute('aria-pressed', 'true');
+      listBtn.setAttribute('aria-pressed', 'false');
+    });
+    listBtn.addEventListener('click', () => {
+      grid.classList.add('list-view');
+      listBtn.setAttribute('aria-pressed', 'true');
+      gridBtn.setAttribute('aria-pressed', 'false');
+    });
+  }
 
-    return `
-      <article class="doctor-card">
-        <div class="doctor-avatar">${initials}</div>
-        <div class="doctor-identity">
-          <h3>${Utils.escapeHtml(doc.name)}</h3>
-          <p>${specialization}</p>
-        </div>
-        <div class="doctor-detail">
-          <span>Status</span>
-          <span class="badge ${badgeClass}">
-            <span class="badge-dot"></span>
-            ${status}
-          </span>
-        </div>
-        <div class="doctor-detail">
-          <span>Working hours</span>
-          <strong>${workingHoursText}</strong>
-        </div>
-        <div class="doctor-detail">
-          <span>Next available</span>
-          <strong>${nextAvailable}</strong>
-        </div>
-        <a href="book-appointment.html?doctorId=${doc.id}&date=${selectedDateStr}" class="button ${isAvailableNow ? 'button-primary' : 'button-secondary'}">
-          ${isAvailableNow ? 'Book this doctor' : 'View future times'}
-        </a>
-      </article>
-    `;
-  }).join('');
-}
+  renderDoctors();
+});

@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="../assets/css/student.css">
   <link rel="stylesheet" href="../assets/css/responsive.css">
   <link rel="stylesheet" href="../assets/css/finishing.css">
+  <link rel="stylesheet" href="../assets/css/pages/doctor-availability.css">
 </head>
 <body class="app-layout">
 
@@ -27,10 +28,10 @@
     <!-- Top Header -->
     <header class="top-header"></header>
 
-    <main class="content-container">
+    <main class="content-container doctor-availability">
       
       <!-- Page Title -->
-      <div class="page-title">
+      <div class="page-title availability-heading">
         <div>
           <h1>Doctor Availability</h1>
           <p>See who's available and find a suitable time for your visit.</p>
@@ -62,14 +63,25 @@
         <div class="filter-summary" id="filter-summary">
           <span class="badge badge-success">
             <span class="badge-dot"></span>
-            <span id="doctors-on-duty-count">3 doctors on duty</span>
+            <span id="doctors-on-duty-count">Checking duty schedules</span>
           </span>
           <span id="filter-updated-text">Updated just now</span>
         </div>
       </div>
 
-      <!-- Doctor List -->
-      <div class="doctor-list" id="doctor-list">
+      <!-- Doctor card directory -->
+      <div class="availability-toolbar">
+        <p class="availability-results-summary" id="doctor-results-summary" role="status" aria-live="polite"></p>
+        <div class="view-toggle" role="group" aria-label="View mode">
+          <button type="button" id="view-grid" aria-label="Grid view" aria-pressed="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </button>
+          <button type="button" id="view-list" aria-label="List view" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="availability-grid" id="doctor-list" aria-label="Doctor availability">
         <!-- Populated dynamically by doctors.js -->
       </div>
 
@@ -79,7 +91,7 @@
           <circle cx="12" cy="12" r="10"></circle>
           <polyline points="12 6 12 12 16 14"></polyline>
         </svg>
-        Current status reflects whether a doctor is available now. You can still book a future time with a busy or off-duty doctor.
+        Availability and remaining slots are based on the selected date. Break and consultation statuses apply to today. Future openings follow the saved duty schedules.
       </p>
 
     </main>

@@ -1,0 +1,39 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Profile | Care-OAU</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css"><link rel="stylesheet" href="../assets/css/reset.css">
+  <link rel="stylesheet" href="../assets/css/global.css"><link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layouts.css"><link rel="stylesheet" href="../assets/css/responsive.css">
+  <link rel="stylesheet" href="../assets/css/finishing.css"><link rel="stylesheet" href="../assets/css/pages/student-profile.css">
+</head>
+<body class="app-layout">
+  <aside class="sidebar" aria-label="Student Navigation"></aside>
+  <div class="main-wrapper"><header class="top-header"></header>
+    <main class="content-container student-profile">
+      <div class="profile-page-heading"><span class="eyebrow">Your account</span><h1>Student Profile</h1><p>Manage your personal details and contact information.</p></div>
+      <section class="profile-card" aria-labelledby="personal-details-heading">
+        <div class="profile-identity"><span class="profile-avatar" id="profile-initials" aria-hidden="true"></span><div><h2 id="profile-display-name"></h2><span class="text-sm text-muted">Student &amp; patient portal</span></div><button class="btn btn-outline-teal" id="edit-profile" type="button">Edit Profile</button></div>
+        <h2 id="personal-details-heading" class="h3">Personal details</h2>
+        <form id="profile-form">
+          <div class="profile-fields">
+            <div class="form-group"><label class="form-label" for="profile-name">Full name</label><input class="form-control" id="profile-name" autocomplete="name" maxlength="100" required readonly></div>
+            <div class="form-group"><label class="form-label" for="profile-matric">Matric / hospital registration number</label><input class="form-control" id="profile-matric" readonly aria-describedby="registration-note"><small id="registration-note">Contact reception to correct your registration number.</small></div>
+            <div class="form-group"><label class="form-label" for="profile-email">Email address</label><input class="form-control" id="profile-email" type="email" autocomplete="email" required readonly><span class="badge" id="profile-verification"></span></div>
+            <div class="form-group"><label class="form-label" for="profile-phone">Phone number</label><input class="form-control" id="profile-phone" type="tel" autocomplete="tel" required readonly></div>
+          </div>
+          <p class="profile-email-note">Changing your email marks it unverified. Email re-verification will be required when the backend is connected; this demo does not send emails.</p>
+          <p id="profile-feedback" role="status"></p>
+          <div class="profile-form-actions hidden" id="profile-actions"><button class="btn btn-teal" type="submit">Save changes</button><button class="btn btn-ghost" id="cancel-profile" type="button">Cancel</button></div>
+        </form>
+      </section>
+      <section class="profile-card" id="change-password" aria-labelledby="password-heading"><h2 id="password-heading">Change Password</h2><div id="student-password-container"></div></section>
+      <button class="btn btn-outline-danger" id="profile-signout" type="button">Sign Out</button>
+    </main>
+  </div>
+  <script type="module" src="../assets/js/student/profile.js"></script>
+</body>
+</html>

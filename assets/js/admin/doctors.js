@@ -1,3 +1,4 @@
+import { DOCTOR_STATUSES, attendanceStatus, statusTone, doctorLoad, saveDoctorStatus } from '../services/doctor-status.js';
 import { Utils } from '../core/utils.js';
 import { Navigation } from '../core/navigation.js';
 /**
@@ -128,10 +129,23 @@ async function loadDoctorsTable() {
 
   if (!doctors.length) { tbody.innerHTML = '<div class="quiet-card"><h3>No doctors found</h3><p>Try another name or working day.</p></div>'; return; }
   tbody.innerHTML = doctors.map(doc => {
-    const load = doc.currentLoad || 0;
+    const load = doctorLoad(doc);
+    const status = attendanceStatus(doc);
     const percentage = Math.min(100, load / doc.dailyCapacity * 100);
-    return `<article class="management-doctor"><div class="avatar">${Utils.escapeHtml(doc.name.replace(/^Dr\.?\s*/,'').slice(0,2))}</div><div class="management-name"><h3>${Utils.escapeHtml(doc.name)}</h3><p>${Utils.escapeHtml(doc.specialization)}</p></div><div><span>Working days</span><strong>${doc.workingDays.map(d=>d.slice(0,3)).join(', ')}</strong><small>${doc.startTime} – ${doc.endTime}</small></div><div><span>Daily capacity</span><strong>${load} / ${doc.dailyCapacity} patients</strong><div class="capacity-bar"><div class="capacity-fill" style="width:${percentage}%"></div></div></div><div><span class="badge ${doc.isAvailable ? 'badge-success' : 'badge-neutral'}">${doc.isAvailable ? 'Active' : 'On leave'}</span><small>${Utils.escapeHtml(doc.room)}</small></div><div class="management-actions"><button class="btn btn-outline-teal btn-sm" onclick="editDoctorSchedule('${doc.id}')">Edit schedule</button><button class="btn btn-ghost btn-sm" onclick="toggleDoctorStatus('${doc.id}')">${doc.isAvailable ? 'Set leave' : 'Activate'}</button></div></article>`;
+    return `<article class="management-doctor"><div class="avatar">${Utils.escapeHtml(doc.name.replace(/^Dr\.?\s*/,'').slice(0,2))}</div><div class="management-name"><h3>${Utils.escapeHtml(doc.name)}</h3><p>${Utils.escapeHtml(doc.specialization)}</p></div><div><span>Working days</span><strong>${doc.workingDays.map(d=>d.slice(0,3)).join(', ')}</strong><small>${doc.startTime} – ${doc.endTime}</small></div><div><span>Daily capacity</span><strong>${load} / ${doc.dailyCapacity} patients</strong><div class="capacity-bar"><div class="capacity-fill" style="width:${percentage}%"></div></div></div><div><span class="badge badge-${statusTone(status)}">${status}</span>${load >= doc.dailyCapacity ? '<span class="badge badge-warning">Fully Booked</span>' : ''}<small>${Utils.escapeHtml(doc.room)}</small></div><div class="management-actions"><button class="btn btn-outline-teal btn-sm" onclick="editDoctorSchedule('${doc.id}')">Edit schedule</button><label class="text-xs" for="status-${doc.id}">Attendance status</label><select class="form-control doctor-status-select" id="status-${doc.id}" data-doctor-id="${doc.id}" aria-label="Attendance status for ${Utils.escapeHtml(doc.name)}">${DOCTOR_STATUSES.map(value => '<option ' + (value === status ? 'selected' : '') + '>' + value + '</option>').join('')}</select>${status === 'Arriving Soon' && doc.expectedArrivalAt ? '<small>Expected at ' + new Date(doc.expectedArrivalAt).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) + '</small>' : ''}</div></article>`;
   }).join('');
+  tbody.querySelectorAll('.doctor-status-select').forEach(select => select.addEventListener('change', () => {
+    const id = select.dataset.doctorId;
+    const status = select.value;
+    const save = minutes => {
+      try { saveDoctorStatus(id, status, minutes); Toast.success('Doctor attendance updated.'); loadDoctorsTable(); }
+      catch (error) { Toast.error(error.message); loadDoctorsTable(); return false; }
+    };
+    if (status !== 'Arriving Soon') { save(); return; }
+    // Do not persist an arrival state without its estimate.
+    select.value = attendanceStatus(doctors.find(d => d.id === id));
+    Modal.confirm({ title: 'Expected arrival', message: '<label class="form-label" for="doctor-arrival">Expected in</label><select class="form-control" id="doctor-arrival"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select><p class="text-xs text-muted">An estimate does not automatically mark the doctor available. Update attendance when they arrive.</p>', confirmText: 'Save arrival time', onConfirm: () => save(document.getElementById('doctor-arrival').value) });
+  }));
 }
 
 function openDoctorModal(doc = null) {
@@ -183,15 +197,4 @@ window.editDoctorSchedule = async (id) => {
   if (doc) openDoctorModal(doc);
 };
 
-window.toggleDoctorStatus = async (id) => {
-  const doctors = await DoctorService.getAllDoctors();
-  const updated = doctors.map(d => {
-    if (d.id === id) {
-      return { ...d, isAvailable: !d.isAvailable };
-    }
-    return d;
-  });
-  Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
-  Toast.info('Physician availability status updated.');
-  loadDoctorsTable();
-};
+window.addEventListener('storage', event => { if ([APP_CONFIG.STORAGE_KEYS.DOCTORS, APP_CONFIG.STORAGE_KEYS.APPOINTMENTS].includes(event.key)) loadDoctorsTable(); });

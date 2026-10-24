@@ -258,7 +258,7 @@ function initDoctors(paramDoctorId) {
     const isSelected = !isEarliestDoctor && selectedDoctorObj && selectedDoctorObj.id === doc.id;
     const capacity = doc.dailyCapacity || 25;
     const currentLoad = doc.currentLoad || 0;
-    const isFull = !doc.isAvailable;
+    const isFull = false; // Date-specific attendance is enforced by availableSlots.
     const slotsRemaining = Math.max(0, capacity - currentLoad);
 
     const parts = (doc.name || 'Doctor').replace(/^Dr\.?\s+/i, '').split(' ');

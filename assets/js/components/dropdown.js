@@ -7,6 +7,11 @@ export const Dropdown = {
   init() {
     if (this.initialized) return;
     this.initialized = true;
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') document.querySelectorAll('.dropdown.open').forEach(menu => {
+        menu.classList.remove('open'); const button = menu.querySelector('[data-dropdown-toggle]'); button?.setAttribute('aria-expanded', 'false'); button?.focus();
+      });
+    });
     // Global listener for click outside to close dropdowns
     document.addEventListener('click', (e) => {
       const toggle = e.target.closest('[data-dropdown-toggle]');
@@ -14,7 +19,8 @@ export const Dropdown = {
         e.preventDefault();
         const parent = toggle.closest('.dropdown');
         if (parent) {
-          parent.classList.toggle('open');
+          const open = parent.classList.toggle('open');
+          toggle.setAttribute('aria-expanded', String(open));
         }
         return;
       }
@@ -23,6 +29,7 @@ export const Dropdown = {
       if (!e.target.closest('.dropdown')) {
         document.querySelectorAll('.dropdown.open').forEach(dd => {
           dd.classList.remove('open');
+          dd.querySelector('[data-dropdown-toggle]')?.setAttribute('aria-expanded', 'false');
         });
       }
     });
