@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Appointments | Care-OAU</title>
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/reset.css">
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/layouts.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/student.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <link rel="stylesheet" href="../assets/css/pages/my-appointments.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Student navigation"></aside>
+    <div class="app-main">
+      <header class="top-header"></header>
+      <main class="main-content my-appointments">
+        <div class="ma-head">
+          <div>
+            <h1>My Appointments</h1>
+            <p>Monitor status updates, pending clinic approvals, and hospital check-in eligibility.</p>
+          </div>
+          <a class="ma-book" href="book-appointment.html">+ Book Appointment</a>
+        </div>
+
+        <div class="ma-tabs" id="appointment-status-tabs" role="tablist" aria-label="Appointment status">
+          <button type="button" role="tab" class="tab-filter-btn active" data-filter="upcoming" aria-selected="true">Upcoming</button>
+          <button type="button" role="tab" class="tab-filter-btn" data-filter="past" aria-selected="false">Past</button>
+          <button type="button" role="tab" class="tab-filter-btn" data-filter="cancelled" aria-selected="false">Cancelled / Rejected</button>
+        </div>
+
+        <div id="ma-message" class="ma-message" role="status" aria-live="polite" hidden></div>
+        <section id="appointments-list" class="ma-list"></section>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="details-dialog" class="ma-dialog" aria-labelledby="details-title">
+    <h2 id="details-title">Appointment details</h2>
+    <dl id="details-body" class="ma-details"></dl>
+    <div class="ma-dialog-actions">
+      <button type="button" class="ma-btn" id="details-close">Close</button>
+    </div>
+  </dialog>
+
+  <dialog id="cancel-dialog" class="ma-dialog" aria-labelledby="cancel-title">
+    <h2 id="cancel-title">Are you sure?</h2>
+    <p id="cancel-text"></p>
+    <div class="ma-dialog-actions">
+      <button type="button" class="ma-btn" id="cancel-back">Go back</button>
+      <button type="button" class="ma-btn ma-btn-danger" id="cancel-confirm">Confirm cancellation</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="../assets/js/student/appointments.js"></script>
+</body>
+</html>
