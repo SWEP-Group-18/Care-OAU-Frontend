@@ -7,6 +7,8 @@ import { Navigation } from '../core/navigation.js';
  */
 
 import { DoctorService } from '../services/doctor-service.js';
+import { MedicalService } from '../services/medical-service.js';
+import { INITIAL_SERVICES } from '../data/mock-data.js';
 import { AdminSidebar } from '../components/admin-sidebar.js';
 import { Header } from '../components/header.js';
 import { Modal } from '../components/modal.js';
@@ -51,8 +53,8 @@ function initControls() {
 
   const btnAdd = document.getElementById('btn-add-doctor');
   if (btnAdd) {
-    btnAdd.addEventListener('click', () => {
-      openDoctorModal(null);
+    btnAdd.addEventListener('click', async () => {
+      await openDoctorModal(null);
     });
   }
 
@@ -153,7 +155,7 @@ async function loadDoctorsTable() {
   }));
 }
 
-function openDoctorModal(doc = null) {
+async function openDoctorModal(doc = null) {
   const modalTitle = document.getElementById('doctor-modal-title');
   const docIdInput = document.getElementById('doc-id');
   const nameInput = document.getElementById('doc-name');
@@ -165,10 +167,21 @@ function openDoctorModal(doc = null) {
   const roomInput = document.getElementById('doc-room');
 
   // Populate services dropdown
-  const services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, INITIAL_SERVICES);
-  serviceSelect.innerHTML = services.map(s => `
-    <option value="${s.id}" ${doc && doc.serviceId === s.id ? 'selected' : ''}>${s.name}</option>
-  `).join('');
+  let services = [];
+  try {
+    services = await MedicalService.getAllServices();
+  } catch (err) {
+    console.warn('[DoctorManagement] Failed to fetch services from MedicalService:', err);
+  }
+  if (!Array.isArray(services) || services.length === 0) {
+    services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, INITIAL_SERVICES) || INITIAL_SERVICES || [];
+  }
+
+  serviceSelect.innerHTML = services.map(s => {
+    const sId = s.publicId || s.id;
+    const isSelected = doc && (doc.serviceId === s.id || doc.serviceId === s.publicId);
+    return `<option value="${sId}" ${isSelected ? 'selected' : ''}>${Utils.escapeHtml(s.name)}</option>`;
+  }).join('');
 
   if (doc) {
     modalTitle.textContent = `Edit Schedule — ${Utils.escapeHtml(doc.name)}`;
@@ -199,7 +212,9 @@ function openDoctorModal(doc = null) {
 window.editDoctorSchedule = async (id) => {
   const doctors = await DoctorService.getAllDoctors();
   const doc = doctors.find(d => d.id === id);
-  if (doc) openDoctorModal(doc);
+  if (doc) await openDoctorModal(doc);
 };
 
 window.addEventListener('storage', event => { if ([APP_CONFIG.STORAGE_KEYS.DOCTORS, APP_CONFIG.STORAGE_KEYS.APPOINTMENTS].includes(event.key)) loadDoctorsTable(); });
+
+export { openDoctorModal };
