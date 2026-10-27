@@ -24,8 +24,8 @@ body {
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   line-height: var(--line-height-base);
-  color: var(--color-text-main);
-  background-color: var(--color-bg);
+  color: var(--color-text);
+  background-color: var(--color-background);
 }
 
 img,
