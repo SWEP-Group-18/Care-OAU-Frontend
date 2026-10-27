@@ -179,9 +179,38 @@
   .btn-lg {
     padding: 0.75rem 1.25rem;
     font-size: var(--font-size-sm);
+    min-height: 44px;
   }
 
   .hero-actions .btn {
     width: 100%;
+  }
+
+  .card,
+  .clay-cushion,
+  .clay-tray {
+    padding: 20px 16px;
+    border-radius: 18px;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    min-height: 44px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: Reduced Motion Preference
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
