@@ -113,6 +113,10 @@ class ApiClient {
     return this.request(endpoint, { method: 'PUT', body, headers });
   }
 
+  patch(endpoint, body = {}, headers = {}) {
+    return this.request(endpoint, { method: 'PATCH', body, headers });
+  }
+
   delete(endpoint, headers = {}) {
     return this.request(endpoint, { method: 'DELETE', headers });
   }
