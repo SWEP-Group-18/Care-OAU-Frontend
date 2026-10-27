@@ -9,8 +9,12 @@ import { Toast } from '../components/toast.js';
 import { Loading } from '../components/loading.js';
 import { Storage } from '../core/storage.js';
 import { APP_CONFIG } from '../core/config.js';
+import { Utils } from '../core/utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize password view/hide toggle
+  Utils.setupPasswordToggle();
+
   // If user already holds an authenticated admin session, redirect straight to dashboard
   const currentUser = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
   if (currentUser && currentUser.role === 'admin') {

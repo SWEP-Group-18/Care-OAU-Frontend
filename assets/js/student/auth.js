@@ -8,6 +8,7 @@ import { FormValidator } from '../components/form-validation.js';
 import { Toast } from '../components/toast.js';
 import { Loading } from '../components/loading.js';
 import { APP_CONFIG } from '../core/config.js';
+import { Utils } from '../core/utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const tabLogin = document.getElementById('tab-login');
@@ -28,17 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     switchToRegister();
   }
 
-  // Password visibility toggle helpers
-  document.querySelectorAll('[data-toggle-password]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const targetId = btn.getAttribute('data-toggle-password');
-      const input = document.getElementById(targetId);
-      if (!input) return;
-      const isPassword = input.getAttribute('type') === 'password';
-      input.setAttribute('type', isPassword ? 'text' : 'password');
-      btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
-    });
-  });
+  // Password visibility toggle helpers with dynamic eye/eye-off icon swapping
+  Utils.setupPasswordToggle();
 
   // Tab switching
   function switchToLogin() {

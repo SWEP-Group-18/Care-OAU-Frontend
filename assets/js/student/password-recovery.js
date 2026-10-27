@@ -3,8 +3,12 @@ import { FormValidator } from '../components/form-validation.js';
 import { Toast } from '../components/toast.js';
 import { Loading } from '../components/loading.js';
 import { APP_CONFIG } from '../core/config.js';
+import { Utils } from '../core/utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize password view/hide toggle
+  Utils.setupPasswordToggle();
+
   const forgotForm = document.getElementById('form-forgot-password');
   const resetForm = document.getElementById('form-reset-password');
   const urlParams = new URLSearchParams(window.location.search);

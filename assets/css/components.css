@@ -914,11 +914,16 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
+}
+
+.input-wrap input {
+  padding-right: 44px;
 }
 
 .input-action {
   position: absolute;
-  right: 8px;
+  right: 6px;
   top: 50%;
   transform: translateY(-50%);
   width: 34px;
@@ -930,10 +935,17 @@
   place-items: center;
   cursor: pointer;
   border-radius: 6px;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .input-action:hover {
   color: var(--navy);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.input-action:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
 }
 
 .field-message {
