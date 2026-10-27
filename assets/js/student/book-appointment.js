@@ -28,15 +28,17 @@ document.addEventListener('DOMContentLoaded', () => {
   Header.render('Book an Appointment');
   StudentSidebar.render();
 
-  // Seed data if empty
-  if (!Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS)) {
-    Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, INITIAL_DOCTORS);
-  }
-  if (!Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES)) {
-    Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, INITIAL_SERVICES);
-  }
-  if (!Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS)) {
-    Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, INITIAL_APPOINTMENTS);
+  // Seed data only in isolated mock/test mode
+  if (APP_CONFIG.USE_MOCK_DATA) {
+    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS)) {
+      Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, INITIAL_DOCTORS);
+    }
+    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES)) {
+      Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, INITIAL_SERVICES);
+    }
+    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS)) {
+      Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, INITIAL_APPOINTMENTS);
+    }
   }
 
   // Pre-select doctor if passed in query param

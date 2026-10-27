@@ -15,33 +15,39 @@ import { INITIAL_APPOINTMENTS, INITIAL_DOCTORS, INITIAL_SERVICES, INITIAL_QUEUE 
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('student')) return;
-  // Ensure default demo user exists
   let user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
-  if (!user || user.role !== 'student') {
-    user = {
-      id: 'usr_student_01',
-      name: 'Amina Yusuf',
-      matricNo: '21/SCI/1048',
-      email: 'amina@university.edu',
-      phone: '+234 800 000 0000',
-      role: 'student',
-      isVerified: true
-    };
-    Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_USER, user);
+  if (!user) {
+    if (APP_CONFIG.USE_MOCK_DATA) {
+      user = {
+        id: 'usr_student_01',
+        name: 'Amina Yusuf',
+        matricNo: '21/SCI/1048',
+        email: 'amina@university.edu',
+        phone: '+234 800 000 0000',
+        role: 'student',
+        isVerified: true
+      };
+      Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_USER, user);
+    } else {
+      window.location.href = '../student/auth.html';
+      return;
+    }
   }
 
-  // Seed storage if empty
-  if (!Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS)) {
-    Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, INITIAL_APPOINTMENTS);
-  }
-  if (!Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS)) {
-    Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, INITIAL_DOCTORS);
-  }
-  if (!Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES)) {
-    Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, INITIAL_SERVICES);
-  }
-  if (!Storage.get(APP_CONFIG.STORAGE_KEYS.QUEUE)) {
-    Storage.set(APP_CONFIG.STORAGE_KEYS.QUEUE, INITIAL_QUEUE);
+  // Seed storage only in isolated mock/test mode
+  if (APP_CONFIG.USE_MOCK_DATA) {
+    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS)) {
+      Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, INITIAL_APPOINTMENTS);
+    }
+    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS)) {
+      Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, INITIAL_DOCTORS);
+    }
+    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES)) {
+      Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, INITIAL_SERVICES);
+    }
+    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.QUEUE)) {
+      Storage.set(APP_CONFIG.STORAGE_KEYS.QUEUE, INITIAL_QUEUE);
+    }
   }
 
   // Render navigation & top header

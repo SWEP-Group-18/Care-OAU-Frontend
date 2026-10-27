@@ -15,7 +15,6 @@ import { Dropdown } from '../components/dropdown.js';
 import { FormValidator } from '../components/form-validation.js';
 import { Storage } from '../core/storage.js';
 import { APP_CONFIG } from '../core/config.js';
-import { INITIAL_SERVICES } from '../data/mock-data.js';
 
 let activeDayFilter = 'All';
 let searchQuery = '';

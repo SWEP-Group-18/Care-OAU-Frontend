@@ -18,8 +18,12 @@ export const AppointmentService = {
   async getAllAppointments() {
     let appointments = Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS);
     if (!appointments) {
-      appointments = INITIAL_APPOINTMENTS;
-      Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, appointments);
+      if (APP_CONFIG.USE_MOCK_DATA) {
+        appointments = INITIAL_APPOINTMENTS;
+        Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, appointments);
+      } else {
+        appointments = [];
+      }
     }
     const normalized = appointments.map(a => ({ ...a,
       appointmentDate: a.appointmentDate || a.date,

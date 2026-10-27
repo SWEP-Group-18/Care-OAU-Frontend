@@ -21,24 +21,30 @@ let currentCallerItem = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('admin')) return;
-  // Ensure staff demo user session
   let user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
   if (!user || user.role !== 'admin') {
-    user = {
-      id: 'staff_adm_001',
-      name: 'Dr. T. A. Babalola',
-      staffId: 'STAFF/MED/002',
-      role: 'admin',
-      department: 'Health Centre Administration'
-    };
-    Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_USER, user);
+    if (APP_CONFIG.USE_MOCK_DATA) {
+      user = {
+        id: 'staff_adm_001',
+        name: 'Dr. T. A. Babalola',
+        staffId: 'STAFF/MED/002',
+        role: 'admin',
+        department: 'Health Centre Administration'
+      };
+      Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_USER, user);
+    } else {
+      window.location.href = '../admin/login.html';
+      return;
+    }
   }
 
-  // Ensure storage seeded
-  if (!Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS)) Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, INITIAL_APPOINTMENTS);
-  if (!Storage.get(APP_CONFIG.STORAGE_KEYS.QUEUE)) Storage.set(APP_CONFIG.STORAGE_KEYS.QUEUE, INITIAL_QUEUE);
-  if (!Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS)) Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, INITIAL_DOCTORS);
-  if (!Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES)) Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, INITIAL_SERVICES);
+  // Ensure storage seeded only in mock/test mode
+  if (APP_CONFIG.USE_MOCK_DATA) {
+    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS)) Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, INITIAL_APPOINTMENTS);
+    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.QUEUE)) Storage.set(APP_CONFIG.STORAGE_KEYS.QUEUE, INITIAL_QUEUE);
+    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS)) Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, INITIAL_DOCTORS);
+    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES)) Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, INITIAL_SERVICES);
+  }
 
   const greeting = document.getElementById('admin-welcome-name');
   if (greeting) greeting.textContent = 'Welcome, ' + user.name + '.';

@@ -14,8 +14,12 @@ export const MedicalService = {
   async getAllServices() {
     let services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES);
     if (!services) {
-      services = INITIAL_SERVICES;
-      Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, services);
+      if (APP_CONFIG.USE_MOCK_DATA) {
+        services = INITIAL_SERVICES;
+        Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, services);
+      } else {
+        services = [];
+      }
     }
     return services;
   },

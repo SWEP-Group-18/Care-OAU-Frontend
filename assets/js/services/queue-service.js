@@ -36,8 +36,12 @@ export const QueueService = {
   async getQueue() {
     let queue = Storage.get(APP_CONFIG.STORAGE_KEYS.QUEUE);
     if (!queue) {
-      queue = INITIAL_QUEUE;
-      Storage.set(APP_CONFIG.STORAGE_KEYS.QUEUE, queue);
+      if (APP_CONFIG.USE_MOCK_DATA) {
+        queue = INITIAL_QUEUE;
+        Storage.set(APP_CONFIG.STORAGE_KEYS.QUEUE, queue);
+      } else {
+        queue = [];
+      }
     }
     return queue;
   },
