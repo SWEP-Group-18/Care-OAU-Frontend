@@ -16,8 +16,10 @@ import { Toast } from '../components/toast.js';
 import { Modal } from '../components/modal.js';
 import { Utils } from '../core/utils.js';
 import { INITIAL_APPOINTMENTS, INITIAL_QUEUE, INITIAL_SERVICES } from '../data/mock-data.js';
+import { SyncManager } from '../core/sync-manager.js';
 
 let currentCallerItem = null;
+let adminDashboardPoller = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('admin')) return;
@@ -53,6 +55,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setupCallerControls();
   refreshDashboardData();
+
+  adminDashboardPoller = SyncManager.createPoller({
+    name: 'admin-dashboard-sync',
+    interval: 10000,
+    fetchFn: () => refreshDashboardData(),
+    immediate: false
+  });
+  adminDashboardPoller.start();
 });
 
 async function refreshDashboardData() {
