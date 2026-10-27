@@ -765,27 +765,42 @@ body.landing-body {
 }
 
 .service-card {
-  background: var(--oau-cream);
+  background: var(--color-surface);
   border-radius: var(--clay-radius-card);
-  border: 1px solid var(--oau-border);
+  border: 1px solid var(--color-border);
   box-shadow: var(--clay-shadow-card), var(--clay-inset-light);
   padding: 32px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .service-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--clay-shadow-card-hover), var(--clay-inset-light);
+  border-color: rgba(8, 116, 67, 0.25);
+}
+
+.service-card h3 {
+  font-size: 19px;
+  font-weight: 750;
+  color: var(--color-primary-dark);
+  margin: 0;
+}
+
+.service-card p {
+  font-size: 14.5px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
 }
 
 .service-card--featured {
   grid-column: 1 / -1;
-  background: linear-gradient(145deg, var(--oau-cream) 0%, #FFFFFF 100%);
-  border-left: 4px solid var(--oau-gold);
+  background: linear-gradient(145deg, #FFFFFF 0%, var(--color-surface-muted) 100%);
+  border-left: 4px solid var(--color-primary);
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -796,8 +811,8 @@ body.landing-body {
   width: 52px;
   height: 52px;
   border-radius: 14px;
-  background: var(--oau-pale-blue);
-  color: var(--oau-navy);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -813,19 +828,21 @@ body.landing-body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
   width: fit-content;
 }
 
 .service-status-tag--active {
-  background: #D1FAE5;
-  color: #065F46;
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  border: 1px solid var(--color-success-border);
 }
 
 .service-status-tag--planned {
-  background: #FEF3C7;
-  color: #92400E;
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border: 1px solid var(--color-warning-border);
 }
 
 /* How It Works Section */
