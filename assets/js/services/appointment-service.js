@@ -10,12 +10,48 @@ import { Utils } from '../core/utils.js';
 import { INITIAL_APPOINTMENTS } from '../data/mock-data.js';
 import { availableSlots, localDate } from './availability.js';
 import { QueueService } from './queue-service.js';
+import { Api } from './api-client.js';
 
 export const AppointmentService = {
   /**
-   * Get all appointments from persistent client storage
+   * Get all appointments from backend API or persistent client storage fallback
    */
   async getAllAppointments() {
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
+        const endpoint = user?.role === 'admin' ? '/appointments/admin/all' : '/appointments/me';
+        const res = await Api.get(endpoint);
+        const items = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : null);
+        if (items !== null) {
+          const mapped = items.map(a => ({
+            id: a.publicId || a.id,
+            publicId: a.publicId || a.id,
+            appointmentDate: a.appointmentDate,
+            timeSlot: a.timeSlot,
+            studentName: a.studentName || a.name,
+            matricNo: a.matricNo,
+            studentId: a.studentPublicId || a.studentId,
+            doctorName: a.doctorName,
+            doctorId: a.doctorPublicId,
+            serviceName: a.serviceName,
+            serviceId: a.servicePublicId,
+            reason: a.reason,
+            status: a.status === 'pending' ? APP_CONFIG.APPOINTMENT_STATUS.PENDING :
+                    a.status === 'confirmed' ? APP_CONFIG.APPOINTMENT_STATUS.APPROVED :
+                    a.status === 'cancelled' ? APP_CONFIG.APPOINTMENT_STATUS.CANCELLED :
+                    a.status === 'completed' ? APP_CONFIG.APPOINTMENT_STATUS.COMPLETED :
+                    a.status === 'in_consultation' ? APP_CONFIG.APPOINTMENT_STATUS.IN_CONSULTATION : a.status,
+            cancellationReason: a.cancellationReason
+          }));
+          Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, mapped);
+          return mapped;
+        }
+      } catch (err) {
+        // Fallback to local storage
+      }
+    }
+
     let appointments = Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS);
     if (!appointments) {
       if (APP_CONFIG.USE_MOCK_DATA) {
@@ -73,8 +109,29 @@ export const AppointmentService = {
     doctorId = slot.doctor.id;
     doctorName = slot.doctor.name;
 
+    let backendAppointment = null;
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        const res = await Api.post('/appointments', {
+          doctorPublicId: doctorId,
+          servicePublicId: serviceId,
+          appointmentDate,
+          timeSlot,
+          reason,
+          phone
+        });
+        backendAppointment = res?.data;
+      } catch (err) {
+        if (err.status === 409 || err.code === 'SLOT_CONFLICT') {
+          return { success: false, message: 'This time is no longer available. Please select another appointment time.' };
+        }
+        // Fallback to local
+      }
+    }
+
     const newAppointment = {
-      id: `apt_${Date.now()}`,
+      id: backendAppointment?.publicId || `apt_${Date.now()}`,
+      publicId: backendAppointment?.publicId || `apt_${Date.now()}`,
       referenceNo: `CHC-${Date.now().toString().slice(-8)}`,
       referralCode: referralCode || null,
       studentId: studentId || 'usr_student_01',
@@ -103,6 +160,16 @@ export const AppointmentService = {
    * Admin Action: Approve a pending appointment request
    */
   async approveAppointment(appointmentId) {
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        await Api.patch(`/appointments/${appointmentId}/status`, {
+          status: 'confirmed'
+        });
+      } catch (err) {
+        // Fallback
+      }
+    }
+
     const appointments = await this.getAllAppointments();
     if (!appointments.some(a => a.id === appointmentId && a.status === APP_CONFIG.APPOINTMENT_STATUS.PENDING)) return { success: false, message: 'Only pending requests can be approved.' };
     const updated = appointments.map(apt => {
@@ -124,6 +191,17 @@ export const AppointmentService = {
    * Admin Action: Reject an appointment with reason
    */
   async rejectAppointment(appointmentId, rejectionReason = 'Doctor unavailable') {
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        await Api.patch(`/appointments/${appointmentId}/status`, {
+          status: 'cancelled',
+          cancellationReason: rejectionReason
+        });
+      } catch (err) {
+        // Fallback
+      }
+    }
+
     const appointments = await this.getAllAppointments();
     if (!appointments.some(a => a.id === appointmentId && a.status === APP_CONFIG.APPOINTMENT_STATUS.PENDING)) return { success: false, message: 'Only pending requests can be rejected.' };
     const updated = appointments.map(apt => {
@@ -146,6 +224,16 @@ export const AppointmentService = {
    * Cancel an appointment (by student or admin)
    */
   async cancelAppointment(appointmentId, cancellationReason = 'Cancelled by student') {
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        await Api.patch(`/appointments/${appointmentId}/cancel`, {
+          reason: cancellationReason
+        });
+      } catch (err) {
+        // Fallback
+      }
+    }
+
     const appointments = await this.getAllAppointments();
     if (!appointments.some(a => a.id === appointmentId && ['Pending Approval', 'Approved'].includes(a.status))) return { success: false, message: 'This visit can no longer be cancelled online.' };
     const updated = appointments.map(apt => {
