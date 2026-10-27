@@ -12,6 +12,9 @@ import { Header } from '../components/header.js';
 import { Storage } from '../core/storage.js';
 import { APP_CONFIG } from '../core/config.js';
 import { Toast } from '../components/toast.js';
+import { SyncManager } from '../core/sync-manager.js';
+
+let queuePoller = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('student')) return;
@@ -20,11 +23,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadQueueTracker();
 
+  queuePoller = SyncManager.createPoller({
+    name: 'student-queue-tracker',
+    interval: 10000,
+    fetchFn: () => loadQueueTracker(),
+    immediate: false
+  });
+  queuePoller.start();
+
   const refreshBtn = document.getElementById('btn-refresh-queue');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', () => {
       Toast.info('Refreshing live queue position...');
-      loadQueueTracker();
+      if (queuePoller) {
+        queuePoller.trigger();
+      } else {
+        loadQueueTracker();
+      }
     });
   }
 });

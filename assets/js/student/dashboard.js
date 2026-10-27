@@ -13,6 +13,9 @@ import { StudentSidebar } from '../components/student-sidebar.js';
 import { Header } from '../components/header.js';
 import { DoctorService } from '../services/doctor-service.js';
 import { INITIAL_APPOINTMENTS, INITIAL_SERVICES, INITIAL_QUEUE } from '../data/mock-data.js';
+import { SyncManager } from '../core/sync-manager.js';
+
+let dashboardPoller = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('student')) return;
@@ -61,6 +64,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Load appointment and queue state
   loadDashboardData();
+
+  dashboardPoller = SyncManager.createPoller({
+    name: 'student-dashboard-sync',
+    interval: 10000,
+    fetchFn: () => loadDashboardData(),
+    immediate: false
+  });
+  dashboardPoller.start();
 });
 
 function initHealthTipsPopup() {
