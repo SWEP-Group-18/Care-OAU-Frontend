@@ -13,6 +13,7 @@ const makeMockElement = () => ({
   innerHTML: '',
   textContent: '',
   value: '',
+  style: {},
   appendChild: () => {},
   setAttribute: () => {},
   getAttribute: () => null,
@@ -43,11 +44,13 @@ globalThis.window = {
     clear: () => storageMap.clear()
   },
   location: { hostname: 'localhost', search: '' },
-  addEventListener: () => {}
+  addEventListener: () => {},
+  removeEventListener: () => {}
 };
 
 globalThis.document = {
   addEventListener: () => {},
+  removeEventListener: () => {},
   getElementById: (id) => elements[id] || null,
   querySelector: () => null,
   querySelectorAll: () => [],
@@ -73,7 +76,7 @@ const sampleDoc = {
   id: 'doc-123',
   name: 'Dr. Adeyemi',
   title: 'Chief Consultant',
-  serviceId: 'srv_general_outpatient',
+  serviceId: 'srv_gen_med',
   startTime: '09:00',
   endTime: '15:00',
   dailyCapacity: 30,
