@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------
    OAU Health Care Student Dashboard Page Styles
-   Developer 1: Roland | Assignment reference: Student Dashboard
+   Claymorphism Design System with Official OAU Navy & Gold Brand Identity
    -------------------------------------------------------------------------- */
 
 .welcome-row {
@@ -13,15 +13,15 @@
 
 .welcome-row h1 {
   font-size: clamp(26px, 3vw, 32px);
-  font-weight: 700;
-  color: var(--navy);
+  font-weight: 800;
+  color: var(--color-primary-dark);
   letter-spacing: -0.035em;
   margin: 4px 0 6px;
 }
 
 .welcome-row p {
-  color: var(--slate);
-  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-size: 14.5px;
   margin: 0;
 }
 
@@ -33,22 +33,23 @@
 .booking-banner {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--navy) 0%, #153754 100%);
-  color: #ffffff;
-  border-radius: 18px;
-  padding: 34px 36px;
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+  color: #FFFFFF;
+  border-radius: var(--clay-radius-card);
+  padding: 34px 38px;
   display: grid;
   grid-template-columns: 1fr 420px;
   gap: 32px;
   align-items: center;
-  box-shadow: var(--shadow);
+  box-shadow: var(--clay-shadow-tray), var(--clay-inset-card);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .booking-banner::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at top right, rgba(45, 212, 191, 0.18), transparent 35%);
+  background: radial-gradient(circle at top right, rgba(229, 174, 50, 0.22), transparent 45%);
   pointer-events: none;
 }
 
@@ -60,36 +61,41 @@
 .booking-kicker {
   display: flex;
   align-items: center;
-  gap: 7px;
-  color: #92dcd4;
+  gap: 8px;
+  color: var(--color-accent);
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   margin-bottom: 12px;
 }
 
 .booking-banner h2 {
-  font-size: clamp(24px, 2.5vw, 30px);
-  color: #ffffff;
-  margin: 0 0 8px 0;
-  font-weight: 700;
+  font-size: clamp(24px, 2.5vw, 32px);
+  color: #FFFFFF;
+  margin: 0 0 10px 0;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .booking-banner p {
-  color: #c7d9e5;
+  color: rgba(234, 242, 252, 0.88);
   font-size: 15px;
   margin: 0 0 24px 0;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .availability-panel {
-  background: #ffffff;
-  color: var(--navy);
-  padding: 22px;
-  border-radius: 13px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 24px;
+  border-radius: 16px;
   display: grid;
   grid-template-columns: 1fr 1px 1fr;
   gap: 16px;
   align-items: center;
+  box-shadow: 0 8px 24px rgba(11, 36, 89, 0.12), var(--clay-inset-light);
+  border: 1px solid var(--color-border);
 }
 
 .open-row {
@@ -98,12 +104,13 @@
   justify-content: space-between;
   align-items: center;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .open-row > span {
-  color: var(--muted);
+  color: var(--color-text-secondary);
   font-size: 12px;
+  font-weight: 600;
 }
 
 .availability-stat {
@@ -112,19 +119,20 @@
 }
 
 .availability-stat strong {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--navy);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-primary-dark);
   line-height: 1.1;
 }
 
 .availability-stat strong small {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--color-text-secondary);
 }
 
 .availability-stat span {
-  color: var(--muted);
+  color: var(--color-text-secondary);
   margin-top: 5px;
   font-size: 12px;
 }
@@ -132,15 +140,17 @@
 .availability-divider {
   width: 1px;
   height: 42px;
-  background: var(--border);
+  background: var(--color-border);
 }
 
 .availability-panel .text-link {
   grid-column: 1 / -1;
   padding-top: 12px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--color-border);
   justify-content: center;
   font-size: 12px;
+  color: var(--color-primary);
+  font-weight: 650;
 }
 
 .dashboard-grid {
@@ -160,42 +170,42 @@
 
 .section-heading h2 {
   font-size: 18px;
-  font-weight: 700;
-  color: var(--navy);
+  font-weight: 750;
+  color: var(--color-primary-dark);
   margin: 0;
 }
 
 .appointment-card {
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--clay-radius-card);
   display: grid;
   grid-template-columns: 115px 1fr;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(16, 42, 67, 0.04);
+  box-shadow: var(--clay-shadow-card), var(--clay-inset-light);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .appointment-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(16, 42, 67, 0.08);
-  border-color: rgba(15, 118, 110, 0.2);
+  transform: translateY(-2px);
+  box-shadow: var(--clay-shadow-card-hover), var(--clay-inset-light);
+  border-color: rgba(11, 36, 89, 0.2);
 }
 
 .appointment-date {
-  background: var(--mint);
+  background: linear-gradient(180deg, var(--color-primary-light) 0%, #FFFFFF 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-right: 1px solid #d2eee8;
+  border-right: 1px solid var(--color-border);
   padding: 20px 10px;
   text-align: center;
 }
 
 .appointment-date span {
-  color: var(--teal);
-  font-weight: 700;
+  color: var(--color-primary);
+  font-weight: 750;
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -204,12 +214,13 @@
 .appointment-date strong {
   font-size: 34px;
   line-height: 1.15;
-  color: var(--navy);
+  color: var(--color-primary-dark);
   margin: 2px 0;
+  font-weight: 800;
 }
 
 .appointment-date small {
-  color: var(--slate);
+  color: var(--color-text-secondary);
   font-size: 11.5px;
 }
 
@@ -233,13 +244,13 @@
 
 .card-title-row h3 {
   font-size: 17px;
-  font-weight: 700;
-  color: var(--navy);
+  font-weight: 750;
+  color: var(--color-primary-dark);
   margin: 0 0 4px 0;
 }
 
 .card-title-row p {
-  color: var(--muted);
+  color: var(--color-text-secondary);
   font-size: 13px;
   margin: 0;
 }
@@ -249,8 +260,8 @@
   gap: 24px;
   padding: 14px 0 12px;
   margin-top: 14px;
-  border-top: 1px solid var(--border);
-  color: var(--slate);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
   font-size: 13px;
 }
 
@@ -261,7 +272,7 @@
 }
 
 .appointment-meta svg {
-  color: var(--teal);
+  color: var(--color-primary);
   flex: 0 0 auto;
 }
 
@@ -273,16 +284,16 @@
 }
 
 .appointment-actions > span {
-  color: var(--muted);
+  color: var(--color-text-secondary);
   font-size: 12px;
   font-family: monospace;
 }
 
 .quiet-card,
 .empty-state {
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--clay-radius-card);
   padding: 30px 24px;
   text-align: center;
   min-height: 220px;
@@ -291,6 +302,7 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  box-shadow: var(--clay-shadow-card), var(--clay-inset-light);
 }
 
 .quiet-icon {
@@ -299,15 +311,16 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: var(--mint);
-  color: var(--teal);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
   margin-bottom: 14px;
+  box-shadow: 0 4px 10px rgba(11, 36, 89, 0.08);
 }
 
 .quiet-card h3 {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--navy);
+  font-size: 16.5px;
+  font-weight: 750;
+  color: var(--color-primary-dark);
   margin: 0 0 6px 0;
 }
 
@@ -316,18 +329,19 @@
   max-width: 340px;
   font-size: 13px;
   margin: 0 0 16px 0;
-  color: var(--muted);
+  color: var(--color-text-secondary);
   line-height: 1.5;
 }
 
 .queue-mini {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 22px 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--clay-radius-card);
+  padding: 24px 22px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  box-shadow: var(--clay-shadow-card), var(--clay-inset-light);
 }
 
 .button.button-primary {
@@ -336,7 +350,7 @@
 
 .button.button-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.2);
+  box-shadow: 0 12px 24px rgba(11, 36, 89, 0.25);
   filter: saturate(1.05);
 }
 
@@ -345,7 +359,7 @@
   justify-content: space-between;
   align-items: center;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .queue-mini > div:last-child {
@@ -354,14 +368,14 @@
 }
 
 .queue-mini span {
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
 }
 
 .queue-mini strong {
   font-size: 18px;
-  font-weight: 700;
-  color: var(--navy);
+  font-weight: 750;
+  color: var(--color-primary-dark);
 }
 
 .health-tip-popup {
@@ -369,11 +383,11 @@
   right: 24px;
   bottom: 24px;
   width: min(360px, calc(100vw - 28px));
-  background: linear-gradient(135deg, #0f766e 0%, #0b5f59 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+  color: #FFFFFF;
   border-radius: 18px;
   padding: 16px 18px 14px;
-  box-shadow: 0 18px 36px rgba(15, 118, 110, 0.22);
+  box-shadow: var(--clay-shadow-tray);
   border: 1px solid rgba(255, 255, 255, 0.18);
   z-index: 120;
   opacity: 0;
