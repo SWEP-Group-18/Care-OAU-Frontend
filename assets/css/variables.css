@@ -4,117 +4,107 @@
    ========================================================================== */
 
 :root {
-  /* Figma Design Reference Tokens */
-  --teal: #0F766E;
-  --teal-dark: #0B5F59;
-  --navy: #102A43;
-  --navy-2: #173B5E;
-  --mint: #E8F7F3;
-  --bg: #F7FAFC;
-  --surface: #FFFFFF;
-  --slate: #475569;
-  --muted: #64748B;
-  --border: #E2E8F0;
-  --border-strong: #CBD5E1;
-  --green: #15803D;
-  --green-bg: #EDF8EF;
-  --amber: #A15C06;
-  --amber-bg: #FFF8E6;
-  --blue: #1769AA;
-  --blue-bg: #EDF6FF;
-  --red: #B42318;
-  --red-bg: #FFF0EF;
-  --shadow: 0 10px 32px rgba(16, 42, 67, 0.07);
-  --radius: 14px;
+  /* ==========================================================================
+     OAU Brand Identity Tokens
+     Obafemi Awolowo University Healthcare Palette
+     ========================================================================== */
+  --color-primary: #087443;
+  --color-primary-dark: #055B35;
+  --color-primary-light: #DDF3E6;
+  --color-primary-subtle: #EDF8F2;
+  --color-background: #F5F7F5;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #F8FAF8;
+  --color-text: #252D29;
+  --color-text-secondary: #626D66;
+  --color-text-muted: #7E8B83;
+  --color-text-light: #A3AFA8;
+  --color-border: #E1E8E2;
+  --color-border-strong: #CDD7CF;
+  --color-border-focus: #087443;
+  --color-accent: #F3DFA0;
+  --color-accent-hover: #E7C970;
+  --color-accent-subtle: #FFF9E6;
+  --color-success: #16834A;
+  --color-success-bg: #EDF8F2;
+  --color-success-border: #B7E4C7;
+  --color-success-text: #0E5E34;
+  --color-warning: #A66A12;
+  --color-warning-bg: #FFF7EB;
+  --color-warning-border: #F8DCA6;
+  --color-warning-text: #784B08;
+  --color-error: #C0393B;
+  --color-error-bg: #FDF2F2;
+  --color-error-border: #F8C8C9;
+  --color-error-text: #962224;
+  --color-info: #0F6B5C;
+  --color-info-bg: #E8F5F2;
+  --color-info-border: #BCE2D9;
+  --color-info-text: #0A4A3F;
 
-  /* OAU University Healthcare & Claymorphism Brand Identity */
+  /* Aliases for Existing Selectors */
+  --teal: var(--color-primary);
+  --teal-dark: var(--color-primary-dark);
+  --navy: #192720;
+  --navy-2: #24352D;
+  --mint: var(--color-primary-light);
+  --bg: var(--color-background);
+  --surface: var(--color-surface);
+  --slate: var(--color-text-secondary);
+  --muted: var(--color-text-secondary);
+  --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
+  --green: var(--color-success);
+  --green-bg: var(--color-success-bg);
+  --amber: var(--color-warning);
+  --amber-bg: var(--color-warning-bg);
+  --blue: var(--color-info);
+  --blue-bg: var(--color-info-bg);
+  --red: var(--color-error);
+  --red-bg: var(--color-error-bg);
+  --shadow: 0 12px 32px rgba(8, 116, 67, 0.07);
+  --radius: 16px;
+
+  /* OAU Brand Specific Aliases */
+  --oau-green: var(--color-primary);
+  --oau-green-deep: var(--color-primary-dark);
+  --oau-green-light: var(--color-primary-light);
   --oau-navy: #0B2459;
   --oau-navy-deep: #07183D;
-  --oau-royal: #173F8A;
+  --oau-royal: var(--color-primary);
   --oau-gold: #E5AE32;
   --oau-gold-hover: #D49B24;
   --oau-gold-subtle: #FFF3D6;
-  --oau-cream: #FFFDF7;
-  --oau-pale-blue: #EAF2FC;
-  --oau-bg: #F3F6FC;
-  --oau-text: #202B40;
-  --oau-text-secondary: #536178;
-  --oau-border: #DCE5F2;
-  --oau-border-soft: rgba(220, 229, 242, 0.7);
+  --oau-cream: #FAFBF9;
+  --oau-pale-blue: var(--color-primary-light);
+  --oau-bg: var(--color-background);
+  --oau-text: var(--color-text);
+  --oau-text-secondary: var(--color-text-secondary);
+  --oau-border: var(--color-border);
+  --oau-border-soft: rgba(225, 232, 226, 0.85);
 
-  /* Claymorphic Dimensional Surfaces */
-  --clay-radius-hero: 32px;
+  /* Claymorphic Dimensional Surfaces (OAU Sculpted Design) */
+  --clay-radius-hero: 36px;
   --clay-radius-tray: 28px;
-  --clay-radius-card: 20px;
+  --clay-radius-card: 22px;
+  --clay-radius-sm: 14px;
   --clay-radius-pill: 9999px;
 
-  --clay-shadow-soft: 0 8px 24px -4px rgba(11, 36, 89, 0.08), 0 2px 6px -1px rgba(11, 36, 89, 0.04);
-  --clay-shadow-tray: 0 20px 48px -10px rgba(11, 36, 89, 0.09), 0 6px 16px -2px rgba(11, 36, 89, 0.04);
-  --clay-shadow-card: 0 12px 30px -6px rgba(11, 36, 89, 0.07), 0 3px 8px -2px rgba(11, 36, 89, 0.03);
-  --clay-shadow-card-hover: 0 18px 36px -6px rgba(11, 36, 89, 0.12), 0 6px 12px -2px rgba(11, 36, 89, 0.06);
-  --clay-shadow-button: 0 6px 18px -2px rgba(11, 36, 89, 0.22);
-  --clay-shadow-button-gold: 0 6px 20px -2px rgba(229, 174, 50, 0.42);
+  --clay-shadow-soft: 0 10px 28px -4px rgba(8, 116, 67, 0.06), 0 2px 6px -1px rgba(37, 45, 41, 0.03);
+  --clay-shadow-tray: 0 24px 54px -10px rgba(8, 116, 67, 0.08), 0 6px 18px -2px rgba(37, 45, 41, 0.04);
+  --clay-shadow-card: 0 14px 34px -6px rgba(8, 116, 67, 0.07), 0 3px 8px -2px rgba(37, 45, 41, 0.03);
+  --clay-shadow-card-hover: 0 20px 42px -6px rgba(8, 116, 67, 0.12), 0 8px 14px -2px rgba(37, 45, 41, 0.05);
+  --clay-shadow-button: 0 6px 18px -2px rgba(8, 116, 67, 0.28);
+  --clay-shadow-button-hover: 0 10px 24px -2px rgba(8, 116, 67, 0.35);
+  --clay-shadow-button-gold: 0 6px 20px -2px rgba(243, 223, 160, 0.5);
 
-  --clay-inset-light: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.9), inset -1.5px -1.5px 2.5px 0 rgba(11, 36, 89, 0.04);
-  --clay-inset-card: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.95), inset -1.5px -1.5px 2.5px 0 rgba(11, 36, 89, 0.04);
-  --clay-inset-navy: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.22), inset -1.5px -1.5px 2.5px 0 rgba(0, 0, 0, 0.25);
-  --clay-inset-gold: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.45), inset -1.5px -1.5px 2.5px 0 rgba(11, 36, 89, 0.16);
+  --clay-inset-light: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.95), inset -1.5px -1.5px 2.5px 0 rgba(8, 116, 67, 0.05);
+  --clay-inset-card: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.95), inset -1.5px -1.5px 2.5px 0 rgba(8, 116, 67, 0.04);
+  --clay-inset-primary: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.35), inset -1.5px -1.5px 2.5px 0 rgba(0, 0, 0, 0.18);
+  --clay-inset-navy: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.2), inset -1.5px -1.5px 2.5px 0 rgba(0, 0, 0, 0.25);
+  --clay-inset-gold: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.6), inset -1.5px -1.5px 2.5px 0 rgba(166, 106, 18, 0.16);
 
   --font-instrument: 'Instrument Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-
-  /* Brand Core Palette */
-  --color-teal: #0F766E;
-  --color-teal-hover: #0B5F59;
-  --color-teal-light: #14B8A6;
-  --color-teal-subtle: #CCFBF1;
-  --color-teal-50: #F0FDFA;
-
-  --color-navy: #102A43;
-  --color-navy-hover: #173B5E;
-  --color-navy-light: #243B53;
-  --color-navy-subtle: #334E68;
-  --color-navy-900: #0A1926;
-
-  --color-mint: #E8F7F3;
-  --color-mint-dark: #99F6E4;
-  --color-mint-accent: #2DD4BF;
-
-  /* Neutrals */
-  --color-white: #FFFFFF;
-  --color-bg: #F7FAFC;
-  --color-surface: #FFFFFF;
-  --color-surface-hover: #F1F5F9;
-  --color-border: #E2E8F0;
-  --color-border-focus: #0F766E;
-  --color-divider: #EDF2F7;
-
-  /* Typography Colors */
-  --color-text-main: #0F172A;
-  --color-text-secondary: #334155;
-  --color-text-muted: #64748B;
-  --color-text-light: #94A3B8;
-  --color-text-inverse: #FFFFFF;
-
-  /* Semantic Feedback Colors */
-  --color-success: #059669;
-  --color-success-bg: #ECFDF5;
-  --color-success-border: #A7F3D0;
-  --color-success-text: #065F46;
-
-  --color-warning: #D97706;
-  --color-warning-bg: #FFFBEB;
-  --color-warning-border: #FDE68A;
-  --color-warning-text: #92400E;
-
-  --color-danger: #DC2626;
-  --color-danger-bg: #FEF2F2;
-  --color-danger-border: #FECACA;
-  --color-danger-text: #991B1B;
-
-  --color-info: #2563EB;
-  --color-info-bg: #EFF6FF;
-  --color-info-border: #BFDBFE;
-  --color-info-text: #1E40AF;
 
   /* Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
