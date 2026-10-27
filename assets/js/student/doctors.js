@@ -1,12 +1,13 @@
 import { attendanceStatus, attendanceAllowsDate } from '../services/doctor-status.js';
-﻿import { Utils } from '../core/utils.js';
+import { Utils } from '../core/utils.js';
 import { availableSlots, localDate } from '../services/availability.js';
 import { Navigation } from '../core/navigation.js';
 import { Storage } from '../core/storage.js';
 import { APP_CONFIG } from '../core/config.js';
 import { StudentSidebar } from '../components/student-sidebar.js';
 import { Header } from '../components/header.js';
-import { INITIAL_DOCTORS, INITIAL_SERVICES, INITIAL_APPOINTMENTS } from '../data/mock-data.js';
+import { DoctorService } from '../services/doctor-service.js';
+import { INITIAL_SERVICES, INITIAL_APPOINTMENTS } from '../data/mock-data.js';
 
 const keys = APP_CONFIG.STORAGE_KEYS;
 const seededAppointmentIds = new Set(INITIAL_APPOINTMENTS.map(appointment => appointment.id));
@@ -35,7 +36,6 @@ function remainingCapacity(doctor, service, date) {
 }
 
 function nextOpening(doctor, date) {
-
   const day = new Date(`${date}T12:00:00`);
   // Weekly schedules repeat; look ahead four weeks, allowing for existing bookings.
   for (let offset = 1; offset <= 28; offset++) {
@@ -94,32 +94,124 @@ function renderCard(doctor, services) {
   </article>`;
 }
 
-function refreshSpecialties() {
+let currentAvailabilityState = {
+  status: 'loading',
+  doctors: [],
+  statusCode: null
+};
+
+function refreshSpecialties(doctorsList = []) {
   const select = document.getElementById('filter-specialty');
-  const values = [...new Set(Storage.get(keys.DOCTORS, []).map(specialtyOf))].sort();
+  if (!select) return;
+  const values = [...new Set(doctorsList.map(specialtyOf))].sort();
   if (!values.includes(specialty)) specialty = 'All';
   select.replaceChildren(new Option('All specialties', 'All'), ...values.map(value => new Option(value, value)));
   select.value = specialty;
 }
 
 function renderDoctors() {
-  const doctors = Storage.get(keys.DOCTORS, []).filter(doctor => specialty === 'All' || specialtyOf(doctor) === specialty);
-  const services = Storage.get(keys.SERVICES, INITIAL_SERVICES);
-  const count = doctors.filter(doctor => doctorState(doctor, services).onDuty).length;
-  document.getElementById('doctors-on-duty-count').textContent = `${count} ${count === 1 ? 'doctor' : 'doctors'} on duty`;
-  document.getElementById('filter-updated-text').textContent = `For ${formatDate(selectedDate)} · Updated ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
-  document.getElementById('doctor-results-summary').textContent = `${doctors.length} ${doctors.length === 1 ? 'doctor' : 'doctors'}${specialty === 'All' ? ' across all specialties' : ' in ' + specialty}`;
-  document.getElementById('doctor-list').innerHTML = doctors.length
-    ? doctors.map(doctor => renderCard(doctor, services)).join('')
-    : '<div class="availability-empty"><div class="empty-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div><h2>No doctors found</h2><p>Try another specialty or check back for updated schedules.</p></div>';
+  const listEl = document.getElementById('doctor-list');
+  const countEl = document.getElementById('doctors-on-duty-count');
+  const summaryEl = document.getElementById('doctor-results-summary');
+  const updatedEl = document.getElementById('filter-updated-text');
+  if (!listEl || !countEl || !summaryEl || !updatedEl) return;
+
+  updatedEl.textContent = `For ${formatDate(selectedDate)} · Updated ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+
+  // Loading state
+  if (currentAvailabilityState.status === 'loading') {
+    countEl.textContent = 'Checking duty schedules';
+    summaryEl.textContent = 'Loading doctor records...';
+    listEl.innerHTML = `
+      <div class="availability-loading" role="status" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Checking doctor availability...</p>
+      </div>`;
+    return;
+  }
+
+  // Unavailable state (backend 404 / network failure and no admin-published records)
+  if (currentAvailabilityState.status === 'unavailable') {
+    countEl.textContent = 'Availability unavailable';
+    summaryEl.textContent = 'Doctor availability is not available right now.';
+    listEl.innerHTML = `
+      <div class="availability-empty availability-unavailable">
+        <div class="empty-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h2>Doctor availability unavailable</h2>
+        <p>Doctor availability is not available right now. Please check back later.</p>
+      </div>`;
+    return;
+  }
+
+  const allDoctors = currentAvailabilityState.doctors || [];
+
+  // Empty state: confirmed 0 doctors published
+  if (allDoctors.length === 0) {
+    countEl.textContent = '0 doctors on duty';
+    summaryEl.textContent = '0 doctors available';
+    listEl.innerHTML = `
+      <div class="availability-empty">
+        <div class="empty-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <h2>No doctors available yet</h2>
+        <p>Doctor profiles and availability will appear here once the health centre team adds and publishes them. Please check back later.</p>
+      </div>`;
+    return;
+  }
+
+  // Filtered by specialty
+  const filtered = allDoctors.filter(doctor => specialty === 'All' || specialtyOf(doctor) === specialty);
+  const services = Storage.get(keys.SERVICES, APP_CONFIG.USE_MOCK_DATA ? INITIAL_SERVICES : []);
+
+  // Filter empty state: records exist, but none match the filter
+  if (filtered.length === 0) {
+    countEl.textContent = '0 doctors on duty';
+    summaryEl.textContent = `0 doctors in ${specialty}`;
+    listEl.innerHTML = `
+      <div class="availability-empty">
+        <div class="empty-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+        <h2>No doctors found</h2>
+        <p>Try another specialty or check back for updated schedules.</p>
+      </div>`;
+    return;
+  }
+
+  // Normal populated state
+  const count = filtered.filter(doctor => doctorState(doctor, services).onDuty).length;
+  countEl.textContent = `${count} ${count === 1 ? 'doctor' : 'doctors'} on duty`;
+  summaryEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'doctor' : 'doctors'}${specialty === 'All' ? ' across all specialties' : ' in ' + specialty}`;
+  listEl.innerHTML = filtered.map(doctor => renderCard(doctor, services)).join('');
+}
+
+async function fetchAndDisplayDoctors() {
+  currentAvailabilityState = { status: 'loading', doctors: [] };
+  renderDoctors();
+
+  const availability = await DoctorService.getDoctorAvailability();
+  currentAvailabilityState = availability;
+  refreshSpecialties(availability.doctors || []);
+  renderDoctors();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('student')) return;
   Header.render('Doctor Availability');
   StudentSidebar.render();
-  if (!Storage.get(keys.DOCTORS)) Storage.set(keys.DOCTORS, INITIAL_DOCTORS);
-  refreshSpecialties();
   const dateInput = document.getElementById('filter-date');
   dateInput.min = selectedDate;
   dateInput.value = selectedDate;
@@ -135,10 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
     specialty = event.target.value;
     renderDoctors();
   });
-window.addEventListener('storage', event => {
+  window.addEventListener('storage', event => {
     if ([keys.DOCTORS, keys.SERVICES, keys.APPOINTMENTS].includes(event.key) || event.key === null) {
-      refreshSpecialties();
-      renderDoctors();
+      fetchAndDisplayDoctors();
     }
   });
 
@@ -158,5 +249,5 @@ window.addEventListener('storage', event => {
     });
   }
 
-  renderDoctors();
+  fetchAndDisplayDoctors();
 });

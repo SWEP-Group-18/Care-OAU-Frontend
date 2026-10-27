@@ -14,13 +14,13 @@ const minutes = time => {
 const timeLabel = value => `${Math.floor(value / 60) % 12 || 12}:${String(value % 60).padStart(2, '0')} ${value >= 720 ? 'PM' : 'AM'}`;
 export function availableSlots(serviceId, doctorId, date, excludeId = null) {
   if (!date || date < localDate()) return [];
-  const service = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, INITIAL_SERVICES).find(s => s.id === serviceId);
+  const service = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, APP_CONFIG.USE_MOCK_DATA ? INITIAL_SERVICES : []).find(s => s.id === serviceId);
   const day = new Date(`${date}T12:00:00`).toLocaleDateString('en-US', { weekday: 'long' });
   if (!service?.isActive || !service.operatingDays.includes(day)) return [];
   const appointments = Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, []).filter(a =>
     a.id !== excludeId && (a.appointmentDate || a.date) === date && !['Cancelled', 'Rejected'].includes(a.status));
   if (appointments.filter(a => a.serviceId === serviceId).length >= service.dailyCapacity) return [];
-  const doctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, INITIAL_DOCTORS).filter(d =>
+  const doctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, APP_CONFIG.USE_MOCK_DATA ? INITIAL_DOCTORS : []).filter(d =>
     d.serviceId === serviceId && (!doctorId || d.id === doctorId) && attendanceAllowsDate(d, date) && d.workingDays.includes(day));
   const slots = new Map();
   for (const doctor of doctors) {

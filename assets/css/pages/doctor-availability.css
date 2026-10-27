@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    Doctor Availability — Card Grid Redesign
    Professional healthcare interface aligned with Care-OAU brand
    ========================================================================== */
@@ -444,7 +444,7 @@
   text-align: left;
 }
 
-/* Empty State */
+/* Empty & Unavailable State */
 .availability-empty {
   grid-column: 1 / -1;
   text-align: center;
@@ -464,6 +464,10 @@
   justify-content: center;
   margin-bottom: 18px;
 }
+.availability-empty.availability-unavailable .empty-icon {
+  background: var(--sand, #F5F1E8);
+  color: var(--gold, #C4820A);
+}
 .availability-empty h2 {
   font-size: 18px;
   font-weight: 650;
@@ -475,9 +479,33 @@
   font-size: 14px;
   line-height: 1.5;
   margin: 0;
-  max-width: 360px;
+  max-width: 500px;
   margin-left: auto;
   margin-right: auto;
+}
+
+/* Loading State */
+.availability-loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.availability-loading .spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: availSpin 0.8s linear infinite;
+}
+@keyframes availSpin {
+  to { transform: rotate(360deg); }
 }
 
 /* Page Note */
