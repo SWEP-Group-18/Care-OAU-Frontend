@@ -5,27 +5,27 @@
 
 :root {
   /* ==========================================================================
-     OAU Brand Identity Tokens
-     Obafemi Awolowo University Healthcare Palette
+     OAU Brand Identity Tokens — Official OAU Logo Palette
+     Midnight Navy (#0B2459), Deep Navy (#07183D), University Gold (#E5AE32)
      ========================================================================== */
-  --color-primary: #087443;
-  --color-primary-dark: #055B35;
-  --color-primary-light: #DDF3E6;
-  --color-primary-subtle: #EDF8F2;
-  --color-background: #F5F7F5;
+  --color-primary: #0B2459;
+  --color-primary-dark: #07183D;
+  --color-primary-light: #EAF2FC;
+  --color-primary-subtle: #F3F7FD;
+  --color-background: #F5F7FB;
   --color-surface: #FFFFFF;
-  --color-surface-muted: #F8FAF8;
-  --color-text: #252D29;
-  --color-text-secondary: #626D66;
-  --color-text-muted: #7E8B83;
-  --color-text-light: #A3AFA8;
-  --color-border: #E1E8E2;
-  --color-border-strong: #CDD7CF;
-  --color-border-focus: #087443;
-  --color-accent: #F3DFA0;
-  --color-accent-hover: #E7C970;
-  --color-accent-subtle: #FFF9E6;
-  --color-success: #16834A;
+  --color-surface-muted: #F8FAFD;
+  --color-text: #162033;
+  --color-text-secondary: #566479;
+  --color-text-muted: #7A89A0;
+  --color-text-light: #9EAEC4;
+  --color-border: #E1E7F0;
+  --color-border-strong: #CDD6E4;
+  --color-border-focus: #0B2459;
+  --color-accent: #E5AE32;
+  --color-accent-hover: #D49B24;
+  --color-accent-subtle: #FFF8E6;
+  --color-success: #087443;
   --color-success-bg: #EDF8F2;
   --color-success-border: #B7E4C7;
   --color-success-text: #0E5E34;
@@ -37,16 +37,16 @@
   --color-error-bg: #FDF2F2;
   --color-error-border: #F8C8C9;
   --color-error-text: #962224;
-  --color-info: #0F6B5C;
-  --color-info-bg: #E8F5F2;
-  --color-info-border: #BCE2D9;
-  --color-info-text: #0A4A3F;
+  --color-info: #173F8A;
+  --color-info-bg: #EAF2FC;
+  --color-info-border: #BDD6F5;
+  --color-info-text: #0B2459;
 
   /* Aliases for Existing Selectors */
   --teal: var(--color-primary);
   --teal-dark: var(--color-primary-dark);
-  --navy: #192720;
-  --navy-2: #24352D;
+  --navy: #0B2459;
+  --navy-2: #07183D;
   --mint: var(--color-primary-light);
   --bg: var(--color-background);
   --surface: var(--color-surface);
@@ -62,26 +62,26 @@
   --blue-bg: var(--color-info-bg);
   --red: var(--color-error);
   --red-bg: var(--color-error-bg);
-  --shadow: 0 12px 32px rgba(8, 116, 67, 0.07);
+  --shadow: 0 12px 32px rgba(11, 36, 89, 0.08);
   --radius: 16px;
 
   /* OAU Brand Specific Aliases */
-  --oau-green: var(--color-primary);
-  --oau-green-deep: var(--color-primary-dark);
-  --oau-green-light: var(--color-primary-light);
+  --oau-green: #087443;
+  --oau-green-deep: #055B35;
+  --oau-green-light: #DDF3E6;
   --oau-navy: #0B2459;
   --oau-navy-deep: #07183D;
-  --oau-royal: var(--color-primary);
+  --oau-royal: #173F8A;
   --oau-gold: #E5AE32;
   --oau-gold-hover: #D49B24;
   --oau-gold-subtle: #FFF3D6;
-  --oau-cream: #FAFBF9;
-  --oau-pale-blue: var(--color-primary-light);
+  --oau-cream: #FAFBFD;
+  --oau-pale-blue: #EAF2FC;
   --oau-bg: var(--color-background);
   --oau-text: var(--color-text);
   --oau-text-secondary: var(--color-text-secondary);
   --oau-border: var(--color-border);
-  --oau-border-soft: rgba(225, 232, 226, 0.85);
+  --oau-border-soft: rgba(225, 231, 240, 0.85);
 
   /* Claymorphic Dimensional Surfaces (OAU Sculpted Design) */
   --clay-radius-hero: 36px;
@@ -90,19 +90,19 @@
   --clay-radius-sm: 14px;
   --clay-radius-pill: 9999px;
 
-  --clay-shadow-soft: 0 10px 28px -4px rgba(8, 116, 67, 0.06), 0 2px 6px -1px rgba(37, 45, 41, 0.03);
-  --clay-shadow-tray: 0 24px 54px -10px rgba(8, 116, 67, 0.08), 0 6px 18px -2px rgba(37, 45, 41, 0.04);
-  --clay-shadow-card: 0 14px 34px -6px rgba(8, 116, 67, 0.07), 0 3px 8px -2px rgba(37, 45, 41, 0.03);
-  --clay-shadow-card-hover: 0 20px 42px -6px rgba(8, 116, 67, 0.12), 0 8px 14px -2px rgba(37, 45, 41, 0.05);
-  --clay-shadow-button: 0 6px 18px -2px rgba(8, 116, 67, 0.28);
-  --clay-shadow-button-hover: 0 10px 24px -2px rgba(8, 116, 67, 0.35);
-  --clay-shadow-button-gold: 0 6px 20px -2px rgba(243, 223, 160, 0.5);
+  --clay-shadow-soft: 0 10px 28px -4px rgba(11, 36, 89, 0.07), 0 2px 6px -1px rgba(22, 32, 51, 0.04);
+  --clay-shadow-tray: 0 24px 54px -10px rgba(11, 36, 89, 0.1), 0 6px 18px -2px rgba(22, 32, 51, 0.05);
+  --clay-shadow-card: 0 14px 34px -6px rgba(11, 36, 89, 0.08), 0 3px 8px -2px rgba(22, 32, 51, 0.03);
+  --clay-shadow-card-hover: 0 20px 42px -6px rgba(11, 36, 89, 0.14), 0 8px 14px -2px rgba(22, 32, 51, 0.06);
+  --clay-shadow-button: 0 6px 18px -2px rgba(11, 36, 89, 0.32);
+  --clay-shadow-button-hover: 0 10px 24px -2px rgba(11, 36, 89, 0.42);
+  --clay-shadow-button-gold: 0 6px 20px -2px rgba(229, 174, 50, 0.45);
 
-  --clay-inset-light: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.95), inset -1.5px -1.5px 2.5px 0 rgba(8, 116, 67, 0.05);
-  --clay-inset-card: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.95), inset -1.5px -1.5px 2.5px 0 rgba(8, 116, 67, 0.04);
-  --clay-inset-primary: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.35), inset -1.5px -1.5px 2.5px 0 rgba(0, 0, 0, 0.18);
-  --clay-inset-navy: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.2), inset -1.5px -1.5px 2.5px 0 rgba(0, 0, 0, 0.25);
-  --clay-inset-gold: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.6), inset -1.5px -1.5px 2.5px 0 rgba(166, 106, 18, 0.16);
+  --clay-inset-light: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.95), inset -1.5px -1.5px 2.5px 0 rgba(11, 36, 89, 0.06);
+  --clay-inset-card: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.95), inset -1.5px -1.5px 2.5px 0 rgba(11, 36, 89, 0.05);
+  --clay-inset-primary: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.35), inset -1.5px -1.5px 2.5px 0 rgba(0, 0, 0, 0.22);
+  --clay-inset-navy: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.25), inset -1.5px -1.5px 2.5px 0 rgba(0, 0, 0, 0.3);
+  --clay-inset-gold: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.65), inset -1.5px -1.5px 2.5px 0 rgba(166, 106, 18, 0.18);
 
   --font-instrument: 'Instrument Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
