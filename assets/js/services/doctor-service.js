@@ -175,11 +175,53 @@ export const DoctorService = {
   },
 
   /**
-   * Save or update doctor record (Used in Admin portal)
+   * Save or update doctor record (Used in Admin portal).
+   * Attempts live backend mutation and maintains persistent fallback cache.
    */
   async saveDoctor(doctorData) {
     const doctors = this.purgeLegacyDemoDoctors();
     let updated;
+    const publicId = doctorData.publicId || doctorData.id;
+
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        if (publicId && !publicId.startsWith('doc_admin_')) {
+          await Api.patch(`/doctors/${publicId}/profile`, {
+            name: doctorData.name,
+            title: doctorData.title,
+            specialization: doctorData.specialization,
+            room: doctorData.room
+          });
+          if (doctorData.workingDays && doctorData.startTime && doctorData.endTime) {
+            await Api.patch(`/doctors/${publicId}/schedule`, {
+              workingDays: doctorData.workingDays,
+              startTime: doctorData.startTime,
+              endTime: doctorData.endTime,
+              dailyCapacity: Number(doctorData.dailyCapacity) || 20
+            });
+          }
+        } else {
+          const res = await Api.post('/doctors', {
+            name: doctorData.name,
+            title: doctorData.title || 'Medical Officer',
+            specialization: doctorData.specialization,
+            room: doctorData.room || 'Consulting Room 1',
+            workingDays: doctorData.workingDays || ['Monday', 'Tuesday', 'Wednesday'],
+            startTime: doctorData.startTime || '08:00',
+            endTime: doctorData.endTime || '16:00',
+            dailyCapacity: Number(doctorData.dailyCapacity) || 20
+          });
+          const createdDoc = res?.data;
+          if (createdDoc?.publicId) {
+            await Api.patch(`/doctors/${createdDoc.publicId}/publish`);
+            doctorData.id = createdDoc.publicId;
+            doctorData.publicId = createdDoc.publicId;
+          }
+        }
+      } catch (err) {
+        // Fallback to local storage persistence
+      }
+    }
 
     if (doctorData.id) {
       updated = doctors.map(d => d.id === doctorData.id ? { ...d, ...doctorData, isAdminCreated: true } : d);
@@ -194,6 +236,51 @@ export const DoctorService = {
       updated = [...doctors, newDoc];
     }
 
+    Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
+    return { success: true, doctors: updated };
+  },
+
+  /**
+   * Explicitly publish a doctor draft
+   */
+  async publishDoctor(publicId) {
+    try {
+      await Api.patch(`/doctors/${publicId}/publish`);
+    } catch (err) {
+      // Fallback
+    }
+    const doctors = this.purgeLegacyDemoDoctors();
+    const updated = doctors.map(d => (d.id === publicId || d.publicId === publicId) ? { ...d, status: 'published', isAvailable: true } : d);
+    Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
+    return { success: true, doctors: updated };
+  },
+
+  /**
+   * Deactivate a doctor (preserves historical bookings)
+   */
+  async deactivateDoctor(publicId) {
+    try {
+      await Api.patch(`/doctors/${publicId}/deactivate`);
+    } catch (err) {
+      // Fallback
+    }
+    const doctors = this.purgeLegacyDemoDoctors();
+    const updated = doctors.map(d => (d.id === publicId || d.publicId === publicId) ? { ...d, status: 'deactivated', isAvailable: false } : d);
+    Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
+    return { success: true, doctors: updated };
+  },
+
+  /**
+   * Toggle temporary doctor availability
+   */
+  async toggleAvailability(publicId, isAvailable) {
+    try {
+      await Api.patch(`/doctors/${publicId}/availability`, { isAvailable });
+    } catch (err) {
+      // Fallback
+    }
+    const doctors = this.purgeLegacyDemoDoctors();
+    const updated = doctors.map(d => (d.id === publicId || d.publicId === publicId) ? { ...d, isAvailable } : d);
     Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
     return { success: true, doctors: updated };
   }
