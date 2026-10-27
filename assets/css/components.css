@@ -752,17 +752,18 @@
 }
 
 .logo-mark {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   display: grid;
   place-items: center;
   background: #ffffff;
-  border-radius: 9px;
+  border-radius: var(--clay-radius-sm);
   position: relative;
   flex: 0 0 auto;
-  padding: 2px;
+  padding: 3px;
   box-sizing: border-box;
-  box-shadow: 0 2px 6px rgba(11, 36, 89, 0.08);
+  box-shadow: 0 4px 14px rgba(8, 116, 67, 0.12), var(--clay-inset-card);
+  border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
 .logo-inverse .logo-mark {
