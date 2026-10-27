@@ -947,13 +947,6 @@ body.landing-body {
 .benefit-card p {
   font-size: 14.5px;
   color: var(--color-text-secondary);
-  line-height: 1.55;
-  margin: 0;
-}
-  line-height: 1.55;
-  margin: 0;
-}
-
 /* Truthful Operational Preview Sections: Doctors, Appointments, Queue */
 .operational-section {
   padding-top: 48px;
@@ -968,10 +961,10 @@ body.landing-body {
 }
 
 .op-live-preview {
-  background: #FFFFFF;
+  background: var(--color-surface);
   border-radius: var(--clay-radius-card);
-  border: 1.5px solid var(--oau-border);
-  box-shadow: 0 10px 24px rgba(11, 36, 89, 0.06);
+  border: 1.5px solid var(--color-border);
+  box-shadow: var(--clay-shadow-card), var(--clay-inset-light);
   padding: 28px;
 }
 
@@ -984,24 +977,25 @@ body.landing-body {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: var(--oau-pale-blue);
-  color: var(--oau-royal);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 14px;
+  box-shadow: 0 4px 12px rgba(11, 36, 89, 0.08);
 }
 
 .empty-state-notice h4 {
   font-size: 16px;
   font-weight: 700;
-  color: var(--oau-navy);
+  color: var(--color-primary-dark);
   margin: 0 0 6px 0;
 }
 
 .empty-state-notice p {
   font-size: 13.5px;
-  color: var(--oau-text-secondary);
+  color: var(--color-text-secondary);
   line-height: 1.5;
   margin: 0;
   max-width: 320px;
