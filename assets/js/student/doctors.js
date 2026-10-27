@@ -130,30 +130,13 @@ function renderDoctors() {
     return;
   }
 
-  // Unavailable state (backend 404 / network failure and no admin-published records)
-  if (currentAvailabilityState.status === 'unavailable') {
-    countEl.textContent = 'Availability unavailable';
-    summaryEl.textContent = 'Doctor availability is not available right now.';
-    listEl.innerHTML = `
-      <div class="availability-empty availability-unavailable">
-        <div class="empty-icon" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-        </div>
-        <h2>Doctor availability unavailable</h2>
-        <p>Doctor availability is not available right now. Please check back later.</p>
-      </div>`;
-    return;
-  }
-
   const allDoctors = currentAvailabilityState.doctors || [];
 
-  // Empty state: confirmed 0 doctors published
-  if (allDoctors.length === 0) {
+  // When no doctors exist (either empty confirmed, unavailable/not seeded yet, or 0 doctors)
+  if (currentAvailabilityState.status === 'unavailable' || currentAvailabilityState.status === 'empty' || allDoctors.length === 0) {
     countEl.textContent = '0 doctors on duty';
+    const badge = countEl.closest('.badge');
+    if (badge) badge.className = 'badge badge-neutral';
     summaryEl.textContent = '0 doctors available';
     listEl.innerHTML = `
       <div class="availability-empty">
@@ -176,6 +159,8 @@ function renderDoctors() {
   // Filter empty state: records exist, but none match the filter
   if (filtered.length === 0) {
     countEl.textContent = '0 doctors on duty';
+    const badge = countEl.closest('.badge');
+    if (badge) badge.className = 'badge badge-neutral';
     summaryEl.textContent = `0 doctors in ${specialty}`;
     listEl.innerHTML = `
       <div class="availability-empty">
@@ -194,11 +179,14 @@ function renderDoctors() {
   // Normal populated state
   const count = filtered.filter(doctor => doctorState(doctor, services).onDuty).length;
   countEl.textContent = `${count} ${count === 1 ? 'doctor' : 'doctors'} on duty`;
+  const badge = countEl.closest('.badge');
+  if (badge) badge.className = count > 0 ? 'badge badge-success' : 'badge badge-neutral';
   summaryEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'doctor' : 'doctors'}${specialty === 'All' ? ' across all specialties' : ' in ' + specialty}`;
   listEl.innerHTML = filtered.map(doctor => renderCard(doctor, services)).join('');
 }
 
 async function fetchAndDisplayDoctors() {
+  DoctorService.purgeLegacyDemoDoctors();
   currentAvailabilityState = { status: 'loading', doctors: [] };
   renderDoctors();
 

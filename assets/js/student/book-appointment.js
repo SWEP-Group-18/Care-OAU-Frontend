@@ -13,7 +13,8 @@ import { APP_CONFIG } from '../core/config.js';
 import { StudentSidebar } from '../components/student-sidebar.js';
 import { Header } from '../components/header.js';
 import { Toast } from '../components/toast.js';
-import { INITIAL_DOCTORS, INITIAL_SERVICES, INITIAL_APPOINTMENTS } from '../data/mock-data.js';
+import { DoctorService } from '../services/doctor-service.js';
+import { INITIAL_SERVICES, INITIAL_APPOINTMENTS } from '../data/mock-data.js';
 
 let currentStep = 1;
 let selectedServiceObj = null;
@@ -25,14 +26,12 @@ let referralCode = '';
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('student')) return;
+  DoctorService.purgeLegacyDemoDoctors();
   Header.render('Book an Appointment');
   StudentSidebar.render();
 
   // Seed data only in isolated mock/test mode
   if (APP_CONFIG.USE_MOCK_DATA) {
-    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS)) {
-      Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, INITIAL_DOCTORS);
-    }
     if (!Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES)) {
       Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, INITIAL_SERVICES);
     }

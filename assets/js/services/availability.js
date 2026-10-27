@@ -1,7 +1,7 @@
 import { attendanceAllowsDate, attendanceAllowsTime } from './doctor-status.js';
 import { Storage } from '../core/storage.js';
 import { APP_CONFIG } from '../core/config.js';
-import { INITIAL_DOCTORS, INITIAL_SERVICES, INITIAL_APPOINTMENTS } from '../data/mock-data.js';
+import { INITIAL_SERVICES, INITIAL_APPOINTMENTS } from '../data/mock-data.js';
 
 export const localDate = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const minutes = time => {
@@ -20,7 +20,8 @@ export function availableSlots(serviceId, doctorId, date, excludeId = null) {
   const appointments = Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, []).filter(a =>
     a.id !== excludeId && (a.appointmentDate || a.date) === date && !['Cancelled', 'Rejected'].includes(a.status));
   if (appointments.filter(a => a.serviceId === serviceId).length >= service.dailyCapacity) return [];
-  const doctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, APP_CONFIG.USE_MOCK_DATA ? INITIAL_DOCTORS : []).filter(d =>
+  const storedDoctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
+  const doctors = (Array.isArray(storedDoctors) ? storedDoctors : []).filter(d =>
     d.serviceId === serviceId && (!doctorId || d.id === doctorId) && attendanceAllowsDate(d, date) && d.workingDays.includes(day));
   const slots = new Map();
   for (const doctor of doctors) {

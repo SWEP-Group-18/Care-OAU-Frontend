@@ -136,7 +136,43 @@ try {
   assert.ok(foundDoctor, 'Admin doctor must be retrievable');
   assert.equal(foundDoctor.specialization, 'Dental Care & Surgery');
 
-  console.log('PASS: missing 404 endpoint unavailable state, network failure resilience, supported empty state, real record rendering, and admin-driven reflection.');
+  // Test 6: Verify legacy demo doctors in storage are purged for every user
+  const legacyDemoDoctors = [
+    { id: 'doc_lab', name: 'Dr. Mariam Sule', specialization: 'Diagnostic Laboratory Services' },
+    { id: 'doc_01', name: 'Dr. O. A. Adeleke', specialization: 'General Medical Consultation' },
+    { id: 'doc_02', name: 'Dr. (Mrs) F. K. Babalola', specialization: 'Dental Care & Surgery' },
+    { id: 'doc_03', name: 'Dr. A. M. Ibrahim', specialization: 'Optometry & Eye Clinic' },
+    { id: 'doc_04', name: 'Dr. E. O. Okonjo', specialization: 'General Medical Consultation' },
+    { id: 'doc_05', name: 'Dr. (Mrs) C. Y. Bello', specialization: 'Student Mental Health & Counselling' }
+  ];
+
+  // Set legacy demo doctors in user storage to simulate old cached state
+  Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, legacyDemoDoctors);
+  const cleansed = DoctorService.purgeLegacyDemoDoctors();
+  assert.equal(cleansed.length, 0, 'Legacy demo doctors must be completely purged');
+  const storedAfterPurge = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, null);
+  assert.equal(storedAfterPurge.length, 0, 'Storage must be cleaned of demo doctors');
+
+  // Test 7: Verify that mixing legacy demo doctors with an admin doctor keeps only the admin doctor
+  const mixedDoctors = [
+    ...legacyDemoDoctors,
+    {
+      id: 'doc_admin_new_99',
+      name: 'Dr. Grace Akintola',
+      isAdminCreated: true,
+      specialization: 'General Medical Consultation',
+      workingDays: ['Monday', 'Tuesday', 'Wednesday'],
+      startTime: '08:00',
+      endTime: '16:00',
+      dailyCapacity: 20
+    }
+  ];
+  Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, mixedDoctors);
+  const mixedCleaned = DoctorService.purgeLegacyDemoDoctors();
+  assert.equal(mixedCleaned.length, 1, 'Only admin-created doctor should remain');
+  assert.equal(mixedCleaned[0].name, 'Dr. Grace Akintola');
+
+  console.log('PASS: missing 404 endpoint unavailable state, network failure resilience, supported empty state, real record rendering, legacy demo purge for all users, and admin-driven reflection.');
 } finally {
   Api.get = originalApiGet;
 }

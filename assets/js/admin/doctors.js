@@ -102,7 +102,8 @@ function initControls() {
         startTime: startTimeInput.value,
         endTime: endTimeInput.value,
         dailyCapacity: parseInt(capacityInput.value, 10) || 25,
-        room: roomInput.value.trim() || 'General Clinic'
+        room: roomInput.value.trim() || 'General Clinic',
+        isAdminCreated: true
       };
 
       if (docId) {
@@ -126,7 +127,12 @@ async function loadDoctorsTable() {
     query: searchQuery
   });
 
-  if (!doctors.length) { tbody.innerHTML = '<div class="quiet-card"><h3>No doctors found</h3><p>Try another name or working day.</p></div>'; return; }
+  if (!doctors.length) {
+    tbody.innerHTML = searchQuery || activeDayFilter !== 'All'
+      ? '<div class="quiet-card"><h3>No matching doctors found</h3><p>Try another name or working day filter.</p></div>'
+      : '<div class="quiet-card"><h3>No doctors added yet</h3><p>Click "Add New Physician" to set up clinic duty rosters.</p></div>';
+    return;
+  }
   tbody.innerHTML = doctors.map(doc => {
     const load = doctorLoad(doc);
     const status = attendanceStatus(doc);

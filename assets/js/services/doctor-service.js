@@ -8,7 +8,51 @@ import { Storage } from '../core/storage.js';
 import { APP_CONFIG } from '../core/config.js';
 import { Api } from './api-client.js';
 
+// Legacy demo doctors seeded in prototype stages that must be purged for every user
+export const DEMO_DOCTOR_IDS = new Set(['doc_lab', 'doc_01', 'doc_02', 'doc_03', 'doc_04', 'doc_05']);
+export const DEMO_DOCTOR_NAMES = new Set([
+  'Dr. Mariam Sule',
+  'Dr. O. A. Adeleke',
+  'Dr. (Mrs) F. K. Babalola',
+  'Dr. A. M. Ibrahim',
+  'Dr. E. O. Okonjo',
+  'Dr. (Mrs) C. Y. Bello'
+]);
+
+/**
+ * Checks if a doctor record matches prototype demo data
+ */
+export function isDemoDoctor(doc) {
+  if (!doc) return false;
+  if (doc.isAdminCreated) return false;
+  if (DEMO_DOCTOR_IDS.has(doc.id)) return true;
+  if (DEMO_DOCTOR_NAMES.has(doc.name)) return true;
+  return false;
+}
+
+/**
+ * Filters out prototype demo doctors, keeping only real/admin-created records
+ */
+export function sanitizeDoctors(list) {
+  if (!Array.isArray(list)) return [];
+  return list.filter(doc => !isDemoDoctor(doc));
+}
+
 export const DoctorService = {
+  /**
+   * Purges residual prototype demo doctors from local storage so real users never see demo records.
+   * Returns clean array of remaining real/admin-created doctors.
+   */
+  purgeLegacyDemoDoctors(provided = null) {
+    const list = provided !== null ? provided : Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, null);
+    if (!Array.isArray(list)) return [];
+    const sanitized = sanitizeDoctors(list);
+    if (sanitized.length !== list.length) {
+      Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, sanitized);
+    }
+    return sanitized;
+  },
+
   /**
    * Fetch doctor records from API or local storage.
    * Distinguishes between:
@@ -17,6 +61,9 @@ export const DoctorService = {
    * - 'unavailable': Endpoint missing (404) or network failure with no admin records
    */
   async getDoctorAvailability() {
+    // Cleanse any legacy demo doctors from browser storage
+    const localDoctors = this.purgeLegacyDemoDoctors();
+
     // 1. If not strictly configured for mock/test data, attempt real backend API
     if (!APP_CONFIG.USE_MOCK_DATA) {
       try {
@@ -26,21 +73,21 @@ export const DoctorService = {
           : (Array.isArray(response?.data) ? response.data : null);
 
         if (apiDoctors !== null) {
-          Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, apiDoctors);
-          if (apiDoctors.length === 0) {
+          const cleanApiDoctors = sanitizeDoctors(apiDoctors);
+          Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, cleanApiDoctors);
+          if (cleanApiDoctors.length === 0) {
             return {
               status: 'empty',
               doctors: [],
               message: 'Doctor profiles and availability will appear here once the health centre team adds and publishes them. Please check back later.'
             };
           }
-          return { status: 'available', doctors: apiDoctors };
+          return { status: 'available', doctors: cleanApiDoctors };
         }
       } catch (err) {
         // Backend /doctors endpoint is not yet supported or returned an error
         // Check if admin has explicitly published doctor records in storage
-        const localDoctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, null);
-        if (Array.isArray(localDoctors) && localDoctors.length > 0) {
+        if (localDoctors.length > 0) {
           return { status: 'available', doctors: localDoctors };
         }
 
@@ -54,8 +101,7 @@ export const DoctorService = {
     }
 
     // 2. In local storage / test environment:
-    const localDoctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, null);
-    if (!localDoctors || localDoctors.length === 0) {
+    if (localDoctors.length === 0) {
       return {
         status: 'empty',
         doctors: [],
@@ -71,7 +117,10 @@ export const DoctorService = {
    */
   async getAllDoctors() {
     const res = await this.getDoctorAvailability();
-    return res.doctors || [];
+    if (Array.isArray(res.doctors) && res.doctors.length > 0) {
+      return res.doctors;
+    }
+    return this.purgeLegacyDemoDoctors();
   },
 
   /**
@@ -129,15 +178,16 @@ export const DoctorService = {
    * Save or update doctor record (Used in Admin portal)
    */
   async saveDoctor(doctorData) {
-    const doctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
+    const doctors = this.purgeLegacyDemoDoctors();
     let updated;
 
     if (doctorData.id) {
-      updated = doctors.map(d => d.id === doctorData.id ? { ...d, ...doctorData } : d);
+      updated = doctors.map(d => d.id === doctorData.id ? { ...d, ...doctorData, isAdminCreated: true } : d);
     } else {
       const newDoc = {
         ...doctorData,
-        id: `doc_${Date.now()}`,
+        id: doctorData.id || `doc_admin_${Date.now()}`,
+        isAdminCreated: true,
         currentLoad: 0,
         isAvailable: true
       };
