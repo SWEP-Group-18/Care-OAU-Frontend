@@ -859,9 +859,9 @@ body.landing-body {
 }
 
 .step-card {
-  background: var(--oau-cream);
+  background: var(--color-surface);
   border-radius: var(--clay-radius-card);
-  border: 1px solid var(--oau-border);
+  border: 1px solid var(--color-border);
   box-shadow: var(--clay-shadow-card), var(--clay-inset-light);
   padding: 30px 24px;
   box-sizing: border-box;
@@ -869,32 +869,40 @@ body.landing-body {
   flex-direction: column;
   gap: 14px;
   position: relative;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.step-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--clay-shadow-card-hover), var(--clay-inset-light);
+  border-color: rgba(8, 116, 67, 0.25);
 }
 
 .step-number {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: var(--oau-navy);
-  color: var(--oau-gold);
+  background: var(--color-primary);
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
   font-weight: 800;
-  box-shadow: 0 4px 10px rgba(11, 36, 89, 0.2);
+  box-shadow: 0 4px 12px rgba(8, 116, 67, 0.25);
+  border: 2px solid var(--color-primary-light);
 }
 
 .step-title {
   font-size: 17px;
   font-weight: 700;
-  color: var(--oau-navy);
+  color: var(--color-primary-dark);
   margin: 0;
 }
 
 .step-desc {
   font-size: 14px;
-  color: var(--oau-text-secondary);
+  color: var(--color-text-secondary);
   line-height: 1.5;
   margin: 0;
 }
@@ -912,32 +920,36 @@ body.landing-body {
 }
 
 .benefit-card {
-  background: #FFFFFF;
+  background: var(--color-surface);
   border-radius: var(--clay-radius-card);
-  border: 1px solid var(--oau-border);
+  border: 1px solid var(--color-border);
   box-shadow: var(--clay-shadow-card), var(--clay-inset-light);
   padding: 32px 28px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .benefit-card:hover {
   transform: translateY(-3px);
-  box-shadow: var(--clay-shadow-card-hover);
+  box-shadow: var(--clay-shadow-card-hover), var(--clay-inset-light);
+  border-color: rgba(8, 116, 67, 0.25);
 }
 
 .benefit-card h3 {
   font-size: 18px;
   font-weight: 750;
-  color: var(--oau-navy);
+  color: var(--color-primary-dark);
   margin: 0;
 }
 
 .benefit-card p {
   font-size: 14.5px;
-  color: var(--oau-text-secondary);
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
   line-height: 1.55;
   margin: 0;
 }
