@@ -947,6 +947,8 @@ body.landing-body {
 .benefit-card p {
   font-size: 14.5px;
   color: var(--color-text-secondary);
+}
+
 /* Truthful Operational Preview Sections: Doctors, Appointments, Queue */
 .operational-section {
   padding-top: 48px;

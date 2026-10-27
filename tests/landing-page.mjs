@@ -67,7 +67,10 @@ assert.doesNotMatch(html, /4\.9\s*★|5\.0\s*★/, 'Landing page must not displa
 assert.doesNotMatch(html, /Dr\.\s+(Adeyemi|Babajide|Okonkwo|Amina\s+Yusuf)/, 'Landing page must not hardcode fictional doctor names');
 assert.doesNotMatch(html, /Waiting time:\s*\d+\s*mins?/, 'Landing page must not display fake queue waiting times');
 
-// 7. Responsive CSS & Accessibility Tokens
+// 7. Responsive CSS & Accessibility Tokens & Syntax Integrity
+const cssOpens = (css.match(/{/g) || []).length;
+const cssCloses = (css.match(/}/g) || []).length;
+assert.equal(cssOpens, cssCloses, `landing.css must have balanced braces (found ${cssOpens} opens and ${cssCloses} closes)`);
 assert.ok(css.includes('@media (max-width: 1100px)'), 'CSS must include 1100px responsive breakpoint');
 assert.ok(css.includes('@media (max-width: 768px)'), 'CSS must include 768px responsive breakpoint');
 assert.ok(css.includes('@media (max-width: 480px)'), 'CSS must include 480px responsive breakpoint');

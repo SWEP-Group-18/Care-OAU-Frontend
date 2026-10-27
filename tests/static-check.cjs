@@ -21,4 +21,11 @@ for (const file of scripts) {
     assert.ok(fs.existsSync(path.resolve(path.dirname(file), target)), `${file}: missing module ${target}`);
   }
 }
-console.log(`PASS: ${pages.length} HTML pages, ${scripts.length} JavaScript modules, local links and unique IDs`);
+const styles = walk('assets/css').filter(p => p.endsWith('.css'));
+for (const file of styles) {
+  const content = fs.readFileSync(file, 'utf8');
+  const opens = (content.match(/{/g) || []).length;
+  const closes = (content.match(/}/g) || []).length;
+  assert.equal(opens, closes, `${file}: unbalanced braces (${opens} opens vs ${closes} closes)`);
+}
+console.log(`PASS: ${pages.length} HTML pages, ${scripts.length} JavaScript modules, ${styles.length} CSS stylesheets, local links and unique IDs`);
