@@ -14,13 +14,16 @@ import { Api } from './api-client.js';
  */
 function normalizeUser(rawUser, fallback = {}) {
   if (!rawUser || typeof rawUser !== 'object') return null;
+  const role = rawUser.role || fallback.role || 'student';
+  const defaultName = role === 'admin' ? 'Staff Administrator' : 'Student';
   return {
     id: rawUser.id || rawUser.publicId || rawUser._id || fallback.id || `usr_${Date.now()}`,
-    name: rawUser.name || rawUser.fullName || fallback.name || 'Student',
+    name: rawUser.name || rawUser.fullName || fallback.name || defaultName,
     email: rawUser.email || fallback.email || '',
     matricNo: rawUser.matricNumber || rawUser.matricNo || fallback.matricNo || '',
+    staffId: rawUser.staffId || fallback.staffId || (role === 'admin' ? (rawUser.publicId || 'STAFF') : ''),
     phone: rawUser.phone || fallback.phone || '',
-    role: rawUser.role || fallback.role || 'student',
+    role,
     isVerified: rawUser.emailVerified ?? rawUser.isVerified ?? true
   };
 }
@@ -279,23 +282,90 @@ export const AuthService = {
   },
 
   /**
-   * Log in clinic staff / administrator
-   * NOTE: The deployed backend does not currently have staff authentication endpoints.
-   * Staff/admin workflow operates in demonstration mode.
+   * Log in clinic staff / administrator using backend POST /api/v1/auth/login.
+   * Strictly enforces server-verified role: only accounts with role === 'admin' are granted admin access.
+   * Denies student accounts attempting admin login and revokes their session.
    */
-  async loginAdmin({ staffId, password }) {
-    await new Promise(r => setTimeout(r, 400));
+  async loginAdmin({ email, staffId, identifier, password }) {
+    const rawIdentifier = (email || staffId || identifier || '').trim();
+    const cleanEmail = rawIdentifier.toLowerCase();
 
-    const adminUser = {
-      id: 'staff_adm_001',
-      name: 'Dr. T. A. Babalola',
-      staffId: staffId.trim().toUpperCase(),
-      role: 'admin',
-      department: 'Health Centre Administration'
-    };
+    // Prototype mock mode
+    if (APP_CONFIG.USE_MOCK_DATA) {
+      await new Promise(r => setTimeout(r, 300));
+      const isStudentMock = cleanEmail === '21/sci/1048' || cleanEmail.includes('student');
+      if (isStudentMock) {
+        return {
+          success: false,
+          code: 'FORBIDDEN_ROLE',
+          message: 'Access denied. This portal is restricted to authorized hospital administration and medical staff. Student accounts cannot access the staff portal.'
+        };
+      }
 
-    Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_USER, adminUser);
-    return { success: true, user: adminUser };
+      const adminUser = {
+        id: 'staff_adm_001',
+        name: 'Dr. T. A. Babalola',
+        staffId: rawIdentifier.toUpperCase().startsWith('STAFF') ? rawIdentifier.toUpperCase() : 'STAFF/MED/002',
+        email: cleanEmail.includes('@') ? cleanEmail : 'admin@oauife.edu.ng',
+        role: 'admin',
+        department: 'Health Centre Administration'
+      };
+
+      Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_USER, adminUser);
+      return { success: true, user: adminUser, message: 'Logged in successfully.' };
+    }
+
+    // Live backend requires email format
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      return {
+        success: false,
+        message: 'Staff login requires your registered hospital staff email address (e.g. name@oauife.edu.ng).'
+      };
+    }
+
+    if (!password) {
+      return {
+        success: false,
+        message: 'Password is required.'
+      };
+    }
+
+    try {
+      const res = await Api.post('/auth/login', {
+        email: cleanEmail,
+        password
+      });
+
+      const rawUser = res.data?.user || res.data || {};
+      const user = normalizeUser(rawUser, { email: cleanEmail });
+
+      // Role check: verify that the authenticated account has role 'admin'
+      if (!user || user.role !== 'admin') {
+        // A non-admin account (e.g. student) signed in on the admin page.
+        // Immediately revoke the session on the backend and clear client storage.
+        try {
+          await Api.post('/auth/logout');
+        } catch {}
+        Storage.remove(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
+        Storage.remove(APP_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
+
+        return {
+          success: false,
+          code: 'FORBIDDEN_ROLE',
+          message: 'Access denied. This portal is restricted to authorized hospital administration and medical staff. Student accounts cannot access the staff portal.'
+        };
+      }
+
+      Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_USER, user);
+      return { success: true, user, message: res.message || 'Logged in successfully.' };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Staff authentication failed. Please check your credentials.',
+        code: error.code,
+        details: error.details || []
+      };
+    }
   },
 
   /**
@@ -324,11 +394,12 @@ export const AuthService = {
       }
       return null;
     } catch (error) {
-      if (error.status === 401) {
+      if (error.status === 401 || error.status === 403 || error.status === 404) {
         Storage.remove(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
         return null;
       }
-      return Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER, null);
+      // On network failure or other errors, do not treat failed request as granting session access
+      return null;
     }
   },
 

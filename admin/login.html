@@ -60,24 +60,15 @@
           <p>Use your provisioned hospital staff credentials.</p>
         </div>
 
-        <div class="demo-banner">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-          <span><strong>Prototype Credential:</strong> Use Staff ID <code>STAFF/MED/002</code> or <code>CHC-STF-014</code>. Any password works in demo mode.</span>
-        </div>
-
         <div class="field">
-          <label class="field-label" for="admin-staff-id">Staff ID or registration number</label>
-          <input type="text" id="admin-staff-id" placeholder="e.g. CHC-STF-014" required autofocus>
+          <label class="field-label" for="admin-staff-id">Staff Email Address</label>
+          <input type="email" id="admin-staff-id" name="email" placeholder="e.g. staff@oauife.edu.ng" required autofocus autocomplete="username">
           <div class="field-message"></div>
         </div>
 
         <div class="field">
           <label class="field-label" for="admin-password">Password</label>
-          <input type="password" id="admin-password" placeholder="Enter your password" required>
+          <input type="password" id="admin-password" name="password" placeholder="Enter your password" required autocomplete="current-password">
           <div class="field-message"></div>
         </div>
 

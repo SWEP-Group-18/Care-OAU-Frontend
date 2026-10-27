@@ -121,8 +121,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (res.success) {
           Toast.success(`Welcome back, ${res.user.name}!`);
+          const dest = res.user.role === 'admin' 
+            ? (isRoot ? './admin/dashboard.html' : '../admin/dashboard.html') 
+            : targetDashboard;
           setTimeout(() => {
-            window.location.href = targetDashboard;
+            window.location.href = dest;
           }, 500);
         } else {
           if (res.details && Array.isArray(res.details)) {

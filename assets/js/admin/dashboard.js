@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_USER, user);
     } else {
-      window.location.href = '../admin/login.html';
+      window.location.href = 'login.html';
       return;
     }
   }
