@@ -17,50 +17,50 @@
 .doctor-availability .availability-heading > div { min-width: 0; }
 .doctor-availability .availability-heading h1 {
   font-size: clamp(26px, 3vw, 32px);
-  font-weight: 700;
-  color: var(--navy);
+  font-weight: 800;
+  color: var(--color-primary-dark);
   letter-spacing: -0.03em;
   margin: 0 0 6px;
 }
 .doctor-availability .availability-heading p {
-  color: var(--muted);
-  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-size: 14.5px;
   line-height: 1.5;
   margin: 0;
 }
 .doctor-availability .availability-heading .button-primary {
   flex-shrink: 0;
   margin-top: 4px;
-  padding: 12px 22px;
-  font-size: 13.5px;
-  font-weight: 600;
-  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 650;
+  border-radius: var(--clay-radius-pill);
 }
 
 /* Filter Bar */
 .doctor-availability .filter-bar {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--clay-radius-card);
+  padding: 24px;
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.2fr) auto;
   gap: 20px;
   align-items: end;
-  margin-bottom: 20px;
-  box-shadow: var(--shadow-xs);
+  margin-bottom: 24px;
+  box-shadow: var(--clay-shadow-card), var(--clay-inset-light);
   transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 .doctor-availability .filter-bar:hover {
-  box-shadow: var(--shadow-sm);
-  border-color: var(--border-strong);
+  box-shadow: var(--clay-shadow-card-hover), var(--clay-inset-light);
+  border-color: rgba(11, 36, 89, 0.2);
 }
 .doctor-availability .filter-bar .field { min-width: 0; }
 .doctor-availability .filter-bar .field-label {
   display: block;
   font-size: 11.5px;
-  font-weight: 600;
-  color: var(--muted);
+  font-weight: 700;
+  color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 7px;
@@ -73,22 +73,23 @@
   padding: 11px 14px;
   font-size: 14px;
   font-family: inherit;
-  color: var(--navy);
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--clay-inset-card);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
 }
 .doctor-availability .filter-bar select:hover,
 .doctor-availability .filter-bar input:hover {
-  border-color: var(--border-strong);
+  border-color: var(--color-border-strong);
 }
 .doctor-availability .filter-bar select:focus,
 .doctor-availability .filter-bar input:focus {
   outline: none;
-  border-color: var(--teal);
-  box-shadow: 0 0 0 3px var(--mint);
-  background: var(--surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+  background: var(--color-surface);
 }
 .doctor-availability .filter-bar select { cursor: pointer; }
 
@@ -104,12 +105,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px;
-  border-radius: 99px;
+  padding: 6px 12px;
+  border-radius: var(--clay-radius-pill);
   font-size: 11.5px;
-  font-weight: 600;
-  background: var(--green-bg);
-  color: var(--green);
+  font-weight: 650;
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  border: 1px solid var(--color-success-border);
 }
 .doctor-availability .filter-summary .badge-dot {
   width: 7px;
@@ -125,7 +127,7 @@
 }
 .doctor-availability .filter-summary #filter-updated-text {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
@@ -140,16 +142,16 @@
 }
 .availability-results-summary {
   font-size: 12.5px;
-  color: var(--muted);
-  font-weight: 500;
+  color: var(--color-text-secondary);
+  font-weight: 600;
 }
 .view-toggle {
   display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
   overflow: hidden;
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--clay-inset-light);
 }
 .view-toggle button {
   display: inline-flex;
@@ -159,19 +161,19 @@
   height: 38px;
   border: 0;
   background: transparent;
-  color: var(--muted);
+  color: var(--color-text-secondary);
   cursor: pointer;
   transition: all 150ms ease;
 }
 .view-toggle button:hover:not(:disabled) {
-  color: var(--navy);
-  background: var(--mint);
+  color: var(--color-primary-dark);
+  background: var(--color-primary-light);
 }
 .view-toggle button[aria-pressed="true"] {
-  color: var(--teal);
-  background: var(--mint);
+  color: var(--color-primary-dark);
+  background: var(--color-primary-light);
 }
-.view-toggle button:first-child { border-right: 1px solid var(--border); }
+.view-toggle button:first-child { border-right: 1px solid var(--color-border); }
 .view-toggle svg { width: 19px; height: 19px; }
 
 /* Grid */
@@ -192,18 +194,18 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--clay-radius-card);
   padding: 24px;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--clay-shadow-card), var(--clay-inset-light);
 }
 .availability-card:hover,
 .availability-card:focus-within {
-  border-color: var(--teal);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  border-color: var(--color-primary);
+  box-shadow: var(--clay-shadow-card-hover), var(--clay-inset-light);
+  transform: translateY(-3px);
 }
 .availability-card:has(.availability-actions .button:disabled) {
   opacity: 0.92;
@@ -224,14 +226,14 @@
   flex: 0 0 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--mint) 0%, #d1f0e8 100%);
-  color: var(--teal);
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, #FFFFFF 100%);
+  color: var(--color-primary-dark);
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 750;
   letter-spacing: 0.02em;
   box-shadow:
-    inset 0 0 0 1px rgba(15, 118, 110, 0.12),
-    0 2px 6px rgba(16, 42, 67, 0.06);
+    inset 0 0 0 1px rgba(11, 36, 89, 0.12),
+    0 4px 10px rgba(11, 36, 89, 0.08);
   position: relative;
   overflow: hidden;
 }
@@ -239,7 +241,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 60%);
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.6) 0%, transparent 60%);
   pointer-events: none;
 }
 
@@ -283,9 +285,9 @@
 }
 .availability-identity h2 {
   font-size: 17px;
-  font-weight: 650;
+  font-weight: 750;
   line-height: 1.35;
-  color: var(--navy);
+  color: var(--color-primary-dark);
   margin: 0 0 5px;
   overflow-wrap: anywhere;
   letter-spacing: -0.01em;
@@ -293,14 +295,14 @@
 .availability-identity p {
   font-size: 13px;
   line-height: 1.5;
-  color: var(--muted);
+  color: var(--color-text-secondary);
   margin: 0;
   font-weight: 500;
 }
 
 /* Details */
 .availability-details {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--color-border);
   padding-top: 18px;
   display: grid;
   gap: 14px;
@@ -314,25 +316,25 @@
   align-items: baseline;
 }
 .availability-details dt {
-  color: var(--muted);
-  font-size: 10.5px;
-  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 .availability-details dd {
   margin: 0;
-  color: var(--navy);
+  color: var(--color-primary-dark);
   font-size: 13.5px;
-  font-weight: 550;
+  font-weight: 650;
   text-align: right;
 }
 .availability-details .availability-slots {
-  color: var(--teal);
-  font-weight: 700;
+  color: var(--color-primary);
+  font-weight: 750;
 }
 .availability-details .availability-slots--empty {
-  color: var(--muted);
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
