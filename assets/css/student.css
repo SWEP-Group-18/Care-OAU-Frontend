@@ -487,12 +487,13 @@
    Booking Flow & Stepper Styles
    -------------------------------------------------------------------------- */
 .stepper {
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--clay-radius-card);
   display: flex;
-  padding: 16px 24px;
+  padding: 18px 26px;
   margin-bottom: 24px;
+  box-shadow: var(--clay-shadow-card), var(--clay-inset-light);
 }
 
 .stepper > div {
@@ -500,7 +501,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  color: var(--muted);
+  color: var(--color-text-secondary);
   font-size: 13px;
   position: relative;
 }
@@ -508,42 +509,44 @@
 .stepper > div:not(:last-child)::after {
   content: '';
   height: 1px;
-  background: var(--border);
+  background: var(--color-border);
   flex: 1;
   margin: 0 14px;
 }
 
 .stepper > div > span {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  border: 1px solid var(--border-strong);
+  border: 1.5px solid var(--color-border-strong);
   display: grid;
   place-items: center;
   flex: 0 0 auto;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
+  background: var(--color-surface);
 }
 
 .stepper > div.active {
-  color: var(--teal);
-  font-weight: 650;
+  color: var(--color-primary);
+  font-weight: 700;
 }
 
 .stepper > div.active > span {
-  background: var(--teal);
-  color: #ffffff;
-  border-color: var(--teal);
+  background: var(--color-primary);
+  color: #FFFFFF;
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 10px rgba(11, 36, 89, 0.25);
 }
 
 .stepper > div.done {
-  color: var(--green);
+  color: var(--color-success);
 }
 
 .stepper > div.done > span {
-  background: var(--green-bg);
-  color: var(--green);
-  border-color: #b8dfc0;
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  border-color: var(--color-success-border);
 }
 
 /* Booking Layout Grid */
@@ -556,10 +559,10 @@
 
 .booking-workspace,
 .booking-summary {
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 2px 8px rgba(16, 42, 67, 0.03);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--clay-radius-card);
+  box-shadow: var(--clay-shadow-card), var(--clay-inset-light);
 }
 
 .booking-workspace {
@@ -574,23 +577,23 @@
 }
 
 .workspace-heading > span {
-  color: var(--teal);
-  font-size: 11px;
-  font-weight: 700;
+  color: var(--color-accent);
+  font-size: 11.5px;
+  font-weight: 750;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .workspace-heading h2 {
   font-size: 24px;
-  font-weight: 700;
-  color: var(--navy);
+  font-weight: 800;
+  color: var(--color-primary-dark);
   margin: 6px 0 6px;
 }
 
 .workspace-heading p {
-  color: var(--muted);
-  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-size: 14.5px;
   margin: 0;
 }
 
@@ -603,38 +606,39 @@
 
 /* Choice Cards */
 .choice-card {
-  border: 1px solid var(--border);
-  background: #ffffff;
-  border-radius: 11px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 16px;
   padding: 16px 18px;
   display: flex;
   align-items: center;
   gap: 14px;
   text-align: left;
-  color: var(--navy);
+  color: var(--color-text);
   width: 100%;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
   box-sizing: border-box;
+  box-shadow: var(--clay-shadow-soft), var(--clay-inset-light);
 }
 
 .choice-card:hover:not(:disabled),
 .choice-card.selected {
-  border-color: var(--teal);
-  background: #fbfffe;
-  box-shadow: 0 0 0 1px var(--teal);
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  box-shadow: 0 4px 14px rgba(11, 36, 89, 0.12), var(--clay-inset-light);
 }
 
 .choice-card:disabled {
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 .choice-radio {
   width: 18px;
   height: 18px;
-  border: 1.5px solid var(--border-strong);
+  border: 1.5px solid var(--color-border-strong);
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -642,14 +646,14 @@
 }
 
 .choice-card.selected .choice-radio {
-  border-color: var(--teal);
+  border-color: var(--color-primary);
 }
 
 .choice-radio span {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--teal);
+  background: var(--color-primary);
 }
 
 .choice-copy {
@@ -661,25 +665,25 @@
 
 .choice-copy strong {
   font-size: 14.5px;
-  color: var(--navy);
+  color: var(--color-primary-dark);
 }
 
 .choice-copy small {
-  color: var(--muted);
+  color: var(--color-text-secondary);
   font-size: 12px;
   line-height: 1.4;
 }
 
 .choice-copy > span:not(.choice-label) {
-  color: var(--teal);
-  font-weight: 600;
+  color: var(--color-primary);
+  font-weight: 650;
   font-size: 11px;
   margin-top: 2px;
 }
 
 .choice-label {
   text-transform: uppercase;
-  color: var(--teal) !important;
+  color: var(--color-primary) !important;
   font-size: 9.5px !important;
   letter-spacing: 0.08em;
   font-weight: 700;
