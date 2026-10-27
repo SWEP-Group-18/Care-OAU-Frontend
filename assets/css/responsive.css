@@ -24,32 +24,13 @@
    Mobile Devices (max-width: 768px)
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
-  /* Mobile Sidebar Drawer Navigation */
+  /* Mobile Navigation: Bottom Tab Bar replaces Sidebar Drawer */
   .sidebar {
-    position: fixed;
-    top: 0;
-    left: calc(-1 * var(--sidebar-drawer-width));
-    width: var(--sidebar-drawer-width) !important;
-    height: 100vh;
-    z-index: var(--z-drawer);
-    transition: left var(--transition-normal);
+    display: none !important;
   }
 
-  .sidebar.mobile-open {
-    left: 0;
-  }
-
-  body.sidebar-collapsed .sidebar-brand-text,
-  body.sidebar-collapsed .nav-label,
-  body.sidebar-collapsed .nav-section-label,
-  body.sidebar-collapsed .nav-badge,
-  body.sidebar-collapsed .user-info {
-    display: flex !important;
-  }
-
-  body.sidebar-collapsed .nav-item {
-    justify-content: flex-start !important;
-    padding: 0.65rem var(--space-3) !important;
+  .mobile-tab-nav {
+    display: flex;
   }
 
   .main-wrapper {
@@ -57,12 +38,9 @@
     width: 100%;
   }
 
-  .mobile-menu-toggle {
-    display: inline-flex;
-  }
-
+  .mobile-menu-toggle,
   .sidebar-toggle-btn {
-    display: none;
+    display: none !important;
   }
 
   /* Header adjustments */

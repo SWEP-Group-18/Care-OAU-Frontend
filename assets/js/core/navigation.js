@@ -22,21 +22,27 @@ export const Navigation = {
    */
   highlightActiveLink() {
     const currentPage = this.getCurrentPage();
-    const links = document.querySelectorAll('.nav-item, .sidebar-link');
+    const links = document.querySelectorAll('.nav-item, .sidebar-link, .mobile-tab-link');
     links.forEach(link => {
       const href = link.getAttribute('href') || '';
       const linkPage = href.split('/').pop().replace('.html', '');
       if (linkPage === currentPage) {
         link.classList.add('active');
-        if (!link.querySelector('.active-indicator')) {
+        if (link.classList.contains('mobile-tab-link')) {
+          link.setAttribute('aria-current', 'page');
+        } else if (!link.querySelector('.active-indicator')) {
           const indicator = document.createElement('i');
           indicator.className = 'active-indicator';
           link.appendChild(indicator);
         }
       } else {
         link.classList.remove('active');
-        const ind = link.querySelector('.active-indicator');
-        if (ind) ind.remove();
+        if (link.classList.contains('mobile-tab-link')) {
+          link.removeAttribute('aria-current');
+        } else {
+          const ind = link.querySelector('.active-indicator');
+          if (ind) ind.remove();
+        }
       }
     });
   },

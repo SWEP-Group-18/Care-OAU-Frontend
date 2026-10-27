@@ -7,16 +7,19 @@ import { Utils } from '../core/utils.js';
 import { Storage } from '../core/storage.js';
 import { APP_CONFIG } from '../core/config.js';
 import { Navigation } from '../core/navigation.js';
+import { MobileTabNav } from './mobile-tab-nav.js';
 
 export const AdminSidebar = {
   render() {
+    // Render mobile bottom tab bar
+    MobileTabNav.render('admin');
+
     const sidebarEl = document.querySelector('.sidebar');
     if (!sidebarEl) return;
 
-    // Check stored collapse state
-    const isCollapsed = Storage.get(APP_CONFIG.STORAGE_KEYS.SIDEBAR_COLLAPSED, false);
-    if (isCollapsed && window.innerWidth > 820) {
-      document.body.classList.add('sidebar-collapsed');
+    // Desktop sidebar is always fixed full-width; ensure no collapsed class remains
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.remove('sidebar-collapsed');
     }
 
     const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER) || {
@@ -43,12 +46,6 @@ export const AdminSidebar = {
             <small>Hospital Staff Portal</small>
           </span>
         </a>
-        <button type="button" class="sidebar-close" id="sidebar-close-btn" aria-label="Close navigation">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
       </div>
 
       <div class="sidebar-section-label">Clinic Operations</div>
@@ -122,84 +119,13 @@ export const AdminSidebar = {
           <span>Sign out</span>
         </button>
       </div>
-
-      <button type="button" class="student-collapse" id="admin-collapse-btn" aria-label="Toggle sidebar collapse">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-        <span>Collapse sidebar</span>
-      </button>
     `;
 
-    this.ensureScrim();
     this.bindEvents(sidebarEl);
     Navigation.highlightActiveLink();
   },
 
-  ensureScrim() {
-    let scrim = document.querySelector('.sidebar-scrim');
-    if (!scrim) {
-      scrim = document.createElement('div');
-      scrim.className = 'sidebar-scrim';
-      document.body.appendChild(scrim);
-    }
-  },
-
   bindEvents(sidebarEl) {
-    // Desktop Collapse Toggle
-    const collapseBtn = sidebarEl.querySelector('#admin-collapse-btn');
-    if (collapseBtn) {
-      collapseBtn.addEventListener('click', () => {
-        const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
-        Storage.set(APP_CONFIG.STORAGE_KEYS.SIDEBAR_COLLAPSED, isCollapsed);
-        const span = collapseBtn.querySelector('span');
-        if (span) {
-          span.textContent = isCollapsed ? 'Expand sidebar' : 'Collapse sidebar';
-        }
-      });
-    }
-
-    // Mobile Hamburger & Drawer
-    const scrim = document.querySelector('.sidebar-scrim');
-    const closeBtn = sidebarEl.querySelector('#sidebar-close-btn');
-
-    const openDrawer = () => {
-      sidebarEl.classList.add('open');
-      if (scrim) scrim.classList.add('active');
-      document.body.style.overflow = 'hidden';
-    };
-
-    const closeDrawer = () => {
-      sidebarEl.classList.remove('open');
-      if (scrim) scrim.classList.remove('active');
-      document.body.style.overflow = '';
-    };
-
-    const mobileToggle = document.getElementById('mobile-menu-toggle');
-    if (mobileToggle) {
-      mobileToggle.onclick = (e) => {
-        e.stopPropagation();
-        if (sidebarEl.classList.contains('open')) {
-          closeDrawer();
-        } else {
-          openDrawer();
-        }
-      };
-    }
-
-    if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
-    if (scrim) scrim.onclick = closeDrawer;
-    document.onkeydown = e => { if (e.key === 'Escape') closeDrawer(); };
-
-    // Auto-close drawer on link click for mobile
-    sidebarEl.querySelectorAll('.sidebar-link').forEach((link) => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 820) {
-          closeDrawer();
-        }
-      });
-    });
-
     // Logout handler
     const logoutBtn = sidebarEl.querySelector('#btn-sidebar-logout');
     if (logoutBtn) {

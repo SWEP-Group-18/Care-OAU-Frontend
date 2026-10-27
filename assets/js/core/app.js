@@ -11,17 +11,9 @@ export function initApp() {
   // Initialize Dropdowns
   Dropdown.init();
 
-  // Apply stored sidebar collapsed preference on desktop
-  const isCollapsed = Storage.get(APP_CONFIG.STORAGE_KEYS.SIDEBAR_COLLAPSED, false);
-  if (isCollapsed) {
-    document.body.classList.add('sidebar-collapsed');
-  }
-
-  // Ensure drawer backdrop exists for mobile
-  if (!document.querySelector('.drawer-backdrop')) {
-    const backdrop = document.createElement('div');
-    backdrop.className = 'drawer-backdrop';
-    document.body.appendChild(backdrop);
+  // Desktop sidebar is always fixed full-width; clean up any legacy collapsed class
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.classList.remove('sidebar-collapsed');
   }
 
   console.log(`Care-OAU initialized (${APP_CONFIG.VERSION})`);

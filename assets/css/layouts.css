@@ -201,79 +201,112 @@
   color: #ffffff;
 }
 
-.student-collapse {
-  width: 100%;
-  min-height: 38px;
-  border: 0;
-  background: transparent;
-  color: #b8cedd;
+/* --------------------------------------------------------------------------
+   Mobile Tab Navigation Bar (Claymorphic)
+   -------------------------------------------------------------------------- */
+.mobile-tab-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(11, 36, 89, 0.1);
+  box-shadow: 0 -4px 20px -2px rgba(11, 36, 89, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  z-index: 80;
+  padding: 0 8px env(safe-area-inset-bottom, 0px);
+  align-items: center;
+  justify-content: space-around;
+}
+
+.mobile-tab-link {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  min-height: 48px;
+  text-decoration: none;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.mobile-tab-icon-wrap {
+  width: 34px;
+  height: 28px;
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 0 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  cursor: pointer;
-  margin-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 10px;
-  transition: all 0.15s ease;
-  white-space: nowrap;
+  justify-content: center;
+  border-radius: 10px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: inherit;
 }
 
-.student-collapse:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #ffffff;
-}
-
-.student-collapse svg {
-  transform: rotate(180deg);
+.mobile-tab-icon-wrap svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
   transition: transform 0.2s ease;
 }
 
-/* --------------------------------------------------------------------------
-   Desktop Collapsed State
-   -------------------------------------------------------------------------- */
-body.sidebar-collapsed .sidebar,
-body.sidebar-collapsed .student-sidebar,
-body.sidebar-collapsed .admin-sidebar {
-  width: 78px;
-  padding-left: 14px;
-  padding-right: 14px;
+.mobile-tab-label {
+  font-size: 11px;
+  line-height: 1;
 }
 
-body.sidebar-collapsed .main-wrapper {
-  margin-left: 78px;
+.mobile-tab-link:hover,
+.mobile-tab-link:focus-visible {
+  color: var(--oau-navy, #0B2459);
 }
 
-body.sidebar-collapsed .logo-text-wrap,
-body.sidebar-collapsed .sidebar-section-label,
-body.sidebar-collapsed .sidebar-link span,
-body.sidebar-collapsed .nav-item span,
-body.sidebar-collapsed .sidebar-link .active-indicator,
-body.sidebar-collapsed .sidebar-profile-card .profile-name,
-body.sidebar-collapsed .sidebar-action-btn span,
-body.sidebar-collapsed .student-collapse span {
-  display: none !important;
+.mobile-tab-link.active {
+  color: var(--oau-navy, #0B2459);
+  font-weight: 700;
 }
 
-body.sidebar-collapsed .sidebar-link,
-body.sidebar-collapsed .nav-item,
-body.sidebar-collapsed .sidebar-action-btn,
-body.sidebar-collapsed .student-collapse {
-  justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
+.mobile-tab-link.active .mobile-tab-icon-wrap {
+  background: rgba(11, 36, 89, 0.08);
+  color: var(--oau-navy, #0B2459);
+  box-shadow: inset 1px 1px 2px rgba(11, 36, 89, 0.12), 0 2px 4px rgba(255, 255, 255, 0.8);
 }
 
-body.sidebar-collapsed .sidebar-profile-card {
-  justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
+.mobile-tab-link.active .mobile-tab-icon-wrap svg {
+  transform: translateY(-1px) scale(1.05);
 }
 
-body.sidebar-collapsed .student-collapse svg {
-  transform: none;
+.mobile-tab-link.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 3px;
+  background: var(--oau-gold, #E5AE32);
+  border-radius: 0 0 3px 3px;
+  box-shadow: 0 1px 3px rgba(229, 174, 50, 0.4);
+}
+
+.mobile-tab-link--accent .mobile-tab-icon-wrap {
+  background: linear-gradient(135deg, rgba(11, 36, 89, 0.06), rgba(229, 174, 50, 0.12));
+  color: var(--oau-navy, #0B2459);
+}
+
+.mobile-tab-link--accent.active .mobile-tab-icon-wrap {
+  background: linear-gradient(135deg, var(--oau-navy, #0B2459), #07183D);
+  color: var(--oau-gold, #E5AE32);
+  box-shadow: 0 4px 10px rgba(11, 36, 89, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* --------------------------------------------------------------------------
@@ -349,23 +382,6 @@ body.sidebar-collapsed .student-collapse svg {
   box-sizing: border-box;
 }
 
-/* Mobile Drawer Overlay */
-.sidebar-scrim,
-.drawer-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 28, 45, 0.5);
-  backdrop-filter: blur(2px);
-  z-index: 65;
-  transition: opacity 0.2s ease;
-}
-
-.sidebar-scrim.active,
-.drawer-backdrop.active {
-  display: block;
-}
-
 /* --------------------------------------------------------------------------
    Responsive Mobile & Tablet Rules
    -------------------------------------------------------------------------- */
@@ -374,35 +390,26 @@ body.sidebar-collapsed .student-collapse svg {
     margin-left: 0 !important;
   }
 
+  /* Desktop sidebar is hidden on mobile; converted to mobile tab bar */
   .sidebar,
   .student-sidebar,
   .admin-sidebar {
-    position: fixed;
-    left: -275px;
-    top: 0;
-    width: 260px;
-    height: 100vh;
-    z-index: 70;
-    box-shadow: 4px 0 24px rgba(10, 28, 45, 0.3);
+    display: none !important;
   }
 
-  .sidebar.open,
-  .sidebar.mobile-open,
-  .student-sidebar.open,
-  .admin-sidebar.open {
-    left: 0;
-  }
-
-  .sidebar-close {
+  /* Mobile bottom tab bar active */
+  .mobile-tab-nav {
     display: flex;
   }
 
-  .student-collapse {
-    display: none;
-  }
-
+  /* Drawer navigation and overlays disabled on mobile */
   .mobile-menu-toggle {
-    display: flex;
+    display: none !important;
+  }
+
+  .sidebar-scrim,
+  .drawer-backdrop {
+    display: none !important;
   }
 
   .top-header {
@@ -411,7 +418,7 @@ body.sidebar-collapsed .student-collapse svg {
   }
 
   .content-container {
-    padding: 24px 18px 60px;
+    padding: 24px 18px calc(76px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -421,6 +428,7 @@ body.sidebar-collapsed .student-collapse svg {
   }
 
   .content-container {
-    padding: 20px 14px 60px;
+    padding: 20px 14px calc(76px + env(safe-area-inset-bottom, 0px));
   }
 }
+
