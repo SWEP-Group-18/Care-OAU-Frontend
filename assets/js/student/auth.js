@@ -7,6 +7,7 @@ import { AuthService } from '../services/auth-service.js';
 import { FormValidator } from '../components/form-validation.js';
 import { Toast } from '../components/toast.js';
 import { Loading } from '../components/loading.js';
+import { APP_CONFIG } from '../core/config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const tabLogin = document.getElementById('tab-login');
@@ -88,8 +89,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const submitBtn = document.getElementById('btn-login-submit');
 
       let isValid = true;
-      if (!identifierInput.value.trim()) {
-        FormValidator.setError(identifierInput, 'Please enter your Matric Number or Email.');
+      const identifierVal = identifierInput.value.trim();
+
+      if (!identifierVal) {
+        FormValidator.setError(identifierInput, 'Please enter your registered student email.');
+        isValid = false;
+      } else if (!identifierVal.includes('@') && !APP_CONFIG.USE_MOCK_DATA) {
+        FormValidator.setError(identifierInput, 'Student login requires your registered email address (e.g. name@student.oauife.edu.ng).');
         isValid = false;
       } else {
         FormValidator.clearError(identifierInput);
@@ -108,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         const res = await AuthService.loginStudent({
-          identifier: identifierInput.value.trim(),
+          identifier: identifierVal,
           password: passwordInput.value,
           remember: rememberInput ? rememberInput.checked : true
         });
@@ -119,12 +125,24 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = targetDashboard;
           }, 500);
         } else {
+          if (res.details && Array.isArray(res.details)) {
+            for (const item of res.details) {
+              if (item.field === 'email' || item.field === 'identifier') {
+                FormValidator.setError(identifierInput, item.message);
+              }
+              if (item.field === 'password') {
+                FormValidator.setError(passwordInput, item.message);
+              }
+            }
+          } else if (res.code === 'INVALID_CREDENTIALS') {
+            FormValidator.setError(passwordInput, 'Invalid email or password. Please verify and try again.');
+          }
           Toast.error(res.message || 'Login failed. Please verify your credentials.');
           Loading.setButtonLoading(submitBtn, false);
         }
       } catch (err) {
         console.error(err);
-        Toast.error('An unexpected error occurred. Please try again.');
+        Toast.error(err.message || 'An unexpected error occurred. Please try again.');
         Loading.setButtonLoading(submitBtn, false);
       }
     });
@@ -182,6 +200,15 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = `${targetVerify}?email=${encodeURIComponent(emailInput.value.trim())}`;
           }, 600);
         } else {
+          if (res.details && Array.isArray(res.details)) {
+            for (const item of res.details) {
+              if (item.field === 'name') FormValidator.setError(fullNameInput, item.message);
+              if (item.field === 'matricNumber' || item.field === 'matricNo') FormValidator.setError(matricInput, item.message);
+              if (item.field === 'email') FormValidator.setError(emailInput, item.message);
+              if (item.field === 'phone') FormValidator.setError(phoneInput, item.message);
+              if (item.field === 'password') FormValidator.setError(passwordInput, item.message);
+            }
+          }
           Toast.error(res.message || 'Registration failed.');
           Loading.setButtonLoading(submitBtn, false);
         }

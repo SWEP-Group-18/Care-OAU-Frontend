@@ -5,6 +5,7 @@
 
 import { Storage } from './storage.js';
 import { APP_CONFIG } from './config.js';
+import { AuthService } from '../services/auth-service.js';
 
 export const Navigation = {
   /**
@@ -64,15 +65,43 @@ export const Navigation = {
       return null;
     }
 
+    // Verify session with live backend in background if student role
+    if (requiredRole === 'student' && !APP_CONFIG.USE_MOCK_DATA) {
+      this.syncSession();
+    }
+
     return user;
   },
 
   /**
-   * Log out user and redirect to appropriate login page
+   * Asynchronously validates session against GET /api/v1/users/me in background
    */
-  logout() {
+  async syncSession() {
+    try {
+      const activeUser = await AuthService.checkSession();
+      if (!activeUser && typeof window !== 'undefined') {
+        const isProtectedStudentPage = window.location.pathname.includes('/student/') && 
+          !/auth|login|verify|password/.test(window.location.pathname);
+        if (isProtectedStudentPage) {
+          window.location.href = 'auth.html';
+        }
+      }
+    } catch (err) {
+      console.warn('[Care-OAU] Session validation notice:', err.message);
+    }
+  },
+
+  /**
+   * Log out user, invoke backend POST /api/v1/auth/logout, and redirect to appropriate login page
+   */
+  async logout() {
     const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
     const isAdmin = user && user.role === 'admin';
+    try {
+      await AuthService.logout();
+    } catch (err) {
+      console.warn('[Care-OAU] Logout notice:', err.message);
+    }
     Storage.remove(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
     Storage.remove(APP_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
 

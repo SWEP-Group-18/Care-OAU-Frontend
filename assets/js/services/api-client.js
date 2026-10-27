@@ -9,8 +9,8 @@ import { APP_CONFIG } from '../core/config.js';
 import { Storage } from '../core/storage.js';
 
 class ApiClient {
-  constructor() {
-    this.baseUrl = APP_CONFIG.API_BASE_URL;
+  getBaseUrl() {
+    return (APP_CONFIG.API_BASE_URL || '').replace(/\/+$/, '');
   }
 
   /**
@@ -32,16 +32,19 @@ class ApiClient {
   }
 
   /**
-   * Generic request wrapper
+   * Generic request wrapper with credentials: 'include' for HttpOnly session cookies
    */
   async request(endpoint, options = {}) {
-    // If in prototype mock mode, log for developers and proceed
     if (APP_CONFIG.USE_MOCK_DATA) {
       console.info(`[Care-OAU Mock API] ${options.method || 'GET'} ${endpoint}`, options.body || {});
     }
 
-    const url = `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+    const baseUrl = this.getBaseUrl();
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${baseUrl}${cleanEndpoint}`;
+
     const config = {
+      credentials: 'include',
       ...options,
       headers: this.getHeaders(options.headers)
     };
@@ -52,17 +55,46 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
+      let data = null;
+      const contentType = response.headers.get('content-type') || '';
+      
+      if (contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch {
+          data = { message: await response.text() };
+        }
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { message: text };
+        }
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || `HTTP Error ${response.status}: ${response.statusText}`);
+        let message = data?.message;
+        if (data?.error?.details && Array.isArray(data.error.details)) {
+          message = data.error.details.map(d => d.message).join('. ');
+        }
+        if (!message) {
+          message = `HTTP Error ${response.status}: ${response.statusText}`;
+        }
+
+        const error = new Error(message);
+        error.status = response.status;
+        error.data = data;
+        error.code = data?.error?.code;
+        error.details = data?.error?.details || [];
+        throw error;
       }
 
       return data;
     } catch (error) {
-      // In mock mode, fetch might fail if no live express server is running; return mock handled response
-      if (APP_CONFIG.USE_MOCK_DATA) {
-        console.warn(`[Care-OAU Client] Live server not found at ${url}. Operating safely in local demonstration mode.`);
+      // In mock mode, if network connection failed (no response status), handle safely
+      if (APP_CONFIG.USE_MOCK_DATA && !error.status) {
+        console.warn(`[Care-OAU Client] Live server not reachable at ${url}. Operating safely in local demonstration mode.`);
         return { mockHandled: true, error: error.message };
       }
       throw error;
