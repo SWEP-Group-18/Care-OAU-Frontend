@@ -132,11 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (resendBtn) {
     resendBtn.addEventListener('click', () => {
-      if (APP_CONFIG.USE_MOCK_DATA) {
-        Toast.info('Simulated verification code resent: 123456');
-      } else {
-        Toast.info('A verification code was dispatched during registration. Please check your inbox or spam folder.');
-      }
+      Toast.info('A verification code was dispatched to your email during registration. Please check your inbox or spam folder.');
       resendBtn.disabled = true;
       seconds = 30;
       resendBtn.innerHTML = `Resend Code (<span id="resend-countdown">30</span>s)`;

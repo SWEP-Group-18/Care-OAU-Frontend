@@ -47,24 +47,12 @@ function resolveApiBaseUrl() {
 
 /**
  * Determines whether to use mock data fallback.
- * Production (e.g. deployed on Vercel) defaults to false (live backend).
- * Localhost defaults to true for prototype demo unless window.__CARE_OAU_USE_MOCK__ is set.
+ * Strictly defaults to false in all environments (production & local) to ensure real API usage.
+ * Can only be explicitly enabled in isolated test suites via window.__CARE_OAU_USE_MOCK__.
  */
 function resolveUseMock() {
-  if (typeof window !== 'undefined') {
-    if (typeof window.__CARE_OAU_USE_MOCK__ === 'boolean') {
-      return window.__CARE_OAU_USE_MOCK__;
-    }
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('mock') === 'true') return true;
-      if (params.get('mock') === 'false') return false;
-    } catch {}
-    if (window.location) {
-      const host = window.location.hostname;
-      const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '';
-      return isLocal;
-    }
+  if (typeof window !== 'undefined' && typeof window.__CARE_OAU_USE_MOCK__ === 'boolean') {
+    return window.__CARE_OAU_USE_MOCK__;
   }
   return false;
 }
