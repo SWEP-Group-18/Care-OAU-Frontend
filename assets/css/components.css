@@ -160,37 +160,38 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: 0.25rem 0.65rem;
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
+  gap: 6px;
+  padding: 0.3rem 0.75rem;
+  font-size: 11px;
+  font-weight: 700;
   line-height: 1.2;
-  border-radius: var(--radius-pill);
+  border-radius: var(--clay-radius-pill);
   border: 1px solid transparent;
+  box-shadow: inset 1px 1px 1.5px rgba(255, 255, 255, 0.7), 0 1px 2px rgba(37, 45, 41, 0.04);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 
-.badge-mint {
-  background-color: var(--color-mint);
-  color: var(--color-teal);
-  border-color: var(--color-mint-dark);
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  flex-shrink: 0;
 }
 
-.badge-teal {
-  background-color: var(--color-teal-50);
-  color: var(--color-teal);
-  border-color: var(--color-teal-subtle);
-}
-
-.badge-navy {
-  background-color: rgba(16, 42, 67, 0.08);
-  color: var(--color-navy);
-  border-color: rgba(16, 42, 67, 0.15);
-}
-
+.badge-mint,
+.badge-teal,
 .badge-success {
   background-color: var(--color-success-bg);
   color: var(--color-success-text);
   border-color: var(--color-success-border);
+}
+
+.badge-navy {
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary-light);
 }
 
 .badge-warning,
@@ -203,9 +204,9 @@
 .badge-danger,
 .badge-rejected,
 .badge-cancelled {
-  background-color: var(--color-danger-bg);
-  color: var(--color-danger-text);
-  border-color: var(--color-danger-border);
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+  border-color: var(--color-error-border);
 }
 
 .badge-info,
@@ -217,9 +218,9 @@
 
 /* Neutral / Off-duty / Inactive states */
 .badge-neutral {
-  background-color: #F1F5F9;
-  color: var(--color-text-muted);
-  border-color: #CBD5E1;
+  background-color: #EDF1EE;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
 }
 
 /* --------------------------------------------------------------------------
