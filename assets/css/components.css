@@ -10,61 +10,84 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: 0.625rem 1.25rem;
+  padding: 0.625rem 1.35rem;
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-weight: 650;
   line-height: 1;
-  border-radius: var(--radius-md);
+  border-radius: var(--clay-radius-pill);
   border: 1px solid transparent;
-  transition: all var(--transition-fast);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
   white-space: nowrap;
   user-select: none;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--color-teal);
+  outline: 3px solid rgba(8, 116, 67, 0.35);
   outline-offset: 2px;
 }
 
 .btn:disabled,
 .btn.disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
-/* Primary Teal */
-.btn-teal {
-  background-color: var(--color-teal);
-  color: var(--color-white);
+/* Primary OAU Green Pill */
+.btn-teal,
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: var(--clay-shadow-button), var(--clay-inset-primary);
 }
-.btn-teal:hover {
-  background-color: var(--color-teal-hover);
-  color: var(--color-white);
-  box-shadow: 0 4px 8px rgba(15, 118, 110, 0.25);
+.btn-teal:hover,
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: var(--clay-shadow-button-hover), var(--clay-inset-primary);
+}
+.btn-teal:active,
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px -1px rgba(8, 116, 67, 0.3), var(--clay-inset-primary);
 }
 
-/* Primary Navy */
+/* Secondary Neutral Surface */
 .btn-navy {
-  background-color: var(--color-navy);
-  color: var(--color-white);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+  box-shadow: var(--clay-shadow-soft), var(--clay-inset-card);
 }
 .btn-navy:hover {
-  background-color: var(--color-navy-hover);
-  color: var(--color-white);
-  box-shadow: 0 4px 8px rgba(16, 42, 67, 0.25);
+  background-color: var(--color-surface-muted);
+  color: var(--color-primary);
+  border-color: var(--color-primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--clay-shadow-card), var(--clay-inset-card);
+}
+.btn-navy:active {
+  transform: translateY(0);
+  box-shadow: var(--clay-shadow-soft), var(--clay-inset-card);
 }
 
 /* Outlines */
 .btn-outline-teal {
   background-color: transparent;
-  border-color: var(--color-teal);
-  color: var(--color-teal);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: none;
 }
 .btn-outline-teal:hover {
-  background-color: var(--color-mint);
-  color: var(--color-teal-hover);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  transform: translateY(-1px);
 }
 
 .btn-outline-navy {
@@ -764,15 +787,15 @@
 .button {
   min-height: 44px;
   border: 1px solid transparent;
-  border-radius: 9px;
+  border-radius: var(--clay-radius-pill);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 18px;
+  padding: 0 20px;
   font-weight: 650;
   font-size: 14px;
-  transition: all 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
   white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
@@ -780,51 +803,82 @@
 }
 
 .button:hover:not(:disabled) {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .button:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.button:focus-visible {
+  outline: 3px solid rgba(8, 116, 67, 0.35);
+  outline-offset: 2px;
 }
 
 .button-primary {
   color: #ffffff;
-  background: var(--teal);
-  box-shadow: 0 3px 8px rgba(15, 118, 110, 0.15);
+  background: var(--color-primary);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: var(--clay-shadow-button), var(--clay-inset-primary);
 }
 
 .button-primary:hover:not(:disabled) {
-  background: var(--teal-dark);
+  background: var(--color-primary-dark);
+  box-shadow: var(--clay-shadow-button-hover), var(--clay-inset-primary);
+}
+
+.button-primary:active:not(:disabled) {
+  box-shadow: 0 2px 8px -1px rgba(8, 116, 67, 0.3), var(--clay-inset-primary);
 }
 
 .button-secondary {
-  color: var(--navy);
-  background: #ffffff;
-  border-color: var(--border-strong);
-  box-shadow: none;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: var(--clay-shadow-soft), var(--clay-inset-card);
 }
 
 .button-secondary:hover:not(:disabled) {
-  border-color: var(--teal);
-  color: var(--teal);
+  border-color: var(--color-primary-light);
+  color: var(--color-primary);
+  background: var(--color-surface-muted);
+  box-shadow: var(--clay-shadow-card), var(--clay-inset-card);
+}
+
+.button-secondary:active:not(:disabled) {
+  box-shadow: var(--clay-shadow-soft), var(--clay-inset-card);
 }
 
 .button-ghost {
   background: transparent;
-  color: inherit;
-  padding: 0;
+  color: var(--color-text-secondary);
+  padding: 0 12px;
   box-shadow: none;
+  border-radius: var(--clay-radius-pill);
+}
+
+.button-ghost:hover:not(:disabled) {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .button-danger {
-  background: var(--red);
+  background: var(--color-error);
   color: #ffffff;
+  box-shadow: 0 4px 12px rgba(192, 57, 59, 0.25);
 }
 
 .button-danger:hover:not(:disabled) {
-  background: #991b1b;
+  background: #A8282A;
+  box-shadow: 0 6px 16px rgba(192, 57, 59, 0.32);
 }
 
 .button.full {
