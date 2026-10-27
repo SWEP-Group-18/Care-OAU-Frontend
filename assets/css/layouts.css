@@ -25,7 +25,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  background: var(--navy);
+  background: linear-gradient(180deg, #13241B 0%, #0E1A13 100%);
   color: #ffffff;
   padding: 24px 18px 18px;
   display: flex;
@@ -35,7 +35,8 @@
   overflow-x: hidden;
   overflow-y: auto;
   box-sizing: border-box;
-  box-shadow: 2px 0 16px rgba(16, 42, 67, 0.12);
+  box-shadow: 4px 0 24px rgba(8, 116, 67, 0.12);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .sidebar-top {
@@ -52,7 +53,7 @@
   color: #ffffff;
   padding: 6px;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--clay-radius-sm);
 }
 
 .sidebar-close:hover {
@@ -60,7 +61,7 @@
 }
 
 .sidebar-section-label {
-  color: #718da4;
+  color: #8CA094;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-size: 9.5px;
@@ -72,50 +73,54 @@
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   flex: 1;
 }
 
 .sidebar-link,
 .nav-item {
   min-height: 44px;
-  border: 0;
+  border: 1px solid transparent;
   background: transparent;
-  color: #b8cedd;
-  border-radius: 8px;
+  color: #C2D1C8;
+  border-radius: var(--clay-radius-sm);
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 0 12px;
+  padding: 0 14px;
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
   position: relative;
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
   white-space: nowrap;
   box-sizing: border-box;
 }
 
 .sidebar-link:hover,
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
+  transform: translateX(2px);
 }
 
 .sidebar-link.active,
 .nav-item.active {
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(8, 116, 67, 0.35);
+  border-color: rgba(221, 243, 230, 0.22);
+  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.15), 0 2px 8px rgba(8, 116, 67, 0.25);
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .sidebar-link.active .active-indicator,
 .nav-item.active .active-indicator {
   position: absolute;
   right: -18px;
-  width: 3px;
+  width: 4px;
   height: 24px;
-  background: #56c9bb;
+  background: var(--color-primary-light);
+  box-shadow: 0 0 10px rgba(221, 243, 230, 0.6);
   border-radius: 3px 0 0 3px;
 }
 
