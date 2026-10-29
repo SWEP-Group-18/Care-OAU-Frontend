@@ -64,8 +64,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
  .header-user-name { display:none; }
  .top-header { gap:10px; } .header-left { min-width:0; gap:8px; } .header-brand-title { font-size:17px; } .page-title { font-size:10.5px; }
  .service-admin-grid { grid-template-columns:1fr; }
+ .content-container { padding-bottom: calc(108px + env(safe-area-inset-bottom, 16px)) !important; }
 }
 @media(max-width:560px) {
+ .content-container { padding-bottom: calc(116px + env(safe-area-inset-bottom, 20px)) !important; }
  .stat-card { padding:14px; display:block; } .stat-icon { margin-bottom:10px; } .stats-grid { gap:10px; }
  .appointment-info-grid,.queue-simple-details { grid-template-columns:1fr; }
  .appointment-list-card { padding:18px; } .large-date > strong { font-size:28px; }

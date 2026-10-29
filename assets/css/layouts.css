@@ -534,7 +534,7 @@
   }
 
   .content-container {
-    padding: 24px 18px calc(76px + env(safe-area-inset-bottom, 0px));
+    padding: 24px 18px calc(108px + env(safe-area-inset-bottom, 16px));
   }
 }
 
@@ -569,7 +569,7 @@
   }
 
   .content-container {
-    padding: 16px 12px calc(80px + env(safe-area-inset-bottom, 0px));
+    padding: 16px 12px calc(116px + env(safe-area-inset-bottom, 20px));
   }
 }
 
