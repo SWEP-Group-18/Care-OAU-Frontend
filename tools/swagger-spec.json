@@ -1,0 +1,3788 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Care OAU API",
+    "version": "1.0.0",
+    "description": "API documentation for Care OAU system"
+  },
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Register a new user",
+        "description": "Creates a new user account and sends an email verification code to activate the account.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                  },
+                  "matricNumber": {
+                    "type": "string",
+                    "example": "CPE/2024/001"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "+2348012345678"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "StrongPassword123!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Registration successful. Please verify your email address to activate your account."
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "user": {
+                              "publicId": "usr_hTfrjOQpxO",
+                              "email": "user@example.com",
+                              "emailVerified": false
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid registration data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Validation error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "VALIDATION_ERROR"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "An account with this email already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "You already have an account"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "USER_ALREADY_EXISTS"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/verify-email": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Verify email address",
+        "description": "Verifies the user's email address using the verification code sent to their email and creates a session upon successful verification. The server returns a session cookie that the client must store and send with subsequent requests to maintain the authenticated session.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "code"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  },
+                  "code": {
+                    "type": "string",
+                    "example": "123456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Email verified successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": null
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid verification code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid verification code"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "INVALID_VERIFICATION_CODE"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid verification request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid verification request"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "INVALID_VERIFICATION_REQUEST"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Account already verified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Your account is already verified"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "ACCOUNT_ALREADY_VERIFIED"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Log in user",
+        "description": "Authenticates a user using their email and password and creates a session.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "StrongPassword123!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Logged in successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "user": {
+                              "publicId": "usr_ztkZdv55YE",
+                              "email": "user@example.com",
+                              "name": "John Doe",
+                              "role": "student"
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid email or password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid credentials"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "INVALID_CREDENTIALS"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email address has not been verified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Please verify your account first"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "EMAIL_NOT_VERIFIED"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Request password reset",
+        "description": "Requests a password reset email for the provided email address. Only verified accounts are eligible. The response does not reveal whether an account exists.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "If your account exists, you'll receive a password reset email"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": null
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Reset password",
+        "description": "Resets the user's password using a valid, unexpired password reset code.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "code",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  },
+                  "code": {
+                    "type": "string",
+                    "example": "123456"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "NewStrongPassword123!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Your password has been reset successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": null
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired reset code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid or expired reset code"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "INVALID_RESET_CODE"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Log out user",
+        "description": "Logs out the currently authenticated user by revoking their active session and clearing the session cookie.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Logged out successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": null
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session has been revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Session has been revoked"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "SESSION_REVOKED"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get current user",
+        "description": "Fetches the profile of the currently authenticated user using their active session.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "User fetched"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "user": {
+                              "publicId": "usr_hTfrjOQpxO",
+                              "email": "user@example.com",
+                              "name": "John Doe",
+                              "role": "student"
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session has been revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Session has been revoked"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "SESSION_REVOKED"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services": {
+      "get": {
+        "tags": [
+          "Services"
+        ],
+        "summary": "Get available services",
+        "description": "Retrieves open clinical services available to students, including the service name, description, and referral requirement.",
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Available services fetched successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "services": [
+                              {
+                                "publicId": "srv_MqJ4U0Pqgs",
+                                "name": "General Medical Consultation",
+                                "description": "To help in general",
+                                "referralMessage": "No referral needed"
+                              },
+                              {
+                                "publicId": "srv_DentalCare01",
+                                "name": "Dental Care",
+                                "description": "Dental consultations, oral examinations, and routine dental care.",
+                                "referralMessage": "No referral needed"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/services": {
+      "post": {
+        "tags": [
+          "Service Management"
+        ],
+        "summary": "Create a service",
+        "description": "Creates a clinical service with its operating days, opening hours, daily capacity, and referral requirements. New services default to open status.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "category",
+                  "description",
+                  "operatingDays",
+                  "opensAt",
+                  "closesAt",
+                  "dailyCapacity",
+                  "requiresReferral"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "General Medical Consultation"
+                  },
+                  "category": {
+                    "type": "string",
+                    "enum": [
+                      "general_medicine",
+                      "dental",
+                      "optometry",
+                      "laboratory",
+                      "mental_health",
+                      "other"
+                    ],
+                    "description": "general_medicine: General consultations. dental: Dental care. optometry: Eye care. laboratory: Laboratory tests and investigations. mental_health: Mental health services. other: Other clinical services.",
+                    "example": "general_medicine"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Outpatient consultations for general illnesses, infections, and routine diagnoses."
+                  },
+                  "operatingDays": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "monday",
+                        "tuesday",
+                        "wednesday",
+                        "thursday",
+                        "friday",
+                        "saturday",
+                        "sunday"
+                      ]
+                    },
+                    "example": [
+                      "monday",
+                      "tuesday",
+                      "wednesday",
+                      "thursday",
+                      "friday",
+                      "saturday",
+                      "sunday"
+                    ]
+                  },
+                  "opensAt": {
+                    "type": "string",
+                    "example": "08:00:00"
+                  },
+                  "closesAt": {
+                    "type": "string",
+                    "example": "20:00:00"
+                  },
+                  "dailyCapacity": {
+                    "type": "integer",
+                    "example": 80
+                  },
+                  "requiresReferral": {
+                    "type": "boolean",
+                    "example": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Service added"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "service": {
+                              "publicId": "srv_MqJ4U0Pqgs",
+                              "name": "General Medical Consultation",
+                              "category": "general_medicine",
+                              "description": "Outpatient consultations for general illnesses, infections, and routine diagnoses.",
+                              "operatingDays": [
+                                "monday",
+                                "tuesday",
+                                "wednesday",
+                                "thursday",
+                                "friday",
+                                "saturday",
+                                "sunday"
+                              ],
+                              "opensAt": "08:00:00",
+                              "closesAt": "20:00:00",
+                              "dailyCapacity": 80,
+                              "requiresReferral": false,
+                              "status": "open"
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body contains invalid service data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Validation error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "VALIDATION_ERROR"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A service with the same name and category already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "A service with this name and category already exists"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "SERVICE_ALREADY_EXISTS"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Service Management"
+        ],
+        "summary": "Get all services",
+        "description": "Retrieves all clinical services, including open and closed services, with their operating days and hours.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Services fetched successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "services": [
+                              {
+                                "publicId": "srv_MqJ4U0Pqgs",
+                                "name": "General Medical Consultation",
+                                "category": "general_medicine",
+                                "description": "Outpatient consultations for general illnesses, infections, and routine diagnoses.",
+                                "operatingDays": [
+                                  "monday",
+                                  "tuesday",
+                                  "wednesday",
+                                  "thursday",
+                                  "friday",
+                                  "saturday",
+                                  "sunday"
+                                ],
+                                "opensAt": "08:00:00",
+                                "closesAt": "20:00:00",
+                                "dailyCapacity": 80,
+                                "requiresReferral": false,
+                                "status": "open"
+                              },
+                              {
+                                "publicId": "srv_Dental8Xk2Lm",
+                                "name": "Dental Consultation",
+                                "category": "dental",
+                                "description": "Dental examinations and oral healthcare services.",
+                                "operatingDays": [
+                                  "monday",
+                                  "tuesday",
+                                  "wednesday",
+                                  "thursday",
+                                  "friday"
+                                ],
+                                "opensAt": "09:00:00",
+                                "closesAt": "16:00:00",
+                                "dailyCapacity": 30,
+                                "requiresReferral": false,
+                                "status": "open"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/services/{publicId}": {
+      "get": {
+        "tags": [
+          "Service Management"
+        ],
+        "summary": "Get a service by public ID",
+        "description": "Retrieves a single clinical service using its public ID, including its operating days, hours, capacity, and referral requirements.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "srv_MqJ4U0Pqgs"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Service fetched successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "service": {
+                              "publicId": "srv_MqJ4U0Pqgs",
+                              "name": "General Medical Consultation",
+                              "category": "general_medicine",
+                              "description": "Outpatient consultations for general illnesses, infections, and routine diagnoses.",
+                              "operatingDays": [
+                                "monday",
+                                "tuesday",
+                                "wednesday",
+                                "thursday",
+                                "friday",
+                                "saturday",
+                                "sunday"
+                              ],
+                              "opensAt": "08:00:00",
+                              "closesAt": "20:00:00",
+                              "dailyCapacity": 80,
+                              "requiresReferral": false,
+                              "status": "open"
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested service was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Service not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "SERVICE_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Service Management"
+        ],
+        "summary": "Update a service",
+        "description": "Updates the provided service fields. Schedule changes preserve existing operating days and hours where possible. Newly added operating days inherit existing hours unless new times are supplied.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "srv_MqJ4U0Pqgs"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "General Medical Consultation"
+                  },
+                  "category": {
+                    "type": "string",
+                    "enum": [
+                      "general_medicine",
+                      "dental",
+                      "optometry",
+                      "laboratory",
+                      "mental_health",
+                      "other"
+                    ],
+                    "example": "general_medicine"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Outpatient consultations and routine diagnoses."
+                  },
+                  "operatingDays": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "monday",
+                        "tuesday",
+                        "wednesday",
+                        "thursday",
+                        "friday",
+                        "saturday",
+                        "sunday"
+                      ]
+                    },
+                    "example": [
+                      "monday",
+                      "wednesday",
+                      "friday"
+                    ]
+                  },
+                  "opensAt": {
+                    "type": "string",
+                    "example": "08:00:00"
+                  },
+                  "closesAt": {
+                    "type": "string",
+                    "example": "18:00:00"
+                  },
+                  "dailyCapacity": {
+                    "type": "integer",
+                    "example": 60
+                  },
+                  "requiresReferral": {
+                    "type": "boolean",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Service updated successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "service": {
+                              "publicId": "srv_MqJ4U0Pqgs",
+                              "name": "General Medical Consultation",
+                              "category": "general_medicine",
+                              "description": "Outpatient consultations and routine diagnoses.",
+                              "operatingDays": [
+                                "monday",
+                                "wednesday",
+                                "friday"
+                              ],
+                              "opensAt": "08:00:00",
+                              "closesAt": "18:00:00",
+                              "dailyCapacity": 60,
+                              "requiresReferral": true,
+                              "status": "open"
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The service has no operating days",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "A service must have at least one operating day"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "SERVICE_OPERATING_DAYS_REQUIRED"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested service was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Service not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "SERVICE_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Service Management"
+        ],
+        "summary": "Delete a service",
+        "description": "Soft-deletes a clinical service. The service is excluded from normal service lookups while historical appointment records are preserved.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "srv_MqJ4U0Pqgs"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Service deleted successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "publicId": "srv_MqJ4U0Pqgs",
+                            "isDeleted": true
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested service was not found or has already been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Service not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "SERVICE_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/services/{publicId}/status": {
+      "patch": {
+        "tags": [
+          "Service Management"
+        ],
+        "summary": "Update service status",
+        "description": "Opens or closes an existing clinical service without changing its other details.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "srv_MqJ4U0Pqgs"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "open",
+                      "closed"
+                    ],
+                    "example": "closed"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Service status updated successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "service": {
+                              "publicId": "srv_MqJ4U0Pqgs",
+                              "name": "General Medical Consultation",
+                              "category": "general_medicine",
+                              "description": "Outpatient consultations for general illnesses, infections, and routine diagnoses.",
+                              "operatingDays": [
+                                "monday",
+                                "tuesday",
+                                "wednesday",
+                                "thursday",
+                                "friday",
+                                "saturday",
+                                "sunday"
+                              ],
+                              "opensAt": "08:00:00",
+                              "closesAt": "20:00:00",
+                              "dailyCapacity": 80,
+                              "requiresReferral": false,
+                              "status": "closed"
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The service already has the requested status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Service is already closed"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "SERVICE_STATUS_UNCHANGED"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested service was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Service not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "SERVICE_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/doctors": {
+      "post": {
+        "tags": [
+          "Doctor Management"
+        ],
+        "summary": "Create a doctor",
+        "description": "Creates a doctor and their recurring work schedule. The selected clinical service is resolved using its public ID. A new doctor defaults to available status, and the doctor and schedule are created in a single database transaction.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "title",
+                  "service",
+                  "workingDays",
+                  "startTime",
+                  "endTime",
+                  "dailyPatientLimit"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Dr. Samuel JOE"
+                  },
+                  "title": {
+                    "type": "string",
+                    "example": "Medical Doctor"
+                  },
+                  "service": {
+                    "type": "object",
+                    "required": [
+                      "publicId"
+                    ],
+                    "description": "The clinical service to which the doctor belongs. Use the service public ID, not its internal database ID.",
+                    "properties": {
+                      "publicId": {
+                        "type": "string",
+                        "example": "srv_XCt17nPkpg"
+                      }
+                    }
+                  },
+                  "workingDays": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "Mon",
+                        "Tue",
+                        "Wed",
+                        "Thu",
+                        "Fri",
+                        "Sat",
+                        "Sun"
+                      ]
+                    },
+                    "example": [
+                      "Mon",
+                      "Tue",
+                      "Wed",
+                      "Thu",
+                      "Fri"
+                    ]
+                  },
+                  "startTime": {
+                    "type": "string",
+                    "description": "Schedule start time in 24-hour format.",
+                    "example": "08:00:00"
+                  },
+                  "endTime": {
+                    "type": "string",
+                    "description": "Must be later than startTime.",
+                    "example": "11:00:00"
+                  },
+                  "dailyPatientLimit": {
+                    "type": "integer",
+                    "example": 25
+                  },
+                  "consultingRoom": {
+                    "type": "string",
+                    "description": "Optional consulting room.",
+                    "example": "Room 2"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor added successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "doctor": {
+                              "publicId": "doc_leTF36hRSB",
+                              "name": "Dr. Samuel JOE",
+                              "title": "Medical Doctor",
+                              "status": "available",
+                              "service": {
+                                "publicId": "srv_XCt17nPkpg",
+                                "name": "General Medical Consultation"
+                              },
+                              "schedule": {
+                                "publicId": "dsc_Rg9aNK85bK",
+                                "workingDays": [
+                                  "Mon",
+                                  "Tue",
+                                  "Wed",
+                                  "Thu",
+                                  "Fri"
+                                ],
+                                "startTime": "08:00:00",
+                                "endTime": "11:00:00",
+                                "dailyPatientLimit": 25,
+                                "consultingRoom": "Room 2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The selected clinical service does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid service selected"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "INVALID_SERVICE"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A doctor with the same name already exists under the selected service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor already exists under this service"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "DOCTOR_ALREADY_EXISTS"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Doctor Management"
+        ],
+        "summary": "Get all doctors",
+        "description": "Retrieves all doctors with their current status, associated clinical service, and recurring work schedule.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctors fetched successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "doctors": [
+                              {
+                                "publicId": "doc_wZWRstXRsA",
+                                "name": "Dr. Samuel Adewale",
+                                "title": "Medical Doctor",
+                                "status": "available",
+                                "service": {
+                                  "publicId": "srv_XCt17nPkpg",
+                                  "name": "General Medical Consultation"
+                                },
+                                "schedule": {
+                                  "publicId": "dsc_MOYMYTWtxK",
+                                  "workingDays": [
+                                    "Mon",
+                                    "Tue",
+                                    "Wed",
+                                    "Thu",
+                                    "Fri"
+                                  ],
+                                  "startTime": "08:00:00",
+                                  "endTime": "16:00:00",
+                                  "dailyPatientLimit": 25,
+                                  "consultingRoom": "Room 2"
+                                }
+                              },
+                              {
+                                "publicId": "doc_leTF36hRSB",
+                                "name": "Dr. Samuel JOE",
+                                "title": "Medical Doctor",
+                                "status": "available",
+                                "service": {
+                                  "publicId": "srv_XCt17nPkpg",
+                                  "name": "General Medical Consultation"
+                                },
+                                "schedule": {
+                                  "publicId": "dsc_Rg9aNK85bK",
+                                  "workingDays": [
+                                    "Mon",
+                                    "Tue",
+                                    "Wed",
+                                    "Thu",
+                                    "Fri"
+                                  ],
+                                  "startTime": "08:00:00",
+                                  "endTime": "11:00:00",
+                                  "dailyPatientLimit": 25,
+                                  "consultingRoom": "Room 2"
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/doctors/{publicId}": {
+      "get": {
+        "tags": [
+          "Doctor Management"
+        ],
+        "summary": "Get a doctor by public ID",
+        "description": "Retrieves one doctor using their public ID, including their clinical service and recurring work schedule.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "doc_leTF36hRSB"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor fetched successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "doctor": {
+                              "publicId": "doc_leTF36hRSB",
+                              "name": "Dr. Samuel JOE",
+                              "title": "Medical Doctor",
+                              "status": "available",
+                              "service": {
+                                "publicId": "srv_XCt17nPkpg",
+                                "name": "General Medical Consultation"
+                              },
+                              "schedule": {
+                                "publicId": "dsc_Rg9aNK85bK",
+                                "workingDays": [
+                                  "Mon",
+                                  "Tue",
+                                  "Wed",
+                                  "Thu",
+                                  "Fri"
+                                ],
+                                "startTime": "08:00:00",
+                                "endTime": "11:00:00",
+                                "dailyPatientLimit": 25,
+                                "consultingRoom": "Room 2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested doctor was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "DOCTOR_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Doctor Management"
+        ],
+        "summary": "Update a doctor",
+        "description": "Updates the supplied doctor fields. Schedule changes must be provided inside the schedule object. The service is selected using its public ID. When changing only one schedule time, the new time is checked against the other saved time. End time must be later than start time.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "doc_leTF36hRSB"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Dr. Samuel Alex"
+                  },
+                  "title": {
+                    "type": "string",
+                    "example": "Medical Doctor"
+                  },
+                  "service": {
+                    "type": "object",
+                    "required": [
+                      "publicId"
+                    ],
+                    "description": "The replacement clinical service, identified by public ID.",
+                    "properties": {
+                      "publicId": {
+                        "type": "string",
+                        "example": "srv_XCt17nPkpg"
+                      }
+                    }
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "available",
+                      "in_consultation",
+                      "on_break",
+                      "arriving_soon",
+                      "off_duty",
+                      "on_leave"
+                    ],
+                    "example": "available"
+                  },
+                  "schedule": {
+                    "type": "object",
+                    "description": "Optional schedule fields. Include only the fields to change. The final saved start and end times must form a valid time range.",
+                    "properties": {
+                      "workingDays": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "Mon",
+                            "Tue",
+                            "Wed",
+                            "Thu",
+                            "Fri",
+                            "Sat",
+                            "Sun"
+                          ]
+                        },
+                        "example": [
+                          "Mon",
+                          "Tue",
+                          "Wed",
+                          "Thu",
+                          "Fri"
+                        ]
+                      },
+                      "startTime": {
+                        "type": "string",
+                        "example": "09:00:00"
+                      },
+                      "endTime": {
+                        "type": "string",
+                        "example": "17:00:00"
+                      },
+                      "dailyPatientLimit": {
+                        "type": "integer",
+                        "example": 30
+                      },
+                      "consultingRoom": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": "Room 3"
+                      }
+                    }
+                  },
+                  "consultingRoom": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "The consulting room can also be updated at the top level.",
+                    "example": "Room 3"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor updated successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "doctor": {
+                              "publicId": "doc_leTF36hRSB",
+                              "name": "Dr. Samuel Alex",
+                              "title": "Medical Doctor",
+                              "status": "available",
+                              "service": {
+                                "publicId": "srv_XCt17nPkpg",
+                                "name": "General Medical Consultation"
+                              },
+                              "schedule": {
+                                "publicId": "dsc_Rg9aNK85bK",
+                                "workingDays": [
+                                  "Mon",
+                                  "Tue",
+                                  "Wed",
+                                  "Thu",
+                                  "Fri"
+                                ],
+                                "startTime": "09:00:00",
+                                "endTime": "17:00:00",
+                                "dailyPatientLimit": 30,
+                                "consultingRoom": "Room 3"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The resulting schedule has an invalid time range",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "End time must be later than start time"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "INVALID_SCHEDULE_TIME"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested doctor was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "DOCTOR_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Doctor Management"
+        ],
+        "summary": "Delete a doctor",
+        "description": "Soft-deletes a doctor using their public ID. The doctor is marked as deleted and excluded from new bookings while their historical appointment records are preserved.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "doc_leTF36hRSB"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor deleted successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "publicId": "doc_leTF36hRSB",
+                            "isDeleted": true
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested doctor was not found or has already been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "DOCTOR_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/doctors/{publicId}/status": {
+      "patch": {
+        "tags": [
+          "Doctor Management"
+        ],
+        "summary": "Update doctor status",
+        "description": "Updates a doctor's current attendance status without changing their name, title, clinical service, or schedule.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "doc_leTF36hRSB"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "available",
+                      "in_consultation",
+                      "on_break",
+                      "arriving_soon",
+                      "off_duty",
+                      "on_leave"
+                    ],
+                    "description": "available: Ready to see patients. in_consultation: Currently consulting. on_break: Temporarily on a break. arriving_soon: Expected to arrive shortly. off_duty: Not currently on duty. on_leave: On leave.",
+                    "example": "on_break"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor status updated successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "doctor": {
+                              "publicId": "doc_leTF36hRSB",
+                              "name": "Dr. Samuel JOE",
+                              "title": "Medical Doctor",
+                              "status": "on_break",
+                              "service": {
+                                "publicId": "srv_XCt17nPkpg",
+                                "name": "General Medical Consultation"
+                              },
+                              "schedule": {
+                                "publicId": "dsc_Rg9aNK85bK",
+                                "workingDays": [
+                                  "Mon",
+                                  "Tue",
+                                  "Wed",
+                                  "Thu",
+                                  "Fri"
+                                ],
+                                "startTime": "08:00:00",
+                                "endTime": "11:00:00",
+                                "dailyPatientLimit": 25,
+                                "consultingRoom": "Room 2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The submitted status is invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid doctor attendance status"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "VALIDATION_ERROR"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested doctor was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "DOCTOR_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/slots": {
+      "get": {
+        "tags": [
+          "Appointments"
+        ],
+        "summary": "Get available appointment slots",
+        "description": "Retrieves appointment slots for a selected clinical service on a specified date. The doctorPublicId query parameter is optional. When omitted, availability is returned for all doctors who provide the selected service. When supplied, availability is returned only for the selected doctor.",
+        "parameters": [
+          {
+            "name": "servicePublicId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Public ID of the clinical service.",
+            "example": "srv_XCt17nPkpg"
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Date for which appointment availability is requested.",
+            "example": "2026-10-29"
+          },
+          {
+            "name": "doctorPublicId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional public ID of a doctor. Omit this parameter to check availability across all eligible doctors for the selected service.",
+            "example": "doc_leTF36hRSB"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointment slots fetched"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "service": {
+                              "publicId": "srv_XCt17nPkpg",
+                              "name": "General Medical Consultation"
+                            },
+                            "date": "2026-10-29",
+                            "slots": [
+                              {
+                                "doctor": {
+                                  "publicId": "doc_wZWRstXRsA",
+                                  "name": "Dr. Adeola Adebayo"
+                                },
+                                "date": "2026-10-29",
+                                "startTime": "08:00:00",
+                                "endTime": "08:30:00",
+                                "status": "available"
+                              },
+                              {
+                                "doctor": {
+                                  "publicId": "doc_leTF36hRSB",
+                                  "name": "Dr. Oluwaseun Okafor"
+                                },
+                                "date": "2026-10-29",
+                                "startTime": "08:30:00",
+                                "endTime": "09:00:00",
+                                "status": "fully_booked"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The selected doctor does not provide the selected service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor does not provide this service"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "DOCTOR_SERVICE_MISMATCH"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The selected doctor was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "DOCTOR_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments": {
+      "post": {
+        "tags": [
+          "Appointments"
+        ],
+        "summary": "Book an appointment",
+        "description": "Books a 30-minute appointment for the authenticated student. The service and doctor are identified by their public IDs. The doctorPublicId is required. The appointment is created with pending status after the requested slot, doctor's schedule, working day, and daily patient limit are validated.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "servicePublicId",
+                  "doctorPublicId",
+                  "appointmentDate",
+                  "startTime"
+                ],
+                "properties": {
+                  "servicePublicId": {
+                    "type": "string",
+                    "description": "Public ID of the clinical service.",
+                    "example": "srv_XCt17nPkpg"
+                  },
+                  "doctorPublicId": {
+                    "type": "string",
+                    "description": "Public ID of the selected doctor.",
+                    "example": "doc_leTF36hRSB"
+                  },
+                  "appointmentDate": {
+                    "type": "string",
+                    "description": "Requested appointment date in YYYY-MM-DD format.",
+                    "example": "2026-10-30"
+                  },
+                  "startTime": {
+                    "type": "string",
+                    "description": "Requested start time in 24-hour format. The appointment lasts 30 minutes.",
+                    "example": "13:00"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "Optional reason for the appointment.",
+                    "example": "Recurring headache"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointment booked successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "appointment": {
+                              "publicId": "apt_2XNdqQ3Rfb",
+                              "status": "pending",
+                              "service": "General Medical Consultation",
+                              "doctor": "Dr. Adeola Adebayo",
+                              "date": "2026-10-30",
+                              "startTime": "13:00:00",
+                              "endTime": "13:30:00",
+                              "reason": "Recurring headache",
+                              "location": "Consulting Room 4"
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The requested appointment time has already passed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointments must be booked for a future time"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "INVALID_APPOINTMENT_TIME"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The selected doctor was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "DOCTOR_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The requested appointment slot overlaps an existing appointment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "This appointment slot is no longer available"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "APPOINTMENT_SLOT_UNAVAILABLE"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/me": {
+      "get": {
+        "tags": [
+          "Appointments"
+        ],
+        "summary": "Get my appointments",
+        "description": "Retrieves appointments belonging to the authenticated student, including status, clinical service, doctor, date, time, reason, and consulting room. Appointments are ordered from most recently created to oldest.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointments fetched successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "appointments": [
+                              {
+                                "publicId": "apt_2XNdqQ3Rfb",
+                                "status": "pending",
+                                "service": "General Medical Consultation",
+                                "doctor": "Dr. Adeola Adebayo",
+                                "date": "2026-10-30T00:00:00.000Z",
+                                "startTime": "13:00:00",
+                                "endTime": "13:30:00",
+                                "reason": "Recurring headache",
+                                "location": "Consulting Room 4"
+                              },
+                              {
+                                "publicId": "apt_9T82g0F7Kt",
+                                "status": "cancelled",
+                                "service": "General Medical Consultation",
+                                "doctor": "Dr. Oluwaseun Okafor",
+                                "date": "2026-10-29T00:00:00.000Z",
+                                "startTime": "10:00:00",
+                                "endTime": "10:30:00",
+                                "reason": "Recurring headache",
+                                "location": "Consulting Room 4"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/{publicId}/cancel": {
+      "patch": {
+        "tags": [
+          "Appointments"
+        ],
+        "summary": "Cancel an appointment",
+        "description": "Cancels an appointment belonging to the authenticated student. Only appointments with pending or approved status can be cancelled. The appointment's historical record is preserved.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Public ID of the appointment to cancel.",
+            "example": "apt_2XNdqQ3Rfb"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointments cancelled successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "publicId": "apt_2XNdqQ3Rfb",
+                            "status": "cancelled"
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The appointment cannot be cancelled in its current status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "This appointment can no longer be cancelled"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "APPOINTMENT_CANNOT_BE_CANCELLED"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The appointment belongs to another student",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "You are not allowed to cancel this appointment"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "APPOINTMENT_CANCELLATION_FORBIDDEN"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested appointment was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointment not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "APPOINTMENT_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/appointments": {
+      "get": {
+        "tags": [
+          "Appointment Management"
+        ],
+        "summary": "Get all appointments",
+        "description": "Retrieves appointments for the admin dashboard, including student details, clinical service, doctor, appointment date and time, consulting room, reason, and status. Results are ordered from most recently created to oldest. An optional status query parameter filters the results.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected",
+                "checked_in",
+                "completed",
+                "cancelled"
+              ]
+            },
+            "description": "Optional appointment status filter. Omit it to retrieve appointments with all statuses.",
+            "example": "pending"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointment fetched successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "appointments": [
+                              {
+                                "publicId": "apt_9T82g0F7Kt",
+                                "student": {
+                                  "name": "Samuel Ola",
+                                  "matricNumber": "CSE/2023/046",
+                                  "phone": "080818080"
+                                },
+                                "service": "General Medical Consultation",
+                                "doctor": "Dr. Adeola Adebayo",
+                                "appointmentDate": "2026-10-30T00:00:00.000Z",
+                                "startTime": "13:00:00",
+                                "endTime": "13:30:00",
+                                "consultingRoom": "Consulting Room 4",
+                                "reason": "Recurring headache",
+                                "status": "approved"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An unsupported appointment status was provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Validation error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "VALIDATION_ERROR"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/appointments/{publicId}/approve": {
+      "patch": {
+        "tags": [
+          "Appointment Management"
+        ],
+        "summary": "Approve an appointment",
+        "description": "Approves a pending appointment. Only appointments with pending status can be approved.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Public ID of the appointment to approve.",
+            "example": "apt_2XNdqQ3Rfb"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointment approved successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "appointment": {
+                              "publicId": "apt_2XNdqQ3Rfb",
+                              "status": "approved"
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The appointment cannot be approved in its current status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Only pending appointments can be approved"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "INVALID_APPOINTMENT_STATUS"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested appointment was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointment not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "APPOINTMENT_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/appointments/{publicId}/reject": {
+      "patch": {
+        "tags": [
+          "Appointment Management"
+        ],
+        "summary": "Reject an appointment",
+        "description": "Rejects a pending appointment by changing its status to rejected. Only appointments with pending status can be rejected. Rejected appointments do not consume doctor appointment capacity.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Public ID of the appointment to reject.",
+            "example": "apt_2XNdqQ3Rfb"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointment rejected successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "appointment": {
+                              "publicId": "apt_2XNdqQ3Rfb",
+                              "status": "rejected"
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The appointment cannot be rejected in its current status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Only pending appointments can be rejected"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "INVALID_APPOINTMENT_STATUS"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested appointment was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointment not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "APPOINTMENT_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/appointments/{publicId}/check-in": {
+      "patch": {
+        "tags": [
+          "Appointment Management"
+        ],
+        "summary": "Check in a patient",
+        "description": "Checks in a patient for an approved appointment by changing its status to checked_in. Only approved appointments can be checked in. This operation does not itself generate a queue ticket.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Public ID of the appointment to check in.",
+            "example": "apt_2XNdqQ3Rfb"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Patient checked in successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "appointment": {
+                              "publicId": "apt_2XNdqQ3Rfb",
+                              "status": "checked_in"
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The appointment is not approved and cannot be checked in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Only approved appointments can be checked in"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "INVALID_APPOINTMENT_STATUS"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested appointment was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointment not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "APPOINTMENT_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/appointments/{publicId}/complete": {
+      "patch": {
+        "tags": [
+          "Appointment Management"
+        ],
+        "summary": "Complete an appointment",
+        "description": "Marks an appointment as completed after the patient has checked in. Only appointments with checked_in status can be completed.",
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Public ID of the appointment to complete.",
+            "example": "apt_2XNdqQ3Rfb"
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointment completed successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "example": {
+                            "appointment": {
+                              "publicId": "apt_2XNdqQ3Rfb",
+                              "status": "completed"
+                            }
+                          }
+                        },
+                        {
+                          "type": "array",
+                          "example": []
+                        },
+                        {
+                          "type": "null",
+                          "example": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The appointment has not been checked in and cannot be completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Only checked-in appointments can be completed"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "INVALID_APPOINTMENT_STATUS"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested appointment was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Appointment not found"
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "code": "APPOINTMENT_NOT_FOUND"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://care-oau-api.onrender.com/api/v1"
+    }
+  ],
+  "components": {},
+  "tags": []
+}
