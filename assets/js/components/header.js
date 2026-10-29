@@ -1,14 +1,10 @@
 import { openStaffAccount } from './staff-account.js';
 import { Utils } from '../core/utils.js';
-/**
- * Care-OAU - Top Header Component
- * Manages the top bar, breadcrumb/title, mobile drawer toggle, and user dropdown.
- */
-
 import { Storage } from '../core/storage.js';
 import { APP_CONFIG } from '../core/config.js';
 import { Navigation } from '../core/navigation.js';
 import { Dropdown } from '../components/dropdown.js';
+import { EmergencyWidget } from './emergency-widget.js';
 
 export const Header = {
   render(title = 'Dashboard') {
@@ -84,5 +80,13 @@ export const Header = {
 
     // Initialize dropdown toggle behavior (user menu, etc.)
     Dropdown.init();
+
+    // Mount emergency medical contact widget for students
+    const isStudentPage = typeof window !== 'undefined' && 
+      (window.location.pathname.includes('/student/') || user.role === 'student') &&
+      !window.location.pathname.includes('/admin/');
+    if (isStudentPage) {
+      EmergencyWidget.mount();
+    }
   }
 };

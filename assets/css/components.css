@@ -1057,3 +1057,144 @@
 /* Unique Figma design tokens (logo, eyebrow, button, field) — used by landing/auth pages */
 /* These sit alongside the modern .btn/.form-control system used by student/admin portals. */
 
+/* --------------------------------------------------------------------------
+   Emergency Medical Alert Widget
+   -------------------------------------------------------------------------- */
+.emergency-alert-widget {
+  background: linear-gradient(135deg, #FFF5F5 0%, #FED7D7 100%);
+  border: 1.5px solid #E53E3E;
+  border-radius: var(--radius-lg, 12px);
+  padding: 14px 18px;
+  margin-bottom: var(--space-6, 24px);
+  box-shadow: 0 4px 14px rgba(229, 62, 62, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.emergency-widget-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.emergency-pulse-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #E53E3E;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7);
+  animation: pulse-emergency 2s infinite;
+}
+
+@keyframes pulse-emergency {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(229, 62, 62, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(229, 62, 62, 0);
+  }
+}
+
+.emergency-widget-info {
+  min-width: 0;
+}
+
+.emergency-widget-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #9B1C1C;
+  margin: 0 0 2px 0;
+  letter-spacing: -0.01em;
+}
+
+.emergency-widget-desc {
+  font-size: 12px;
+  color: #771D1D;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.emergency-widget-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.emergency-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.emergency-btn-call {
+  background: #C53030;
+  color: #FFFFFF !important;
+  border: 1px solid #9B1C1C;
+  box-shadow: 0 2px 6px rgba(197, 48, 48, 0.3);
+}
+
+.emergency-btn-call:hover {
+  background: #9B1C1C;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(197, 48, 48, 0.4);
+}
+
+.emergency-btn-wa {
+  background: #25D366;
+  color: #FFFFFF !important;
+  border: 1px solid #1EBE5D;
+  box-shadow: 0 2px 6px rgba(37, 211, 102, 0.3);
+}
+
+.emergency-btn-wa:hover {
+  background: #1EBE5D;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(37, 211, 102, 0.4);
+}
+
+@media (max-width: 640px) {
+  .emergency-alert-widget {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .emergency-widget-actions {
+    width: 100%;
+    display: flex;
+  }
+
+  .emergency-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+}
+
