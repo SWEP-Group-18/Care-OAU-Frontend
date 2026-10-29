@@ -205,7 +205,7 @@ async function initServices(paramDoctorId) {
 
   let services = [];
   try {
-    services = await MedicalService.getAllServices();
+    services = await MedicalService.getAvailableServices();
   } catch (err) {
     console.warn('[BookAppointment] Failed to load services via MedicalService:', err);
     services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []);

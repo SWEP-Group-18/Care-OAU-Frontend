@@ -44,6 +44,28 @@ try {
 
   Api.get = async (endpoint) => {
     calls.push({ method: "GET", endpoint });
+    if (endpoint === "/services") {
+      return {
+        success: true,
+        message: "Available clinical services fetched successfully",
+        data: {
+          services: [
+            {
+              publicId: "srv_MqJ4U0Pqgs",
+              name: "General Medical Consultation",
+              description: "Outpatient consultations for general illnesses.",
+              referralMessage: "No referral required for undergraduate general medical consultation."
+            },
+            {
+              publicId: "srv_Dental8Xk2Lm",
+              name: "Dental Clinic",
+              description: "Dental examinations and oral healthcare services.",
+              referralMessage: "Clinical referral required from General Outpatient Clinic."
+            }
+          ]
+        }
+      };
+    }
     if (endpoint === "/admin/services") {
       return {
         success: true,
@@ -334,7 +356,16 @@ try {
   );
   Api.delete = originalApiDelete;
 
-  console.log("PASS: MedicalService backend API integration (/admin/services GET, POST, PATCH, DELETE, status toggle, error handling, mock mode)");
+  // Test 13: MedicalService.getAvailableServices calls GET /services for students
+  const availableServices = await MedicalService.getAvailableServices({ forceRemote: true });
+  assert.equal(availableServices.length, 2);
+  assert.equal(availableServices[0].publicId, "srv_MqJ4U0Pqgs");
+  assert.equal(availableServices[0].requiresReferral, false);
+  assert.equal(availableServices[1].requiresReferral, true);
+  const studentServicesCall = calls.find(c => c.method === "GET" && c.endpoint === "/services");
+  assert.ok(studentServicesCall, "Must call GET /services for student available services");
+
+  console.log("PASS: MedicalService backend API integration (/admin/services GET, POST, PATCH, DELETE, status toggle, student /services GET, error handling, mock mode)");
 } finally {
   Api.get = originalApiGet;
   Api.post = originalApiPost;

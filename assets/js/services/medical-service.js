@@ -141,6 +141,38 @@ export function fromBackendService(raw) {
 }
 
 /**
+ * Maps a student-facing backend service record (from GET /services) to the unified frontend service model.
+ * The GET /services endpoint returns { publicId, name, description, referralMessage }.
+ */
+export function fromStudentService(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const publicId = String(raw.publicId || raw.id || '').trim();
+  const referralMessage = raw.referralMessage || '';
+  const requiresReferral = raw.requiresReferral !== undefined
+    ? Boolean(raw.requiresReferral)
+    : (Boolean(referralMessage) && !referralMessage.toLowerCase().includes('no referral'));
+
+  return {
+    publicId,
+    id: publicId,
+    name: raw.name || '',
+    category: normalizeCategory(raw.category || raw.name),
+    categoryLabel: formatCategoryLabel(raw.category || raw.name),
+    description: raw.description || '',
+    referralMessage,
+    requiresReferral,
+    status: 'open',
+    isActive: true,
+    operatingDays: formatOperatingDaysDisplay(raw.operatingDays || VALID_OPERATING_DAYS),
+    opensAt: raw.opensAt ? normalizeTimeString(raw.opensAt, true) : '08:00:00',
+    closesAt: raw.closesAt ? normalizeTimeString(raw.closesAt, true) : '18:00:00',
+    startTime: raw.startTime ? normalizeTimeString(raw.startTime, false) : '08:00',
+    endTime: raw.endTime ? normalizeTimeString(raw.endTime, false) : '18:00',
+    dailyCapacity: Number(raw.dailyCapacity ?? 50)
+  };
+}
+
+/**
  * Serializes service form/model data into the exact request body required by POST /admin/services.
  * Guarantees all 8 required fields per Swagger specification and omits frontend-only properties.
  */
@@ -197,6 +229,35 @@ export function toBackendUpdatePayload(data = {}) {
 }
 
 export const MedicalService = {
+  /**
+   * Get student-available clinical services from GET /services.
+   * This is accessible to authenticated students without requiring admin privileges.
+   */
+  async getAvailableServices(options = {}) {
+    const { forceRemote = false } = options;
+
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        const res = await Api.get('/services');
+        const rawList = res?.data?.services ?? (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : null));
+        if (rawList !== null) {
+          const normalized = rawList.map(fromStudentService).filter(Boolean);
+          Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, normalized);
+          return normalized;
+        }
+      } catch (err) {
+        if (forceRemote) throw err;
+        console.warn('[MedicalService] Failed to fetch services from /services:', err.message);
+      }
+    }
+
+    const cached = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES);
+    if (Array.isArray(cached) && cached.length > 0) {
+      return cached.filter(s => s.status === 'open' || s.isActive !== false);
+    }
+    return this.getAllServices(options);
+  },
+
   /**
    * Get all medical services from API or storage fallback.
    * Calls the documented GET /admin/services route and parses data.services envelope.
