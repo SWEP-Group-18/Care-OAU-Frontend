@@ -235,6 +235,14 @@ export const MedicalService = {
   },
 
   /**
+   * Forces a live refresh of services from GET /admin/services.
+   * Throws on error so callers can distinguish between network failure and successful response.
+   */
+  async refreshServices() {
+    return this.getAllServices({ forceRemote: true });
+  },
+
+  /**
    * Get single service by public ID directly from API or cached list.
    * Calls documented GET /admin/services/{publicId}.
    */
