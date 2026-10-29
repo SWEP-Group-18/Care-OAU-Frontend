@@ -195,6 +195,48 @@ try {
   assert.ok(statusCall, "Must call PATCH /admin/services/:publicId/status");
   assert.deepEqual(statusCall.data, { status: "closed" }, "Status payload must contain target status 'closed'");
 
+  // Test 6: GET /admin/services/:publicId (single service retrieval)
+  const single = await MedicalService.getServiceByPublicId("srv_MqJ4U0Pqgs");
+  assert.ok(single, "Must retrieve service by publicId");
+  assert.equal(single.publicId, "srv_MqJ4U0Pqgs");
+  const singleGetCall = calls.find((c) => c.method === "GET" && c.endpoint === "/admin/services/srv_MqJ4U0Pqgs");
+  assert.ok(singleGetCall, "Must query GET /admin/services/:publicId");
+
+  // Test 7: Validation of create payload required fields
+  await assert.rejects(
+    async () => MedicalService.createService({ name: "", category: "dental", operatingDays: ["monday"] }),
+    /Service name is required/i,
+    "createService must reject empty name"
+  );
+  await assert.rejects(
+    async () => MedicalService.createService({ name: "Testing", category: "dental", operatingDays: [] }),
+    /at least one operating day/i,
+    "createService must reject empty operatingDays"
+  );
+
+  // Test 8: Serialization & strip of non-backend fields
+  const serializedUpdate = toBackendUpdatePayload({
+    id: "temp_123",
+    publicId: "srv_999",
+    name: "Optometry Specialist",
+    category: "Specialist Clinic",
+    isActive: true,
+    status: "open",
+    startTime: "08:30",
+    endTime: "16:45",
+    capacityPerDay: 40
+  });
+  assert.equal(serializedUpdate.id, undefined);
+  assert.equal(serializedUpdate.publicId, undefined);
+  assert.equal(serializedUpdate.isActive, undefined);
+  assert.equal(serializedUpdate.status, undefined);
+  assert.equal(serializedUpdate.startTime, undefined);
+  assert.equal(serializedUpdate.endTime, undefined);
+  assert.equal(serializedUpdate.opensAt, "08:30:00");
+  assert.equal(serializedUpdate.closesAt, "16:45:00");
+  assert.equal(serializedUpdate.dailyCapacity, 40);
+  assert.equal(serializedUpdate.category, "other");
+
   console.log("PASS: MedicalService backend API integration (/admin/services GET, POST, PATCH, status toggle)");
 } finally {
   Api.get = originalApiGet;
