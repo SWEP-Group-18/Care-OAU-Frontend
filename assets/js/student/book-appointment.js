@@ -174,19 +174,24 @@ async function initServices(paramDoctorId) {
     services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []);
   }
 
-  if (Array.isArray(services) && services.length > 0) {
-    selectedServiceObj = services.find(s => s.status === 'open' || s.isActive) || null;
+  const openServices = (Array.isArray(services) ? services : []).filter(s => s.status === 'open' || s.isActive === true);
+
+  if (openServices.length > 0) {
+    selectedServiceObj = openServices[0];
     if (paramDoctorId) {
       const doc = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []).find(d => d.id === paramDoctorId);
-      selectedServiceObj = services.find(s => (s.publicId === doc?.serviceId || s.id === doc?.serviceId) && (s.status === 'open' || s.isActive)) || selectedServiceObj;
+      const match = openServices.find(s => (s.publicId === doc?.serviceId || s.id === doc?.serviceId));
+      if (match) selectedServiceObj = match;
     }
+  } else {
+    selectedServiceObj = null;
   }
 
-  container.innerHTML = services.map((srv, idx) => {
-    const isSelected = selectedServiceObj && selectedServiceObj.id === srv.id;
-    const isClosed = srv.isActive === false;
+  container.innerHTML = openServices.map((srv) => {
+    const srvId = srv.publicId || srv.id;
+    const isSelected = selectedServiceObj && (selectedServiceObj.publicId === srvId || selectedServiceObj.id === srvId);
     return `
-      <button type="button" class="choice-card ${isSelected ? 'selected' : ''}" data-service-id="${srv.id}" ${isClosed ? 'disabled' : ''}>
+      <button type="button" class="choice-card ${isSelected ? 'selected' : ''}" data-service-id="${srvId}">
         <span class="choice-radio">
           ${isSelected ? '<span></span>' : ''}
         </span>
@@ -195,15 +200,14 @@ async function initServices(paramDoctorId) {
           <small>${srv.description || 'Consultation and clinical support'}</small>
           <span>${srv.requiresReferral ? 'Referral required' : 'No referral needed'}</span>
         </span>
-        ${isClosed ? '<span class="badge badge-danger">Temporarily closed</span>' : ''}
       </button>
     `;
   }).join('');
 
-  container.querySelectorAll('.choice-card:not(:disabled)').forEach((btn) => {
+  container.querySelectorAll('.choice-card').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const srvId = btn.dataset.serviceId;
-      selectedServiceObj = services.find((s) => s.id === srvId) || services[0];
+      const clickedId = btn.dataset.serviceId;
+      selectedServiceObj = openServices.find((s) => s.publicId === clickedId || s.id === clickedId) || openServices[0];
       
       container.querySelectorAll('.choice-card').forEach((b) => {
         b.classList.remove('selected');
@@ -218,7 +222,7 @@ async function initServices(paramDoctorId) {
       // Toggle referral field if required
       const referralWrap = document.getElementById('referral-field-container');
       if (referralWrap) {
-        referralWrap.style.display = selectedServiceObj.requiresReferral ? 'flex' : 'none';
+        referralWrap.style.display = selectedServiceObj?.requiresReferral ? 'flex' : 'none';
       }
 
       updateSummary();
