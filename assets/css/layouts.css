@@ -324,9 +324,8 @@
 
 .top-header {
   height: 72px;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(135deg, #0B2459 0%, #07183D 100%);
+  border-bottom: 2px solid #E5AE32;
   position: sticky;
   top: 0;
   z-index: var(--z-header);
@@ -334,20 +333,57 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 32px;
-  box-shadow: 0 4px 20px -2px rgba(8, 116, 67, 0.04);
+  box-shadow: 0 4px 20px rgba(7, 24, 61, 0.25);
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  min-width: 0;
+}
+
+.header-logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.header-oau-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+  transition: transform 0.2s ease;
+}
+
+.header-logo-link:hover .header-oau-logo {
+  transform: scale(1.06);
+}
+
+.header-title-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.header-brand-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #E5AE32;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  margin-bottom: 2px;
 }
 
 .mobile-menu-toggle {
   display: none;
   background: transparent;
   border: 1px solid transparent;
-  color: var(--navy);
+  color: #FFFFFF;
   padding: 8px;
   border-radius: var(--clay-radius-sm);
   cursor: pointer;
@@ -355,16 +391,33 @@
 }
 
 .mobile-menu-toggle:hover {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
+  background: rgba(255, 255, 255, 0.1);
+  color: #E5AE32;
 }
 
 .page-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  color: var(--navy);
+  color: #FFFFFF;
   margin: 0;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-user-btn {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(229, 174, 50, 0.35) !important;
+  border-radius: 9999px !important;
+  padding: 4px 12px 4px 5px !important;
+  color: #FFFFFF !important;
+  transition: all 0.2s ease !important;
+}
+
+.header-user-btn:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: #E5AE32 !important;
 }
 
 .header-right {
@@ -424,11 +477,30 @@
 
 @media (max-width: 560px) {
   .top-header {
-    padding: 0 14px;
+    padding: 0 12px;
+    height: 60px;
+  }
+
+  .header-oau-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .page-title {
+    font-size: 14px;
+    max-width: 170px;
+  }
+
+  .header-brand-badge {
+    font-size: 9px;
+  }
+
+  .header-user-btn {
+    padding: 3px !important;
   }
 
   .content-container {
-    padding: 20px 14px calc(76px + env(safe-area-inset-bottom, 0px));
+    padding: 16px 12px calc(80px + env(safe-area-inset-bottom, 0px));
   }
 }
 

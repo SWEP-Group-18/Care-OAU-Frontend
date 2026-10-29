@@ -21,28 +21,32 @@ export const Header = {
       matricNo: 'CSC/2021/045'
     };
 
+    const isInSubDir = typeof window !== 'undefined' && 
+      (window.location.pathname.includes('/admin/') || window.location.pathname.includes('/student/'));
+    const logoSrc = isInSubDir ? '../assets/images/oau-logo.png' : 'assets/images/oau-logo.png';
+    const homeHref = user.role === 'admin' ? 'dashboard.html' : 'dashboard.html';
+
     headerContainer.innerHTML = `
       <div class="header-left">
-        <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle navigation menu">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
-        <h1 class="page-title">${title}</h1>
+        <a href="${homeHref}" class="header-logo-link" aria-label="Care-OAU Dashboard">
+          <img src="${logoSrc}" alt="OAU Crest" class="header-oau-logo">
+        </a>
+        <div class="header-title-box">
+          <span class="header-brand-badge">Care-OAU</span>
+          <h1 class="page-title">${title}</h1>
+        </div>
       </div>
 
       <div class="header-right">
         <div class="dropdown">
-          <button class="btn btn-ghost btn-sm" data-dropdown-toggle aria-label="Account menu" aria-expanded="false" aria-controls="account-menu" style="display: flex; align-items: center; gap: 8px;">
-            <div class="user-avatar" style="width: 32px; height: 32px; font-size: 13px;">
+          <button class="btn btn-ghost btn-sm header-user-btn" data-dropdown-toggle aria-label="Account menu" aria-expanded="false" aria-controls="account-menu" style="display: flex; align-items: center; gap: 8px;">
+            <div class="user-avatar" style="width: 32px; height: 32px; font-size: 13px; font-weight: 700; background: #E5AE32; color: #07183D;">
               ${(user.name || 'U').charAt(0).toUpperCase()}
             </div>
-            <span class="text-sm text-semibold header-user-name">
+            <span class="text-sm text-semibold header-user-name" style="color: #FFFFFF;">
               ${Utils.escapeHtml(user.name)}
             </span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E5AE32" stroke-width="2.5">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </button>
