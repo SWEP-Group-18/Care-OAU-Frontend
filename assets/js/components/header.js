@@ -48,7 +48,7 @@ export const Header = {
           </button>
 
           <div class="dropdown-menu" id="account-menu">
-            <div style="padding: 10px 16px; border-bottom: 1px solid var(--color-border); background: #f8fafc;">
+            <div class="dropdown-user-header" style="padding: 12px 16px; border-bottom: 1px solid var(--color-border); background: #f8fafc !important; background-color: #f8fafc !important;">
               <div class="text-xs text-bold" style="font-weight: 700; color: #0B2459; font-size: 13px;">${Utils.escapeHtml(user.name)}</div>
               <div class="text-xs" style="color: #64748b; font-size: 11px; margin-top: 2px;">${Utils.escapeHtml(user.matricNo || user.staffId || user.email || '')}</div>
             </div>

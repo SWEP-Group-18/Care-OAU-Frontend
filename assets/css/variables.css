@@ -188,12 +188,12 @@
 
   /* Z-Index Layers */
   --z-base: 1;
-  --z-header: 100;
-  --z-sidebar: 110;
-  --z-dropdown: 500;
-  --z-drawer-overlay: 600;
-  --z-drawer: 700;
-  --z-modal-backdrop: 800;
-  --z-modal: 900;
-  --z-toast: 1000;
+  --z-header: 1000;
+  --z-sidebar: 1050;
+  --z-dropdown: 1200;
+  --z-drawer-overlay: 1250;
+  --z-drawer: 1300;
+  --z-modal-backdrop: 1400;
+  --z-modal: 1500;
+  --z-toast: 1600;
 }

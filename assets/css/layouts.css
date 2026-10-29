@@ -368,7 +368,7 @@
   border-bottom: 2px solid #E5AE32;
   position: sticky;
   top: 0;
-  z-index: var(--z-header);
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -525,6 +525,12 @@
   .top-header {
     padding: 0 18px;
     height: 64px;
+    z-index: 1000 !important;
+  }
+
+  .dropdown-menu {
+    right: 0 !important;
+    max-width: calc(100vw - 28px) !important;
   }
 
   .content-container {
