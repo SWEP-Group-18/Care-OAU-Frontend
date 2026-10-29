@@ -8,6 +8,49 @@ import { APP_CONFIG } from '../core/config.js';
 import { INITIAL_SERVICES } from '../data/mock-data.js';
 import { Api } from './api-client.js';
 
+export const VALID_SERVICE_CATEGORIES = [
+  'general_medicine',
+  'dental',
+  'optometry',
+  'laboratory',
+  'mental_health',
+  'other'
+];
+
+/**
+ * Normalizes input category to valid backend enum value
+ */
+export function normalizeCategory(category) {
+  if (!category || typeof category !== 'string') return 'other';
+  const clean = category.trim().toLowerCase();
+  if (VALID_SERVICE_CATEGORIES.includes(clean)) return clean;
+
+  if (clean.includes('general') || clean.includes('outpatient')) return 'general_medicine';
+  if (clean.includes('dent')) return 'dental';
+  if (clean.includes('opt') || clean.includes('eye')) return 'optometry';
+  if (clean.includes('lab') || clean.includes('diagnost')) return 'laboratory';
+  if (clean.includes('mental') || clean.includes('counsel') || clean.includes('psych')) return 'mental_health';
+  return 'other';
+}
+
+/**
+ * Provides a human-readable display label for a service category
+ */
+export function formatCategoryLabel(category) {
+  const norm = normalizeCategory(category);
+  switch (norm) {
+    case 'general_medicine': return 'General Medical Consultation';
+    case 'dental': return 'Dental Care & Surgery';
+    case 'optometry': return 'Optometry & Eye Clinic';
+    case 'laboratory': return 'Diagnostic Laboratory Services';
+    case 'mental_health': return 'Student Mental Health & Counselling';
+    case 'other':
+    default:
+      return 'Other Clinical Services';
+  }
+}
+
+
 export const MedicalService = {
   /**
    * Get all medical services from API or storage fallback
