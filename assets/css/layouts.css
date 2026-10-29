@@ -25,7 +25,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  background: linear-gradient(180deg, #13241B 0%, #0E1A13 100%);
+  background: linear-gradient(180deg, #0B2459 0%, #07183D 100%);
   color: #ffffff;
   padding: 24px 18px 18px;
   display: flex;
@@ -35,8 +35,8 @@
   overflow-x: hidden;
   overflow-y: auto;
   box-sizing: border-box;
-  box-shadow: 4px 0 24px rgba(8, 116, 67, 0.12);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 4px 0 24px rgba(7, 24, 61, 0.25);
+  border-right: 1.5px solid rgba(229, 174, 50, 0.25);
 }
 
 .sidebar-top {
@@ -61,7 +61,7 @@
 }
 
 .sidebar-section-label {
-  color: #8CA094;
+  color: #E5AE32;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-size: 9.5px;
@@ -82,7 +82,7 @@
   min-height: 44px;
   border: 1px solid transparent;
   background: transparent;
-  color: #C2D1C8;
+  color: #C5D7F2;
   border-radius: var(--clay-radius-sm);
   display: flex;
   align-items: center;
@@ -99,18 +99,18 @@
 
 .sidebar-link:hover,
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
   transform: translateX(2px);
 }
 
 .sidebar-link.active,
 .nav-item.active {
-  background: rgba(8, 116, 67, 0.35);
-  border-color: rgba(221, 243, 230, 0.22);
-  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.15), 0 2px 8px rgba(8, 116, 67, 0.25);
+  background: linear-gradient(135deg, rgba(229, 174, 50, 0.22) 0%, rgba(229, 174, 50, 0.08) 100%);
+  border-color: rgba(229, 174, 50, 0.4);
+  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.15), 0 2px 8px rgba(7, 24, 61, 0.35);
   color: #ffffff;
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .sidebar-link.active .active-indicator,
@@ -119,8 +119,8 @@
   right: -18px;
   width: 4px;
   height: 24px;
-  background: var(--color-primary-light);
-  box-shadow: 0 0 10px rgba(221, 243, 230, 0.6);
+  background: #E5AE32;
+  box-shadow: 0 0 10px rgba(229, 174, 50, 0.8);
   border-radius: 3px 0 0 3px;
 }
 
@@ -148,12 +148,12 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--color-primary-light);
-  color: var(--color-primary-dark);
+  background: #E5AE32;
+  color: #07183D;
   font-weight: 700;
   font-size: 13px;
   flex: 0 0 auto;
-  box-shadow: 0 2px 8px rgba(8, 116, 67, 0.15), var(--clay-inset-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   border: 1.5px solid rgba(255, 255, 255, 0.4);
 }
 
