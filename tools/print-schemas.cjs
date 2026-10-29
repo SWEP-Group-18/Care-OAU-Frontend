@@ -23,3 +23,4 @@ for (const [path, methods] of Object.entries(spec.paths)) {
     }
   }
 }
+

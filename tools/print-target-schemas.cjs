@@ -34,3 +34,4 @@ for (const t of targets) {
     console.log('Response schema:', JSON.stringify(res200.content?.['application/json']?.schema, null, 2));
   }
 }
+
