@@ -162,8 +162,11 @@ async function loadAppointments() {
 
             ${isCheckedIn ? `
               <a href="queue-management.html" class="btn btn-outline-teal btn-sm">
-                Queue (${apt.queueNumber})
+                Queue (${apt.queueNumber || 'Active'})
               </a>
+              <button type="button" class="btn btn-navy btn-sm" onclick="window.adminComplete('${apt.id}')">
+                Complete
+              </button>
             ` : ''}
 
             <button type="button" class="btn btn-ghost btn-sm" onclick="window.adminViewDetails('${apt.id}')">
@@ -180,10 +183,33 @@ async function loadAppointments() {
 // Clinical Action Handlers
 // ---------------------------------------------------------------------------
 window.adminApprove = async (id) => {
-  await AppointmentService.approveAppointment(id);
+  const res = await AppointmentService.approveAppointment(id);
+  if (res && res.success === false) {
+    Toast.error(res.message || 'Unable to approve appointment.');
+    return;
+  }
   Toast.success('Appointment approved. Patient is now eligible for on-site check-in.');
   loadAppointments();
   AdminSidebar.render();
+};
+
+window.adminComplete = async (id) => {
+  Modal.confirm({
+    title: 'Complete Appointment',
+    message: 'Mark this consultation as completed and finalize the clinical encounter?',
+    confirmText: 'Complete Encounter',
+    confirmClass: 'btn-teal',
+    onConfirm: async () => {
+      const res = await AppointmentService.completeAppointment(id);
+      if (res && res.success === false) {
+        Toast.error(res.message || 'Unable to complete appointment.');
+        return false;
+      }
+      Toast.success('Appointment marked as completed.');
+      loadAppointments();
+      AdminSidebar.render();
+    }
+  });
 };
 
 window.adminReject = (id) => {

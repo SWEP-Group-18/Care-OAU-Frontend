@@ -20,7 +20,7 @@ export const AppointmentService = {
     if (!APP_CONFIG.USE_MOCK_DATA) {
       try {
         const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
-        const endpoint = user?.role === 'admin' ? '/appointments/admin/all' : '/appointments/me';
+        const endpoint = user?.role === 'admin' ? '/admin/appointments' : '/appointments/me';
         const res = await Api.get(endpoint);
         let items = null;
         if (Array.isArray(res)) {
@@ -52,17 +52,20 @@ export const AppointmentService = {
               timeSlot: formattedTime,
               startTime: rawTime,
               endTime: a.endTime || '',
-              studentName: a.studentName || a.name || user?.name || 'Student',
-              matricNo: a.matricNo || user?.matricNo || '',
+              studentName: a.student?.name || a.studentName || a.name || user?.name || 'Student',
+              matricNo: a.student?.matricNumber || a.matricNo || user?.matricNo || '',
+              phone: a.student?.phone || a.phone || '',
               studentId: a.studentPublicId || a.studentId || user?.id,
               doctorName,
               doctorId,
               serviceName,
               serviceId,
               reason: a.reason || '',
-              location: a.location || 'Care-OAU Health Centre',
+              location: a.consultingRoom || a.location || 'Care-OAU Health Centre',
+              consultingRoom: a.consultingRoom || a.location || 'Care-OAU Health Centre',
               status: a.status === 'pending' ? APP_CONFIG.APPOINTMENT_STATUS.PENDING :
                       (a.status === 'confirmed' || a.status === 'approved') ? APP_CONFIG.APPOINTMENT_STATUS.APPROVED :
+                      a.status === 'checked_in' ? APP_CONFIG.APPOINTMENT_STATUS.CHECKED_IN :
                       a.status === 'cancelled' ? APP_CONFIG.APPOINTMENT_STATUS.CANCELLED :
                       a.status === 'completed' ? APP_CONFIG.APPOINTMENT_STATUS.COMPLETED :
                       a.status === 'in_consultation' ? APP_CONFIG.APPOINTMENT_STATUS.IN_CONSULTATION :
@@ -263,23 +266,28 @@ export const AppointmentService = {
   },
 
   /**
-   * Admin Action: Approve a pending appointment request
+   * Admin Action: Approve a pending appointment request.
+   * Calls documented PATCH /admin/appointments/{publicId}/approve.
    */
   async approveAppointment(appointmentId) {
+    const cleanId = String(appointmentId || '').trim();
+    if (!cleanId) return { success: false, message: 'Appointment ID is required.' };
+
+    const appointments = await this.getAllAppointments();
+    if (!appointments.some(a => (a.id === cleanId || a.publicId === cleanId) && a.status === APP_CONFIG.APPOINTMENT_STATUS.PENDING)) {
+      return { success: false, message: 'Only pending requests can be approved.' };
+    }
+
     if (!APP_CONFIG.USE_MOCK_DATA) {
       try {
-        await Api.patch(`/appointments/${appointmentId}/status`, {
-          status: 'confirmed'
-        });
+        await Api.patch(`/admin/appointments/${cleanId}/approve`);
       } catch (err) {
-        // Fallback
+        return { success: false, message: err.message || 'Unable to approve appointment on backend.' };
       }
     }
 
-    const appointments = await this.getAllAppointments();
-    if (!appointments.some(a => a.id === appointmentId && a.status === APP_CONFIG.APPOINTMENT_STATUS.PENDING)) return { success: false, message: 'Only pending requests can be approved.' };
     const updated = appointments.map(apt => {
-      if (apt.id === appointmentId) {
+      if (apt.id === cleanId || apt.publicId === cleanId) {
         return {
           ...apt,
           status: APP_CONFIG.APPOINTMENT_STATUS.APPROVED,
@@ -294,24 +302,28 @@ export const AppointmentService = {
   },
 
   /**
-   * Admin Action: Reject an appointment with reason
+   * Admin Action: Reject an appointment with reason.
+   * Calls documented PATCH /admin/appointments/{publicId}/reject.
    */
   async rejectAppointment(appointmentId, rejectionReason = 'Doctor unavailable') {
+    const cleanId = String(appointmentId || '').trim();
+    if (!cleanId) return { success: false, message: 'Appointment ID is required.' };
+
+    const appointments = await this.getAllAppointments();
+    if (!appointments.some(a => (a.id === cleanId || a.publicId === cleanId) && a.status === APP_CONFIG.APPOINTMENT_STATUS.PENDING)) {
+      return { success: false, message: 'Only pending requests can be rejected.' };
+    }
+
     if (!APP_CONFIG.USE_MOCK_DATA) {
       try {
-        await Api.patch(`/appointments/${appointmentId}/status`, {
-          status: 'cancelled',
-          cancellationReason: rejectionReason
-        });
+        await Api.patch(`/admin/appointments/${cleanId}/reject`);
       } catch (err) {
-        // Fallback
+        return { success: false, message: err.message || 'Unable to reject appointment on backend.' };
       }
     }
 
-    const appointments = await this.getAllAppointments();
-    if (!appointments.some(a => a.id === appointmentId && a.status === APP_CONFIG.APPOINTMENT_STATUS.PENDING)) return { success: false, message: 'Only pending requests can be rejected.' };
     const updated = appointments.map(apt => {
-      if (apt.id === appointmentId) {
+      if (apt.id === cleanId || apt.publicId === cleanId) {
         return {
           ...apt,
           status: APP_CONFIG.APPOINTMENT_STATUS.REJECTED,
@@ -327,23 +339,28 @@ export const AppointmentService = {
   },
 
   /**
-   * Cancel an appointment (by student or admin)
+   * Cancel an appointment (by student or admin).
+   * Calls documented PATCH /appointments/{publicId}/cancel.
    */
   async cancelAppointment(appointmentId, cancellationReason = 'Cancelled by student') {
+    const cleanId = String(appointmentId || '').trim();
+    if (!cleanId) return { success: false, message: 'Appointment ID is required.' };
+
+    const appointments = await this.getAllAppointments();
+    if (!appointments.some(a => (a.id === cleanId || a.publicId === cleanId) && ['Pending Approval', 'Approved'].includes(a.status))) {
+      return { success: false, message: 'This visit can no longer be cancelled online.' };
+    }
+
     if (!APP_CONFIG.USE_MOCK_DATA) {
       try {
-        await Api.patch(`/appointments/${appointmentId}/cancel`, {
-          reason: cancellationReason
-        });
+        await Api.patch(`/appointments/${cleanId}/cancel`);
       } catch (err) {
         return { success: false, message: err.message || 'Unable to cancel appointment.' };
       }
     }
 
-    const appointments = await this.getAllAppointments();
-    if (!appointments.some(a => a.id === appointmentId && ['Pending Approval', 'Approved'].includes(a.status))) return { success: false, message: 'This visit can no longer be cancelled online.' };
     const updated = appointments.map(apt => {
-      if (apt.id === appointmentId) {
+      if (apt.id === cleanId || apt.publicId === cleanId) {
         return {
           ...apt,
           status: APP_CONFIG.APPOINTMENT_STATUS.CANCELLED,
@@ -385,14 +402,18 @@ export const AppointmentService = {
   },
 
   /**
-   * Admin / Reception Action: Check in an approved patient at hospital
-   * Generates sequential Queue Ticket (Q-001) and adds to live triage queue.
+   * Admin / Reception Action: Check in an approved patient at hospital.
+   * Calls documented PATCH /admin/appointments/{publicId}/check-in,
+   * generates sequential Queue Ticket (Q-001), and adds to live triage queue.
    */
   async checkInPatient(appointmentId) {
+    const cleanId = String(appointmentId || '').trim();
+    if (!cleanId) return { success: false, message: 'Appointment ID is required.' };
+
     const appointments = await this.getAllAppointments();
     let queueList = await QueueService.getQueue();
 
-    const targetApt = appointments.find(a => a.id === appointmentId);
+    const targetApt = appointments.find(a => a.id === cleanId || a.publicId === cleanId);
     if (!targetApt) {
       return { success: false, message: 'Appointment not found.' };
     }
@@ -406,12 +427,20 @@ export const AppointmentService = {
 
     if (targetApt.appointmentDate !== localDate()) return { success: false, message: 'Check-in is available on the appointment date.' };
 
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        await Api.patch(`/admin/appointments/${cleanId}/check-in`);
+      } catch (err) {
+        return { success: false, message: err.message || 'Unable to check in patient on backend.' };
+      }
+    }
+
     // Generate next queue ticket
     const ticketNumber = Utils.generateQueueTicket(queueList);
 
     // Update appointment record
     const updatedAppointments = appointments.map(apt => {
-      if (apt.id === appointmentId) {
+      if (apt.id === cleanId || apt.publicId === cleanId) {
         return {
           ...apt,
           status: APP_CONFIG.APPOINTMENT_STATUS.CHECKED_IN,
@@ -426,7 +455,7 @@ export const AppointmentService = {
     const newQueueItem = {
       id: `q_${Date.now()}`,
       queueNumber: ticketNumber,
-      appointmentId: targetApt.id,
+      appointmentId: targetApt.id || cleanId,
       patientName: targetApt.studentName,
       matricNo: targetApt.matricNo,
       doctorName: targetApt.doctorName,
@@ -442,5 +471,40 @@ export const AppointmentService = {
     Storage.set(APP_CONFIG.STORAGE_KEYS.QUEUE, queueList);
 
     return { success: true, queueNumber: ticketNumber, queueItem: newQueueItem };
+  },
+
+  /**
+   * Admin Action: Mark a checked-in appointment as completed.
+   * Calls documented PATCH /admin/appointments/{publicId}/complete.
+   */
+  async completeAppointment(appointmentId) {
+    const cleanId = String(appointmentId || '').trim();
+    if (!cleanId) return { success: false, message: 'Appointment ID is required.' };
+
+    const appointments = await this.getAllAppointments();
+    const targetApt = appointments.find(a => a.id === cleanId || a.publicId === cleanId);
+    if (!targetApt) return { success: false, message: 'Appointment not found.' };
+
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        await Api.patch(`/admin/appointments/${cleanId}/complete`);
+      } catch (err) {
+        return { success: false, message: err.message || 'Unable to complete appointment.' };
+      }
+    }
+
+    const updated = appointments.map(apt => {
+      if (apt.id === cleanId || apt.publicId === cleanId) {
+        return {
+          ...apt,
+          status: APP_CONFIG.APPOINTMENT_STATUS.COMPLETED,
+          completedAt: new Date().toISOString()
+        };
+      }
+      return apt;
+    });
+
+    Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, updated);
+    return { success: true };
   }
 };

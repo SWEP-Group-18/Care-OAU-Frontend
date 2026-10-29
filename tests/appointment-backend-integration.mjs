@@ -24,6 +24,8 @@ globalThis.window = {
 
 const { AppointmentService } = await import("../assets/js/services/appointment-service.js");
 const { Api } = await import("../assets/js/services/api-client.js");
+const { Storage } = await import("../assets/js/core/storage.js");
+const { localDate } = await import("../assets/js/services/availability.js");
 const { APP_CONFIG } = await import("../assets/js/core/config.js");
 
 const originalApiGet = Api.get.bind(Api);
@@ -57,8 +59,56 @@ try {
     }
   ];
 
+  let apiAdminAppointments = [
+    {
+      publicId: "apt_admin_001",
+      student: { name: "Samuel Ola", matricNumber: "CSE/2023/046", phone: "080818080" },
+      service: "General Medical Consultation",
+      doctor: "Dr. Adeola Adebayo",
+      appointmentDate: `${localDate()}T00:00:00.000Z`,
+      startTime: "13:00:00",
+      endTime: "13:30:00",
+      consultingRoom: "Consulting Room 4",
+      reason: "Recurring headache",
+      status: "pending"
+    },
+    {
+      publicId: "apt_admin_pending_002",
+      student: { name: "Babatunde John", matricNumber: "CSE/2023/099", phone: "080818099" },
+      service: "General Medical Consultation",
+      doctor: "Dr. Adeola Adebayo",
+      appointmentDate: `${localDate()}T00:00:00.000Z`,
+      startTime: "14:00:00",
+      endTime: "14:30:00",
+      consultingRoom: "Consulting Room 4",
+      reason: "Flu symptoms",
+      status: "pending"
+    },
+    {
+      publicId: "apt_admin_approved_002",
+      student: { name: "Amina Lawal", matricNumber: "SCI/2022/104", phone: "080123456" },
+      service: "Dental Care & Surgery",
+      doctor: "Dr. Philip",
+      appointmentDate: `${localDate()}T00:00:00.000Z`,
+      startTime: "09:00:00",
+      endTime: "09:30:00",
+      consultingRoom: "Dental Suite 1",
+      reason: "Toothache",
+      status: "approved"
+    }
+  ];
+
   Api.get = async (endpoint) => {
     calls.push({ method: "GET", endpoint });
+    if (endpoint === "/admin/appointments") {
+      return {
+        success: true,
+        message: "Appointment fetched successfully",
+        data: {
+          appointments: apiAdminAppointments
+        }
+      };
+    }
     if (endpoint.startsWith("/appointments/slots")) {
       return {
         success: true,
@@ -175,7 +225,67 @@ try {
   assert.equal(failedCancel.success, false);
   assert.ok(failedCancel.message.includes("cannot be cancelled"));
 
-  console.log("PASS: AppointmentService backend API integration (GET /appointments/me, GET /appointments/slots, POST /appointments, PATCH /appointments/:id/cancel, error propagation)");
+  // Restore Api.patch for subsequent tests
+  Api.patch = async (endpoint, data) => {
+    calls.push({ method: "PATCH", endpoint, data });
+    if (endpoint.includes("/approve")) {
+      const id = endpoint.split("/")[3];
+      const match = apiAdminAppointments.find(a => a.publicId === id);
+      if (match) match.status = "approved";
+    }
+    if (endpoint.includes("/reject")) {
+      const id = endpoint.split("/")[3];
+      const match = apiAdminAppointments.find(a => a.publicId === id);
+      if (match) match.status = "rejected";
+    }
+    if (endpoint.includes("/check-in")) {
+      const id = endpoint.split("/")[3];
+      const match = apiAdminAppointments.find(a => a.publicId === id);
+      if (match) match.status = "checked_in";
+    }
+    if (endpoint.includes("/complete")) {
+      const id = endpoint.split("/")[3];
+      const match = apiAdminAppointments.find(a => a.publicId === id);
+      if (match) match.status = "completed";
+    }
+    return { success: true };
+  };
+
+  // Test 6: Admin GET /admin/appointments
+  Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_USER, { role: "admin", name: "Admin Officer" });
+  const adminApts = await AppointmentService.getAllAppointments();
+  assert.equal(adminApts.length, 3);
+  assert.equal(adminApts[0].studentName, "Samuel Ola");
+  assert.equal(adminApts[0].matricNo, "CSE/2023/046");
+  const adminGetCall = calls.find((c) => c.method === "GET" && c.endpoint === "/admin/appointments");
+  assert.ok(adminGetCall, "Must query /admin/appointments when admin role is active");
+
+  // Test 7: Admin PATCH /admin/appointments/:publicId/approve
+  const approveRes = await AppointmentService.approveAppointment("apt_admin_001");
+  assert.ok(approveRes.success);
+  const approveCall = calls.find((c) => c.method === "PATCH" && c.endpoint === "/admin/appointments/apt_admin_001/approve");
+  assert.ok(approveCall, "Must call PATCH /admin/appointments/:publicId/approve");
+
+  // Test 8: Admin PATCH /admin/appointments/:publicId/reject
+  const rejectRes = await AppointmentService.rejectAppointment("apt_admin_pending_002", "Clinic closed for fumigation");
+  assert.ok(rejectRes.success);
+  const rejectCall = calls.find((c) => c.method === "PATCH" && c.endpoint === "/admin/appointments/apt_admin_pending_002/reject");
+  assert.ok(rejectCall, "Must call PATCH /admin/appointments/:publicId/reject");
+
+  // Test 9: Admin PATCH /admin/appointments/:publicId/check-in
+  const checkInRes = await AppointmentService.checkInPatient("apt_admin_approved_002");
+  assert.ok(checkInRes.success);
+  const checkInCall = calls.find((c) => c.method === "PATCH" && c.endpoint === "/admin/appointments/apt_admin_approved_002/check-in");
+  assert.ok(checkInCall, "Must call PATCH /admin/appointments/:publicId/check-in");
+  assert.ok(checkInRes.queueNumber, "Must issue a queue ticket upon check-in");
+
+  // Test 10: Admin PATCH /admin/appointments/:publicId/complete
+  const completeRes = await AppointmentService.completeAppointment("apt_admin_approved_002");
+  assert.ok(completeRes.success);
+  const completeCall = calls.find((c) => c.method === "PATCH" && c.endpoint === "/admin/appointments/apt_admin_approved_002/complete");
+  assert.ok(completeCall, "Must call PATCH /admin/appointments/:publicId/complete");
+
+  console.log("PASS: AppointmentService backend API integration (GET /appointments/me, GET /appointments/slots, POST /appointments, PATCH /appointments/:id/cancel, GET /admin/appointments, approve, reject, check-in, complete)");
 } finally {
   Api.get = originalApiGet;
   Api.post = originalApiPost;
