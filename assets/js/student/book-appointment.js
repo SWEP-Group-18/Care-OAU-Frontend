@@ -14,6 +14,7 @@ import { StudentSidebar } from '../components/student-sidebar.js';
 import { Header } from '../components/header.js';
 import { Toast } from '../components/toast.js';
 import { DoctorService } from '../services/doctor-service.js';
+import { MedicalService } from '../services/medical-service.js';
 import { INITIAL_SERVICES, INITIAL_APPOINTMENTS } from '../data/mock-data.js';
 
 let currentStep = 1;
@@ -24,7 +25,7 @@ let selectedDateStr = '';
 let selectedTimeStr = '10:30 AM';
 let referralCode = '';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   if (!Navigation.requireAuth('student')) return;
   DoctorService.purgeLegacyDemoDoctors();
   Header.render('Book an Appointment');
@@ -45,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const paramDoctorId = urlParams.get('doctorId');
 
   initDates();
-  initServices(paramDoctorId);
+  await initServices(paramDoctorId);
   bindNavigationEvents();
 });
 
@@ -161,14 +162,24 @@ function renderTimeSlots() {
   });
 }
 
-function initServices(paramDoctorId) {
+async function initServices(paramDoctorId) {
   const container = document.getElementById('service-options-container');
   if (!container) return;
 
-  const services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []);
-  if (services.length > 0) {
-    selectedServiceObj = services.find(s => s.isActive) || null;
-    if (paramDoctorId) { const doc = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []).find(d => d.id === paramDoctorId); selectedServiceObj = services.find(s => s.id === doc?.serviceId && s.isActive) || selectedServiceObj; }
+  let services = [];
+  try {
+    services = await MedicalService.getAllServices();
+  } catch (err) {
+    console.warn('[BookAppointment] Failed to load services via MedicalService:', err);
+    services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []);
+  }
+
+  if (Array.isArray(services) && services.length > 0) {
+    selectedServiceObj = services.find(s => s.status === 'open' || s.isActive) || null;
+    if (paramDoctorId) {
+      const doc = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []).find(d => d.id === paramDoctorId);
+      selectedServiceObj = services.find(s => (s.publicId === doc?.serviceId || s.id === doc?.serviceId) && (s.status === 'open' || s.isActive)) || selectedServiceObj;
+    }
   }
 
   container.innerHTML = services.map((srv, idx) => {
