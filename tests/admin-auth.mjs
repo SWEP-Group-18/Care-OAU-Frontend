@@ -185,6 +185,14 @@ try {
   assert.equal(Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER), null);
   assert.ok(window.location.href.includes('login.html?logout=1'), 'Admin logout must redirect to admin login');
 
+  // Test 8b: Admin logout when user storage is empty must NEVER redirect to /student/
+  window.location.pathname = '/admin/service-management.html';
+  window.location.href = '';
+  assert.equal(Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER), null);
+  await Navigation.logout();
+  assert.equal(window.location.href, 'login.html?logout=1', 'Admin logout without user storage must redirect to admin login.html, never student auth');
+  assert.ok(!window.location.href.includes('student'), 'Must never navigate to broken ./student/ path from admin folder');
+
   // Test 9: Student routes continue working and isolation remains intact
   window.location.pathname = '/student/dashboard.html';
   window.location.href = '';

@@ -52,11 +52,13 @@ export const Navigation = {
    */
   requireAuth(requiredRole = null) {
     const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
-    const isInAdminDir = typeof window !== 'undefined' && window.location.pathname.includes('/admin/');
-    const isInStudentDir = typeof window !== 'undefined' && window.location.pathname.includes('/student/');
+    const isInAdminDir = typeof window !== 'undefined' && 
+      (window.location.pathname.includes('/admin/') || window.location.pathname.endsWith('/admin'));
+    const isInStudentDir = typeof window !== 'undefined' && 
+      (window.location.pathname.includes('/student/') || window.location.pathname.endsWith('/student'));
 
     if (!user) {
-      if (requiredRole === 'admin') {
+      if (requiredRole === 'admin' || isInAdminDir) {
         window.location.href = isInAdminDir ? 'login.html' : '../admin/login.html';
       } else {
         window.location.href = isInStudentDir ? 'auth.html' : '../student/auth.html';
@@ -66,12 +68,12 @@ export const Navigation = {
 
     if (requiredRole && user.role !== requiredRole) {
       // Cross-role access protection
-      if (requiredRole === 'admin') {
+      if (requiredRole === 'admin' || isInAdminDir) {
         // Non-admin attempting to access admin route -> deny and redirect to admin login
         window.location.href = isInAdminDir ? 'login.html?denied=1' : '../admin/login.html?denied=1';
       } else {
         // Non-student attempting to access student route -> redirect to admin dashboard
-        window.location.href = '../admin/dashboard.html';
+        window.location.href = isInAdminDir ? 'dashboard.html' : '../admin/dashboard.html';
       }
       return null;
     }
@@ -92,9 +94,9 @@ export const Navigation = {
       const activeUser = await AuthService.checkSession();
       if (typeof window === 'undefined') return;
 
-      const isProtectedAdminPage = window.location.pathname.includes('/admin/') && 
+      const isProtectedAdminPage = (window.location.pathname.includes('/admin/') || window.location.pathname.endsWith('/admin')) && 
         !/login/.test(window.location.pathname);
-      const isProtectedStudentPage = window.location.pathname.includes('/student/') && 
+      const isProtectedStudentPage = (window.location.pathname.includes('/student/') || window.location.pathname.endsWith('/student')) && 
         !/auth|login|verify|password|reset/.test(window.location.pathname);
 
       if (!activeUser) {
@@ -110,7 +112,7 @@ export const Navigation = {
 
       // If active user session exists, verify role against requiredRole
       if (activeUser && requiredRole && activeUser.role !== requiredRole) {
-        if (requiredRole === 'admin') {
+        if (requiredRole === 'admin' || isProtectedAdminPage) {
           // A student session cannot view admin pages
           Storage.remove(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
           window.location.href = 'login.html?denied=1';
@@ -128,9 +130,11 @@ export const Navigation = {
    */
   async logout() {
     const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
-    const isAdmin = user && user.role === 'admin';
-    const isInAdminDir = typeof window !== 'undefined' && window.location.pathname.includes('/admin/');
-    const isInStudentDir = typeof window !== 'undefined' && window.location.pathname.includes('/student/');
+    const isInAdminDir = typeof window !== 'undefined' && 
+      (window.location.pathname.includes('/admin/') || window.location.pathname.endsWith('/admin'));
+    const isInStudentDir = typeof window !== 'undefined' && 
+      (window.location.pathname.includes('/student/') || window.location.pathname.endsWith('/student'));
+    const isAdmin = (user && user.role === 'admin') || isInAdminDir;
 
     try {
       await AuthService.logout();
@@ -140,10 +144,14 @@ export const Navigation = {
     Storage.remove(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
     Storage.remove(APP_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
 
-    if (isAdmin) {
-      window.location.href = isInAdminDir ? 'login.html?logout=1' : '../admin/login.html?logout=1';
+    if (isInAdminDir) {
+      window.location.href = 'login.html?logout=1';
+    } else if (isInStudentDir) {
+      window.location.href = 'auth.html?logout=1';
+    } else if (isAdmin) {
+      window.location.href = 'admin/login.html?logout=1';
     } else {
-      window.location.href = isInStudentDir ? 'auth.html?logout=1' : './student/auth.html?logout=1';
+      window.location.href = 'student/auth.html?logout=1';
     }
   }
 };
