@@ -84,6 +84,13 @@ function initControls() {
         serviceData.id = serviceId;
       }
 
+      const submitBtn = document.getElementById('btn-save-service');
+      const originalBtnText = submitBtn ? submitBtn.textContent : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving Service...';
+      }
+
       try {
         await MedicalService.saveService(serviceData);
         Modal.close('service-form-modal');
@@ -92,6 +99,11 @@ function initControls() {
       } catch (err) {
         console.error('[AdminServices] Save failed:', err);
         Toast.error(err.message || 'Failed to save medical service.');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalBtnText;
+        }
       }
     });
   }
