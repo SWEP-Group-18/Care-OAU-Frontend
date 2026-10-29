@@ -409,6 +409,29 @@
   min-width: 0;
 }
 
+.header-brand-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.header-subtitle,
+.page-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #E5AE32;
+  margin: 0;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
 .header-brand-badge {
   font-size: 10px;
   font-weight: 700;
@@ -433,17 +456,6 @@
 .mobile-menu-toggle:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #E5AE32;
-}
-
-.page-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #FFFFFF;
-  margin: 0;
-  letter-spacing: -0.015em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .header-user-btn {
@@ -526,8 +538,14 @@
     height: 32px;
   }
 
+  .header-brand-title {
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .header-subtitle,
   .page-title {
-    font-size: 14px;
+    font-size: 10px;
     max-width: 170px;
   }
 

@@ -28,8 +28,8 @@ export const Header = {
           <img src="${logoSrc}" alt="OAU Crest" class="header-oau-logo">
         </a>
         <div class="header-title-box">
-          <span class="header-brand-badge">Care-OAU</span>
-          <h1 class="page-title">${title}</h1>
+          <span class="header-brand-title">Care-OAU</span>
+          <span class="header-subtitle page-title">${title}</span>
         </div>
       </div>
 

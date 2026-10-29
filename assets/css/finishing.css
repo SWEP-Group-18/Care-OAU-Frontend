@@ -62,7 +62,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
  .sidebar { display:none !important; }
  .mobile-tab-nav { display:flex; }
  .header-user-name { display:none; }
- .top-header { gap:10px; } .header-left { min-width:0; gap:8px; } .page-title { font-size:14px; }
+ .top-header { gap:10px; } .header-left { min-width:0; gap:8px; } .header-brand-title { font-size:17px; } .page-title { font-size:10.5px; }
  .service-admin-grid { grid-template-columns:1fr; }
 }
 @media(max-width:560px) {
