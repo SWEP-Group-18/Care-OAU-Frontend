@@ -99,7 +99,7 @@ function initControls() {
         name: nameInput.value.trim(),
         title: titleInput.value.trim(),
         serviceId: serviceSelect.value,
-        specialization: serviceOption.text,
+        specialization: serviceOption ? serviceOption.text : 'General Medical Consultation',
         workingDays: selectedDays,
         startTime: startTimeInput.value,
         endTime: endTimeInput.value,
@@ -110,12 +110,33 @@ function initControls() {
 
       if (docId) {
         doctorData.id = docId;
+        doctorData.publicId = docId;
       }
 
-      await DoctorService.saveDoctor(doctorData);
-      Modal.close('doctor-form-modal');
-      Toast.success(docId ? 'Doctor schedule updated successfully!' : 'New physician added to clinic roster!');
-      loadDoctorsTable();
+      const saveBtn = document.getElementById('btn-save-doctor');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving physician...';
+      }
+
+      try {
+        const res = await DoctorService.saveDoctor(doctorData);
+        if (res && res.success === false) {
+          Toast.error(res.message || 'Unable to save doctor profile.');
+          return;
+        }
+        Modal.close('doctor-form-modal');
+        Toast.success(docId ? 'Doctor schedule updated successfully!' : 'New physician added to clinic roster!');
+        await loadDoctorsTable();
+      } catch (err) {
+        console.error('[AdminDoctors] Save error:', err);
+        Toast.error(err.message || 'Failed to save doctor.');
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Schedule & Capacity';
+        }
+      }
     });
   }
 }
@@ -136,10 +157,21 @@ async function loadDoctorsTable() {
     return;
   }
   tbody.innerHTML = doctors.map(doc => {
+    const docName = String(doc.name || 'Doctor').trim();
+    const cleanDocName = docName.replace(/^Dr\.?\s*/i, '');
+    const initials = cleanDocName.slice(0, 2).toUpperCase() || 'DR';
+    const specialization = String(doc.specialization || doc.serviceName || doc.title || 'General Medical Consultation').trim();
+    const workingDays = Array.isArray(doc.workingDays) ? doc.workingDays : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const startTime = doc.startTime || '08:00';
+    const endTime = doc.endTime || '16:00';
+    const capacity = parseInt(doc.dailyCapacity, 10) || 25;
+    const room = String(doc.room || doc.consultingRoom || 'Consulting Room').trim();
     const load = doctorLoad(doc);
     const status = attendanceStatus(doc);
-    const percentage = Math.min(100, load / doc.dailyCapacity * 100);
-    return `<article class="management-doctor"><div class="avatar">${Utils.escapeHtml(doc.name.replace(/^Dr\.?\s*/,'').slice(0,2))}</div><div class="management-name"><h3>${Utils.escapeHtml(doc.name)}</h3><p>${Utils.escapeHtml(doc.specialization)}</p></div><div><span>Working days</span><strong>${doc.workingDays.map(d=>d.slice(0,3)).join(', ')}</strong><small>${doc.startTime} – ${doc.endTime}</small></div><div><span>Daily capacity</span><strong>${load} / ${doc.dailyCapacity} patients</strong><div class="capacity-bar"><div class="capacity-fill" style="width:${percentage}%"></div></div></div><div><span class="badge badge-${statusTone(status)}">${status}</span>${load >= doc.dailyCapacity ? '<span class="badge badge-warning">Fully Booked</span>' : ''}<small>${Utils.escapeHtml(doc.room)}</small></div><div class="management-actions"><div style="display:flex; gap:6px; width:100%;"><button class="btn btn-outline-teal btn-sm" style="flex:1;" onclick="editDoctorSchedule('${doc.publicId || doc.id}')">Edit schedule</button><button type="button" class="btn btn-outline-danger btn-sm" title="Delete physician" onclick="deleteDoctorProfile('${doc.publicId || doc.id}', '${Utils.escapeHtml(doc.name)}')">Delete</button></div><label class="text-xs" for="status-${doc.id}">Attendance status</label><select class="form-control doctor-status-select" id="status-${doc.id}" data-doctor-id="${doc.id}" aria-label="Attendance status for ${Utils.escapeHtml(doc.name)}">${DOCTOR_STATUSES.map(value => '<option ' + (value === status ? 'selected' : '') + '>' + value + '</option>').join('')}</select>${status === 'Arriving Soon' && doc.expectedArrivalAt ? '<small>Expected at ' + new Date(doc.expectedArrivalAt).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) + '</small>' : ''}</div></article>`;
+    const percentage = Math.min(100, Math.round((load / capacity) * 100));
+    const doctorKey = doc.publicId || doc.id;
+
+    return `<article class="management-doctor"><div class="avatar">${Utils.escapeHtml(initials)}</div><div class="management-name"><h3>${Utils.escapeHtml(docName)}</h3><p>${Utils.escapeHtml(specialization)}</p></div><div><span>Working days</span><strong>${workingDays.map(d=>String(d).slice(0,3)).join(', ')}</strong><small>${startTime} – ${endTime}</small></div><div><span>Daily capacity</span><strong>${load} / ${capacity} patients</strong><div class="capacity-bar"><div class="capacity-fill" style="width:${percentage}%"></div></div></div><div><span class="badge badge-${statusTone(status)}">${status}</span>${load >= capacity ? '<span class="badge badge-warning">Fully Booked</span>' : ''}<small>${Utils.escapeHtml(room)}</small></div><div class="management-actions"><div style="display:flex; gap:6px; width:100%;"><button class="btn btn-outline-teal btn-sm" style="flex:1;" onclick="editDoctorSchedule('${doctorKey}')">Edit schedule</button><button type="button" class="btn btn-outline-danger btn-sm" title="Delete physician" onclick="deleteDoctorProfile('${doctorKey}', '${Utils.escapeHtml(docName)}')">Delete</button></div><label class="text-xs" for="status-${doctorKey}">Attendance status</label><select class="form-control doctor-status-select" id="status-${doctorKey}" data-doctor-id="${doctorKey}" aria-label="Attendance status for ${Utils.escapeHtml(docName)}">${DOCTOR_STATUSES.map(value => '<option ' + (value === status ? 'selected' : '') + '>' + value + '</option>').join('')}</select>${status === 'Arriving Soon' && doc.expectedArrivalAt ? '<small>Expected at ' + new Date(doc.expectedArrivalAt).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) + '</small>' : ''}</div></article>`;
   }).join('');
   tbody.querySelectorAll('.doctor-status-select').forEach(select => select.addEventListener('change', () => {
     const id = select.dataset.doctorId;
@@ -150,7 +182,7 @@ async function loadDoctorsTable() {
     };
     if (status !== 'Arriving Soon') { save(); return; }
     // Do not persist an arrival state without its estimate.
-    select.value = attendanceStatus(doctors.find(d => d.id === id));
+    select.value = attendanceStatus(doctors.find(d => d.id === id || d.publicId === id));
     Modal.confirm({ title: 'Expected arrival', message: '<label class="form-label" for="doctor-arrival">Expected in</label><select class="form-control" id="doctor-arrival"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select><p class="text-xs text-muted">An estimate does not automatically mark the doctor available. Update attendance when they arrive.</p>', confirmText: 'Save arrival time', onConfirm: () => save(document.getElementById('doctor-arrival').value) });
   }));
 }
@@ -172,6 +204,11 @@ async function openDoctorModal(doc = null) {
     services = await MedicalService.getAllServices();
   } catch (err) {
     console.warn('[DoctorManagement] Failed to fetch services from MedicalService:', err);
+  }
+  if (!Array.isArray(services) || services.length === 0) {
+    try {
+      services = await MedicalService.getAvailableServices();
+    } catch {}
   }
   if (!Array.isArray(services) || services.length === 0) {
     services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, INITIAL_SERVICES) || INITIAL_SERVICES || [];

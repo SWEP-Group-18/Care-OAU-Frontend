@@ -146,15 +146,21 @@ export const DoctorService = {
         if (rawList !== null) {
           const apiDoctors = rawList.map(d => fromBackendDoctor(d) || d);
           const cleanApiDoctors = sanitizeDoctors(apiDoctors);
-          Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, cleanApiDoctors);
-          if (cleanApiDoctors.length === 0) {
+
+          // Preserve any locally created admin doctors that may not be present in remote query
+          const remoteIds = new Set(cleanApiDoctors.map(d => d.publicId || d.id));
+          const localAdminDoctors = localDoctors.filter(d => d.isAdminCreated && !remoteIds.has(d.publicId || d.id));
+          const merged = [...cleanApiDoctors, ...localAdminDoctors];
+
+          Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, merged);
+          if (merged.length === 0) {
             return {
               status: 'empty',
               doctors: [],
               message: 'Doctor profiles and availability will appear here once the health centre team adds and publishes them. Please check back later.'
             };
           }
-          return { status: 'available', doctors: cleanApiDoctors };
+          return { status: 'available', doctors: merged };
         }
       } catch (err) {
         // Backend /admin/doctors or /doctors endpoint is not yet supported or returned an error
@@ -252,7 +258,6 @@ export const DoctorService = {
    */
   async saveDoctor(doctorData) {
     const doctors = this.purgeLegacyDemoDoctors();
-    let updated;
     const publicId = doctorData.publicId || doctorData.id;
 
     if (!APP_CONFIG.USE_MOCK_DATA) {
@@ -304,15 +309,33 @@ export const DoctorService = {
           let createdOnBackend = false;
           try {
             const shortDays = (doctorData.workingDays || ['Monday', 'Tuesday', 'Wednesday']).map(d => DAY_LONG_TO_SHORT[d] || d);
-            const servicePublicId = doctorData.serviceId || 'srv_general';
+            let servicePublicId = doctorData.serviceId || 'srv_general';
+
+            const cachedServices = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []);
+            if (Array.isArray(cachedServices) && cachedServices.length > 0) {
+              const matchedService = cachedServices.find(s => 
+                s.publicId === doctorData.serviceId || 
+                s.id === doctorData.serviceId ||
+                s.name?.toLowerCase() === doctorData.specialization?.toLowerCase()
+              );
+              if (matchedService && matchedService.publicId && !matchedService.publicId.startsWith('srv_gen_') && !matchedService.publicId.startsWith('srv_dent')) {
+                servicePublicId = matchedService.publicId;
+              } else {
+                const realService = cachedServices.find(s => s.publicId && !s.publicId.startsWith('srv_gen_') && !s.publicId.startsWith('srv_dent') && !s.publicId.startsWith('srv_opt') && !s.publicId.startsWith('srv_lab'));
+                if (realService) {
+                  servicePublicId = realService.publicId;
+                }
+              }
+            }
+
             const postPayload = {
-              name: doctorData.name,
-              title: doctorData.title || 'Medical Doctor',
+              name: String(doctorData.name).trim(),
+              title: String(doctorData.title || 'Medical Doctor').trim(),
               service: { publicId: servicePublicId },
               workingDays: shortDays,
               startTime: doctorData.startTime ? (doctorData.startTime.length === 5 ? doctorData.startTime + ':00' : doctorData.startTime) : '08:00:00',
               endTime: doctorData.endTime ? (doctorData.endTime.length === 5 ? doctorData.endTime + ':00' : doctorData.endTime) : '16:00:00',
-              dailyPatientLimit: Number(doctorData.dailyCapacity) || 25,
+              dailyPatientLimit: parseInt(doctorData.dailyCapacity, 10) || 25,
               consultingRoom: doctorData.room || doctorData.consultingRoom || 'Consulting Room 1'
             };
             const res = await Api.post('/admin/doctors', postPayload);
@@ -322,26 +345,30 @@ export const DoctorService = {
               doctorData.publicId = createdDoc.publicId;
               createdOnBackend = true;
             }
-          } catch {
-            // Fallback to legacy POST /doctors
+          } catch (postErr) {
+            console.warn('[DoctorService] POST /admin/doctors notice:', postErr.message);
           }
 
           if (!createdOnBackend) {
-            const res = await Api.post('/doctors', {
-              name: doctorData.name,
-              title: doctorData.title || 'Medical Officer',
-              specialization: doctorData.specialization,
-              room: doctorData.room || 'Consulting Room 1',
-              workingDays: doctorData.workingDays || ['Monday', 'Tuesday', 'Wednesday'],
-              startTime: doctorData.startTime || '08:00',
-              endTime: doctorData.endTime || '16:00',
-              dailyCapacity: Number(doctorData.dailyCapacity) || 20
-            });
-            const createdDoc = res?.data;
-            if (createdDoc?.publicId) {
-              await Api.patch(`/doctors/${createdDoc.publicId}/publish`);
-              doctorData.id = createdDoc.publicId;
-              doctorData.publicId = createdDoc.publicId;
+            try {
+              const res = await Api.post('/doctors', {
+                name: doctorData.name,
+                title: doctorData.title || 'Medical Officer',
+                specialization: doctorData.specialization,
+                room: doctorData.room || 'Consulting Room 1',
+                workingDays: doctorData.workingDays || ['Monday', 'Tuesday', 'Wednesday'],
+                startTime: doctorData.startTime || '08:00',
+                endTime: doctorData.endTime || '16:00',
+                dailyCapacity: Number(doctorData.dailyCapacity) || 20
+              });
+              const createdDoc = res?.data;
+              if (createdDoc?.publicId) {
+                await Api.patch(`/doctors/${createdDoc.publicId}/publish`).catch(() => {});
+                doctorData.id = createdDoc.publicId;
+                doctorData.publicId = createdDoc.publicId;
+              }
+            } catch (legErr) {
+              console.warn('[DoctorService] Legacy /doctors route notice:', legErr.message);
             }
           }
         }
@@ -350,21 +377,40 @@ export const DoctorService = {
       }
     }
 
-    if (doctorData.id) {
-      updated = doctors.map(d => d.id === doctorData.id ? { ...d, ...doctorData, isAdminCreated: true } : d);
+    const doctorId = doctorData.publicId || doctorData.id || `doc_admin_${Date.now()}`;
+    const normalizedDoctor = {
+      ...doctorData,
+      id: doctorId,
+      publicId: doctorId,
+      isAdminCreated: true,
+      currentLoad: doctorData.currentLoad || 0,
+      isAvailable: doctorData.isAvailable !== false,
+      status: doctorData.status || 'available',
+      workingDays: (doctorData.workingDays || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])
+        .map(d => DAY_SHORT_TO_LONG[d] || d),
+      startTime: (doctorData.startTime || '08:00').slice(0, 5),
+      endTime: (doctorData.endTime || '16:00').slice(0, 5),
+      dailyCapacity: parseInt(doctorData.dailyCapacity, 10) || 25,
+      room: doctorData.room || doctorData.consultingRoom || 'Consulting Room 1',
+      consultingRoom: doctorData.room || doctorData.consultingRoom || 'Consulting Room 1',
+      specialization: doctorData.specialization || doctorData.serviceName || 'General Medical Consultation'
+    };
+
+    let updated;
+    const existingIndex = doctors.findIndex(d => 
+      (d.id && (d.id === doctorId || d.id === publicId)) || 
+      (d.publicId && (d.publicId === doctorId || d.publicId === publicId))
+    );
+
+    if (existingIndex >= 0) {
+      updated = [...doctors];
+      updated[existingIndex] = { ...doctors[existingIndex], ...normalizedDoctor };
     } else {
-      const newDoc = {
-        ...doctorData,
-        id: doctorData.id || `doc_admin_${Date.now()}`,
-        isAdminCreated: true,
-        currentLoad: 0,
-        isAvailable: true
-      };
-      updated = [...doctors, newDoc];
+      updated = [...doctors, normalizedDoctor];
     }
 
     Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
-    return { success: true, doctors: updated };
+    return { success: true, doctor: normalizedDoctor, doctors: updated };
   },
 
   /**
