@@ -48,9 +48,9 @@ export const Header = {
           </button>
 
           <div class="dropdown-menu" id="account-menu">
-            <div style="padding: 8px 16px; border-bottom: 1px solid var(--color-divider);">
-              <div class="text-xs text-bold text-navy">${Utils.escapeHtml(user.name)}</div>
-              <div class="text-xs text-muted">${Utils.escapeHtml(user.matricNo || user.staffId || user.email || '')}</div>
+            <div style="padding: 10px 16px; border-bottom: 1px solid var(--color-border); background: #f8fafc;">
+              <div class="text-xs text-bold" style="font-weight: 700; color: #0B2459; font-size: 13px;">${Utils.escapeHtml(user.name)}</div>
+              <div class="text-xs" style="color: #64748b; font-size: 11px; margin-top: 2px;">${Utils.escapeHtml(user.matricNo || user.staffId || user.email || '')}</div>
             </div>
             ${user.role === 'student' ? '<a href="profile.html" class="dropdown-item">View Profile</a><a href="profile.html#change-password" class="dropdown-item">Change Password</a>' : '<button type="button" class="dropdown-item" id="staff-view-profile">View Profile</button><button type="button" class="dropdown-item" id="staff-change-password">Change Password</button>'}
             <a href="#" class="dropdown-item" id="header-logout-btn">
