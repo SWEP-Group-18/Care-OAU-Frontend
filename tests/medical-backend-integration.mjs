@@ -301,17 +301,37 @@ try {
   assert.equal(mockToggle.service.status, "closed", "Mock status toggle must update to closed");
   APP_CONFIG.USE_MOCK_DATA = false;
 
-  // Test 12: MedicalService.deleteService prepares DELETE /admin/services/:publicId and updates cache
+  // Test 12: MedicalService.deleteService calls documented DELETE /admin/services/:publicId
   const originalApiDelete = Api.delete.bind(Api);
   let deleteEndpointCalled = null;
   Api.delete = async (endpoint) => {
     deleteEndpointCalled = endpoint;
-    return { success: true, message: "Service deleted" };
+    return {
+      success: true,
+      message: "Service deleted successfully",
+      data: {
+        publicId: "srv_MqJ4U0Pqgs",
+        isDeleted: true
+      }
+    };
   };
   const deleteResult = await MedicalService.deleteService("srv_MqJ4U0Pqgs");
   assert.ok(deleteResult.success, "deleteService must return success");
-  assert.equal(deleteEndpointCalled, "/admin/services/srv_MqJ4U0Pqgs", "Must attempt DELETE /admin/services/:publicId");
+  assert.equal(deleteEndpointCalled, "/admin/services/srv_MqJ4U0Pqgs", "Must call documented DELETE /admin/services/:publicId");
   assert.equal(deleteResult.services.some(s => s.publicId === "srv_MqJ4U0Pqgs"), false, "Deleted service must be removed from cache");
+
+  // Rejection check: ensure errors propagate
+  Api.delete = async () => {
+    const err = new Error("Service not found");
+    err.status = 404;
+    err.code = "SERVICE_NOT_FOUND";
+    throw err;
+  };
+  await assert.rejects(
+    async () => MedicalService.deleteService("srv_deleted_already"),
+    /Service not found/i,
+    "deleteService must reject and propagate error on backend failure"
+  );
   Api.delete = originalApiDelete;
 
   console.log("PASS: MedicalService backend API integration (/admin/services GET, POST, PATCH, DELETE, status toggle, error handling, mock mode)");

@@ -23,6 +23,7 @@ The Care-OAU frontend now provides direct, resilient REST API integration across
    - **Service Detail:** `GET /admin/services/:publicId` (parses `{ data: { service: {...} } }`).
    - **Create Service:** `POST /admin/services` (submits 8 required fields: `name`, `category`, `description`, `operatingDays`, `opensAt`, `closesAt`, `dailyCapacity`, `requiresReferral`).
    - **Update Service:** `PATCH /admin/services/:publicId` (sanitizes frontend fields and updates schedule/quota).
+   - **Delete Service:** `DELETE /admin/services/:publicId` (soft-deletes clinical service).
    - **Toggle Status:** `PATCH /admin/services/:publicId/status` (sends `{ status: 'open' | 'closed' }`).
    - **Data Alignment Layer:** Maps backend `publicId` <-> `id`, `status` (`open`/`closed`) <-> `isActive`, lowercase days <-> TitleCase display, and enum categories (`general_medicine`, `dental`, `optometry`, `laboratory`, `mental_health`, `other`).
    - **Student Booking Integration:** `book-appointment.js` asynchronously queries `MedicalService.getAllServices()`, filters for eligible `open` services, excludes closed units, and handles loading, empty, and retry error states.

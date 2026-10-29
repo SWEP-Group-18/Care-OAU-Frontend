@@ -459,7 +459,7 @@ export const MedicalService = {
 
   /**
    * Deletes a clinical service by public ID.
-   * Dispatches DELETE /admin/services/{publicId} for backend integration and updates cache.
+   * Calls documented DELETE /admin/services/{publicId} to soft-delete the service.
    */
   async deleteService(publicId) {
     const cleanId = String(publicId || '').trim();
@@ -468,11 +468,7 @@ export const MedicalService = {
     }
 
     if (!APP_CONFIG.USE_MOCK_DATA) {
-      try {
-        await Api.delete(`/admin/services/${cleanId}`);
-      } catch (err) {
-        console.warn(`[MedicalService] Backend DELETE /admin/services/${cleanId} pending backend implementation:`, err.message);
-      }
+      await Api.delete(`/admin/services/${cleanId}`);
     }
 
     const cached = await this.getAllServices();
