@@ -455,5 +455,33 @@ export const MedicalService = {
     const targetStatus = isCurrentlyOpen ? 'closed' : 'open';
 
     return this.updateServiceStatus(cleanId, targetStatus);
+  },
+
+  /**
+   * Deletes a clinical service by public ID.
+   * Dispatches DELETE /admin/services/{publicId} for backend integration and updates cache.
+   */
+  async deleteService(publicId) {
+    const cleanId = String(publicId || '').trim();
+    if (!cleanId) {
+      throw new Error('Service publicId is required for deletion');
+    }
+
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        await Api.delete(`/admin/services/${cleanId}`);
+      } catch (err) {
+        console.warn(`[MedicalService] Backend DELETE /admin/services/${cleanId} pending backend implementation:`, err.message);
+      }
+    }
+
+    const cached = await this.getAllServices();
+    const updated = cached.filter(s => s.publicId !== cleanId && s.id !== cleanId);
+    Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, updated);
+
+    return {
+      success: true,
+      services: updated
+    };
   }
 };

@@ -301,7 +301,20 @@ try {
   assert.equal(mockToggle.service.status, "closed", "Mock status toggle must update to closed");
   APP_CONFIG.USE_MOCK_DATA = false;
 
-  console.log("PASS: MedicalService backend API integration (/admin/services GET, POST, PATCH, status toggle, error handling, mock mode)");
+  // Test 12: MedicalService.deleteService prepares DELETE /admin/services/:publicId and updates cache
+  const originalApiDelete = Api.delete.bind(Api);
+  let deleteEndpointCalled = null;
+  Api.delete = async (endpoint) => {
+    deleteEndpointCalled = endpoint;
+    return { success: true, message: "Service deleted" };
+  };
+  const deleteResult = await MedicalService.deleteService("srv_MqJ4U0Pqgs");
+  assert.ok(deleteResult.success, "deleteService must return success");
+  assert.equal(deleteEndpointCalled, "/admin/services/srv_MqJ4U0Pqgs", "Must attempt DELETE /admin/services/:publicId");
+  assert.equal(deleteResult.services.some(s => s.publicId === "srv_MqJ4U0Pqgs"), false, "Deleted service must be removed from cache");
+  Api.delete = originalApiDelete;
+
+  console.log("PASS: MedicalService backend API integration (/admin/services GET, POST, PATCH, DELETE, status toggle, error handling, mock mode)");
 } finally {
   Api.get = originalApiGet;
   Api.post = originalApiPost;

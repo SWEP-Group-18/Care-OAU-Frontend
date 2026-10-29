@@ -134,7 +134,17 @@ async function loadServicesTable() {
       return `<article>
         <div class="service-card-head">
           <span class="service-icon" aria-hidden="true">&#10010;</span>
-          <span class="badge ${isOpen ? 'badge-success' : 'badge-neutral'}">${isOpen ? 'Open for booking' : 'Temporarily closed'}</span>
+          <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+            <span class="badge ${isOpen ? 'badge-success' : 'badge-neutral'}">${isOpen ? 'Open for booking' : 'Temporarily closed'}</span>
+            <button type="button" class="btn-delete-service" title="Delete clinical service" aria-label="Delete ${Utils.escapeHtml(srv.name)}" onclick="deleteMedicalService('${pid}', '${Utils.escapeHtml(srv.name)}')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+            </button>
+          </div>
         </div>
         <h2>${Utils.escapeHtml(srv.name)}</h2>
         <p style="color: var(--color-teal); font-size: var(--font-size-xs); font-weight: 600; margin-bottom: var(--space-2);">${Utils.escapeHtml(categoryName)}</p>
@@ -217,5 +227,21 @@ window.toggleServiceActiveStatus = async (publicId) => {
     await loadServicesTable();
   } catch (err) {
     Toast.error(err.message || 'Failed to update service status.');
+  }
+};
+
+window.deleteMedicalService = async (publicId, serviceName) => {
+  const title = serviceName || 'this service';
+  if (!confirm(`Are you sure you want to remove "${title}"?`)) {
+    return;
+  }
+
+  try {
+    await MedicalService.deleteService(publicId);
+    Toast.info(`Service "${title}" removed.`);
+    await loadServicesTable();
+  } catch (err) {
+    console.error('[AdminServices] Delete failed:', err);
+    Toast.error(err.message || 'Failed to remove service.');
   }
 };
