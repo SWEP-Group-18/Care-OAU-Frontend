@@ -17,6 +17,55 @@ export const VALID_SERVICE_CATEGORIES = [
   'other'
 ];
 
+export const VALID_OPERATING_DAYS = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday'
+];
+
+/**
+ * Normalizes day string or list to lowercase backend enum values
+ */
+export function normalizeOperatingDays(days) {
+  if (!Array.isArray(days)) return [];
+  return days
+    .map(d => String(d || '').trim().toLowerCase())
+    .filter(d => VALID_OPERATING_DAYS.includes(d));
+}
+
+/**
+ * Normalizes day list to TitleCase for user-facing display ('Monday', 'Tuesday', ...)
+ */
+export function formatOperatingDaysDisplay(days) {
+  if (!Array.isArray(days)) return [];
+  return days
+    .map(d => {
+      const clean = String(d || '').trim().toLowerCase();
+      if (!clean) return '';
+      return clean.charAt(0).toUpperCase() + clean.slice(1);
+    })
+    .filter(Boolean);
+}
+
+/**
+ * Normalizes time string to standard format (e.g. '08:00' -> '08:00:00' or vice versa)
+ */
+export function normalizeTimeString(timeStr, withSeconds = true) {
+  if (!timeStr || typeof timeStr !== 'string') return withSeconds ? '08:00:00' : '08:00';
+  const clean = timeStr.trim();
+  const match = clean.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (!match) return withSeconds ? '08:00:00' : '08:00';
+  const hh = match[1].padStart(2, '0');
+  const mm = match[2];
+  const ss = match[3] || '00';
+  return withSeconds ? `${hh}:${mm}:${ss}` : `${hh}:${mm}`;
+}
+
+
 /**
  * Normalizes input category to valid backend enum value
  */
