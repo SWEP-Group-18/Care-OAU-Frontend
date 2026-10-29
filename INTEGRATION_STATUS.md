@@ -28,12 +28,13 @@ The Care-OAU frontend now provides direct, resilient REST API integration across
    - **Data Alignment Layer:** Maps backend `publicId` <-> `id`, `status` (`open`/`closed`) <-> `isActive`, lowercase days <-> TitleCase display, and enum categories (`general_medicine`, `dental`, `optometry`, `laboratory`, `mental_health`, `other`).
    - **Student Booking Integration:** `book-appointment.js` asynchronously queries `MedicalService.getAllServices()`, filters for eligible `open` services, excludes closed units, and handles loading, empty, and retry error states.
    - **Error Handling:** Propagates server errors (e.g. 400 validation, 409 duplicate) without false success toasts or premature UI/cache updates.
-3. **`AppointmentService`:**
-   - Queries student appointments via `GET /appointments/me`.
-   - Queries administrative logs via `GET /appointments/admin/all`.
-   - Creates bookings via `POST /appointments` with server-side conflict detection (`409 SLOT_CONFLICT`).
-   - Cancels visits via `PATCH /appointments/:id/cancel`.
-   - Approves/updates status via `PATCH /appointments/:id/status`.
+3. **`AppointmentService` (Appointment & Slots Integration):**
+   - **Student Appointments:** `GET /appointments/me` (parses `{ success: true, data: { appointments: [...] } }` envelope, maps `publicId`, `date`, `startTime`, `service`, `doctor`, `location`, `status`).
+   - **Slot Availability:** `GET /appointments/slots?servicePublicId=...&date=...&doctorPublicId=...` (retrieves real-time 30-minute slot roster with doctor assignment and `available`/`fully_booked` capacity flags).
+   - **Book Appointment:** `POST /appointments` (submits required backend schema: `servicePublicId`, `doctorPublicId`, `appointmentDate`, `startTime` in 24h format, and `reason`).
+   - **Student Cancellation:** `PATCH /appointments/:publicId/cancel` (cancels pending/approved bookings and preserves audit history).
+   - **Administrative Status:** `PATCH /appointments/:publicId/status` (handles staff approvals and cancellations).
+   - **Error Handling:** Propagates 400 (`INVALID_APPOINTMENT_TIME`), 404 (`DOCTOR_NOT_FOUND`), and 409 (`APPOINTMENT_SLOT_UNAVAILABLE`) to user interface without false success notifications.
 4. **`QueueService`:**
    - Staff check-in on arrival via `POST /queue/check-in` (assigns sequential `Q-001` tickets).
    - Real-time student queue tracker via `GET /queue/me` with live position and calculated wait time.
