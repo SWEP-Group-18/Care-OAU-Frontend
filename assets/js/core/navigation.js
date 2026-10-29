@@ -130,10 +130,9 @@ export const Navigation = {
    */
   async logout() {
     const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
-    const isInAdminDir = typeof window !== 'undefined' && 
-      (window.location.pathname.includes('/admin/') || window.location.pathname.endsWith('/admin'));
-    const isInStudentDir = typeof window !== 'undefined' && 
-      (window.location.pathname.includes('/student/') || window.location.pathname.endsWith('/student'));
+    const path = typeof window !== 'undefined' && window.location ? (window.location.pathname || '').toLowerCase() : '';
+    const isInAdminDir = path.includes('/admin/') || path.endsWith('/admin') || path.includes('admin');
+    const isInStudentDir = path.includes('/student/') || path.endsWith('/student') || path.includes('student');
     const isAdmin = (user && user.role === 'admin') || isInAdminDir;
 
     try {
@@ -149,9 +148,9 @@ export const Navigation = {
     } else if (isInStudentDir) {
       window.location.href = 'auth.html?logout=1';
     } else if (isAdmin) {
-      window.location.href = 'admin/login.html?logout=1';
+      window.location.href = '/admin/login.html?logout=1';
     } else {
-      window.location.href = 'student/auth.html?logout=1';
+      window.location.href = '/student/auth.html?logout=1';
     }
   }
 };

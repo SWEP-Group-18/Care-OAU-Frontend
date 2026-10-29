@@ -32,6 +32,16 @@ document.addEventListener('DOMContentLoaded', () => {
     Toast.info('You have been signed out successfully.');
   }
 
+  // Ensure Return to Student Portal link always resolves to origin root
+  const returnToStudentLink = document.querySelector('.portal-link a');
+  if (returnToStudentLink) {
+    returnToStudentLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      const origin = window.location.origin || '';
+      window.location.href = origin ? `${origin}/student/auth.html` : '../student/auth.html';
+    });
+  }
+
   const form = document.getElementById('form-admin-login');
   const staffIdInput = document.getElementById('admin-staff-id');
   const passwordInput = document.getElementById('admin-password');
