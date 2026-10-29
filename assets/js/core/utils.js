@@ -41,6 +41,23 @@ export const Utils = {
   },
 
   /**
+   * Convert 12-hour AM/PM string to 24-hour HH:mm format for backend API.
+   * e.g., "1:30 PM" -> "13:30", "09:00 AM" -> "09:00"
+   */
+  to24HourTime(timeInput) {
+    if (!timeInput) return '';
+    const clean = String(timeInput).trim();
+    const match = clean.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
+    if (!match) return clean.slice(0, 5);
+    let hour = parseInt(match[1], 10);
+    const minute = match[2];
+    const modifier = match[3]?.toUpperCase();
+    if (modifier === 'PM' && hour < 12) hour += 12;
+    if (modifier === 'AM' && hour === 12) hour = 0;
+    return `${String(hour).padStart(2, '0')}:${minute}`;
+  },
+
+  /**
    * Format today's date in YYYY-MM-DD for HTML date inputs
    */
   getTodayDateString() {
