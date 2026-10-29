@@ -1068,143 +1068,234 @@
 /* These sit alongside the modern .btn/.form-control system used by student/admin portals. */
 
 /* --------------------------------------------------------------------------
-   Emergency Medical Alert Widget
+   Floating Emergency Medical Alert Widget (24/7 SOS & WhatsApp)
    -------------------------------------------------------------------------- */
-.emergency-alert-widget {
-  background: linear-gradient(135deg, #FFF5F5 0%, #FED7D7 100%);
-  border: 1.5px solid #E53E3E;
-  border-radius: var(--radius-lg, 12px);
-  padding: 14px 18px;
-  margin-bottom: var(--space-6, 24px);
-  box-shadow: 0 4px 14px rgba(229, 62, 62, 0.12);
+.floating-emergency-widget {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1350;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.emergency-widget-header {
-  display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 12px;
-  flex: 1;
-  min-width: 240px;
+  pointer-events: none;
 }
 
-.emergency-pulse-badge {
-  width: 38px;
-  height: 38px;
+@media (max-width: 820px) {
+  .floating-emergency-widget {
+    bottom: 84px;
+    right: 16px;
+  }
+}
+
+/* Floating Action Button (FAB) */
+.emergency-fab-trigger {
+  pointer-events: auto;
+  position: relative;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: #E53E3E;
+  background: linear-gradient(135deg, #DC2626 0%, #991B1B 100%);
   color: #FFFFFF;
+  border: 2px solid #FEF08A;
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.45), 0 2px 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+.emergency-fab-trigger:hover {
+  transform: scale(1.06);
+  box-shadow: 0 10px 28px rgba(220, 38, 38, 0.55);
+}
+
+.emergency-fab-trigger:focus-visible {
+  outline: 3px solid #FEF08A;
+  outline-offset: 3px;
+}
+
+.emergency-fab-badge-text {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  color: #FEF08A;
+  text-transform: uppercase;
+}
+
+/* Radiating Pulse Rings */
+.emergency-fab-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(220, 38, 38, 0.85);
+  animation: pulse-emergency-ring 2.2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  pointer-events: none;
+}
+
+.emergency-fab-pulse-outer {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(234, 179, 8, 0.7);
+  animation: pulse-emergency-ring 2.2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite 0.6s;
+  pointer-events: none;
+}
+
+@keyframes pulse-emergency-ring {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.95;
+  }
+  65% {
+    transform: scale(1.38);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.38);
+    opacity: 0;
+  }
+}
+
+/* Expandable Flyout Card */
+.emergency-flyout-card {
+  pointer-events: auto;
+  width: 330px;
+  max-width: calc(100vw - 32px);
+  background: #FFFFFF;
+  border: 1.5px solid #FCA5A5;
+  border-radius: 16px;
+  box-shadow: 0 18px 48px -6px rgba(153, 27, 27, 0.28), 0 6px 18px rgba(0, 0, 0, 0.12);
+  padding: 18px;
+  display: none;
+  opacity: 0;
+  transform: translateY(14px) scale(0.96);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.emergency-flyout-card.open {
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.emergency-flyout-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.emergency-flyout-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.emergency-card-pulse-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #FEE2E2;
+  color: #DC2626;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7);
-  animation: pulse-emergency 2s infinite;
 }
 
-@keyframes pulse-emergency {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 8px rgba(229, 62, 62, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(229, 62, 62, 0);
-  }
+.emergency-flyout-title {
+  font-size: 13.5px;
+  font-weight: 750;
+  color: #991B1B;
+  margin: 0 0 2px;
+  line-height: 1.25;
 }
 
-.emergency-widget-info {
-  min-width: 0;
+.emergency-flyout-subtitle {
+  font-size: 11px;
+  color: #64748B;
+  font-weight: 500;
+  display: block;
 }
 
-.emergency-widget-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #9B1C1C;
-  margin: 0 0 2px 0;
-  letter-spacing: -0.01em;
+.emergency-flyout-close {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
-.emergency-widget-desc {
+.emergency-flyout-close:hover {
+  color: #0F172A;
+  background: #F1F5F9;
+}
+
+.emergency-flyout-text {
   font-size: 12px;
-  color: #771D1D;
-  margin: 0;
-  line-height: 1.4;
+  color: #475569;
+  margin: 0 0 14px 0;
+  line-height: 1.45;
 }
 
-.emergency-widget-actions {
+.emergency-flyout-actions {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
 .emergency-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: var(--radius-md, 8px);
-  font-size: 12px;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   white-space: nowrap;
 }
 
 .emergency-btn-call {
-  background: #C53030;
+  background: #DC2626;
   color: #FFFFFF !important;
-  border: 1px solid #9B1C1C;
-  box-shadow: 0 2px 6px rgba(197, 48, 48, 0.3);
+  border: 1px solid #B91C1C;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
 }
 
 .emergency-btn-call:hover {
-  background: #9B1C1C;
+  background: #B91C1C;
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(197, 48, 48, 0.4);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.45);
 }
 
 .emergency-btn-wa {
-  background: #25D366;
+  background: #22C55E;
   color: #FFFFFF !important;
-  border: 1px solid #1EBE5D;
-  box-shadow: 0 2px 6px rgba(37, 211, 102, 0.3);
+  border: 1px solid #16A34A;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.35);
 }
 
 .emergency-btn-wa:hover {
-  background: #1EBE5D;
+  background: #16A34A;
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(37, 211, 102, 0.4);
-}
-
-@media (max-width: 640px) {
-  .emergency-alert-widget {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 12px;
-    gap: 10px;
-  }
-
-  .emergency-widget-actions {
-    width: 100%;
-    display: flex;
-  }
-
-  .emergency-btn {
-    flex: 1;
-    justify-content: center;
-    padding: 8px 10px;
-    font-size: 11px;
-  }
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.45);
 }
 
