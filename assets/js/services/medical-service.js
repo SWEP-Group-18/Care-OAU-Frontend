@@ -100,6 +100,46 @@ export function formatCategoryLabel(category) {
 }
 
 
+/**
+ * Maps a backend service record to the unified frontend service model.
+ * Preserves canonical publicId, maps status <-> isActive, and normalizes schedule fields.
+ */
+export function fromBackendService(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const publicId = String(raw.publicId || raw.id || '').trim();
+  const rawStatus = raw.status ? String(raw.status).trim().toLowerCase() : null;
+  const status = rawStatus === 'closed' || raw.isActive === false ? 'closed' : 'open';
+  const isActive = status === 'open';
+
+  const opensAt = raw.opensAt ? normalizeTimeString(raw.opensAt, true) : (raw.startTime ? normalizeTimeString(raw.startTime, true) : '08:00:00');
+  const closesAt = raw.closesAt ? normalizeTimeString(raw.closesAt, true) : (raw.endTime ? normalizeTimeString(raw.endTime, true) : '18:00:00');
+  const startTime = normalizeTimeString(opensAt, false);
+  const endTime = normalizeTimeString(closesAt, false);
+
+  const rawDays = Array.isArray(raw.operatingDays) ? raw.operatingDays : [];
+  const operatingDays = formatOperatingDaysDisplay(rawDays);
+  const rawOperatingDays = normalizeOperatingDays(rawDays);
+
+  return {
+    publicId,
+    id: publicId, // compatibility with components expecting .id
+    name: raw.name || '',
+    category: normalizeCategory(raw.category),
+    categoryLabel: formatCategoryLabel(raw.category),
+    description: raw.description || '',
+    operatingDays,
+    rawOperatingDays,
+    opensAt,
+    closesAt,
+    startTime,
+    endTime,
+    dailyCapacity: Number(raw.dailyCapacity ?? raw.capacityPerDay ?? 50),
+    requiresReferral: Boolean(raw.requiresReferral),
+    status,
+    isActive
+  };
+}
+
 export const MedicalService = {
   /**
    * Get all medical services from API or storage fallback
