@@ -73,6 +73,47 @@ export const AppointmentService = {
   },
 
   /**
+   * Get available appointment slots via backend API GET /appointments/slots
+   * Falls back to local availability calculation when in mock mode or on network error.
+   */
+  async getAvailableSlots({ servicePublicId, date, doctorPublicId = null }) {
+    if (!APP_CONFIG.USE_MOCK_DATA && servicePublicId && date) {
+      try {
+        let query = `/appointments/slots?servicePublicId=${encodeURIComponent(servicePublicId)}&date=${encodeURIComponent(date)}`;
+        if (doctorPublicId) {
+          query += `&doctorPublicId=${encodeURIComponent(doctorPublicId)}`;
+        }
+        const res = await Api.get(query);
+        const slotData = res?.data?.slots || (Array.isArray(res?.data) ? res.data : []);
+        if (Array.isArray(slotData)) {
+          return slotData.map(s => {
+            const rawTime = s.startTime || s.time || '';
+            const formattedTime = Utils.formatTime(rawTime);
+            const isFull = s.status === 'fully_booked' || s.status === 'booked' || s.full === true;
+            return {
+              time: formattedTime,
+              startTime: rawTime,
+              endTime: s.endTime || '',
+              date: s.date || date,
+              status: s.status || (isFull ? 'fully_booked' : 'available'),
+              full: isFull,
+              doctor: {
+                id: s.doctor?.publicId || s.doctor?.id || doctorPublicId,
+                publicId: s.doctor?.publicId || s.doctor?.id || doctorPublicId,
+                name: s.doctor?.name || 'Assigned Physician'
+              }
+            };
+          });
+        }
+      } catch (err) {
+        console.warn('[Care-OAU] Slots API notice, falling back:', err.message);
+      }
+    }
+
+    return availableSlots(servicePublicId, doctorPublicId, date);
+  },
+
+  /**
    * Get appointments for a specific student
    */
   async getStudentAppointments(studentId = 'usr_student_01') {
