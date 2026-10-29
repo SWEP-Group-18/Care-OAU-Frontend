@@ -322,6 +322,57 @@ export const MedicalService = {
   },
 
   /**
+   * Updates an existing clinical service.
+   * Calls documented PATCH /admin/services/{publicId} with allowed update fields.
+   */
+  async updateService(publicId, serviceData) {
+    const cleanId = String(publicId || serviceData?.publicId || serviceData?.id || '').trim();
+    if (!cleanId) {
+      throw new Error('Service publicId is required for update');
+    }
+
+    const payload = toBackendUpdatePayload(serviceData);
+    if (Array.isArray(payload.operatingDays) && payload.operatingDays.length === 0) {
+      throw new Error('A service must have at least one operating day');
+    }
+
+    let updatedService = null;
+
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      const res = await Api.patch(`/admin/services/${cleanId}`, payload);
+      const raw = res?.data?.service || res?.data;
+      if (raw) {
+        updatedService = fromBackendService(raw);
+      }
+    }
+
+    const cached = await this.getAllServices();
+    const existing = cached.find(s => s.publicId === cleanId || s.id === cleanId);
+
+    if (!updatedService) {
+      // Mock mode fallback or simulated local update
+      if (!existing) {
+        throw new Error('Service not found');
+      }
+      updatedService = fromBackendService({
+        ...existing,
+        ...payload,
+        publicId: cleanId,
+        id: cleanId
+      });
+    }
+
+    const updated = cached.map(s => (s.publicId === cleanId || s.id === cleanId) ? updatedService : s);
+    Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, updated);
+
+    return {
+      success: true,
+      service: updatedService,
+      services: updated
+    };
+  },
+
+  /**
    * Create or update a medical service
    */
   async saveService(serviceData) {
