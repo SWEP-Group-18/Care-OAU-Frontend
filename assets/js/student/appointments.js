@@ -42,22 +42,30 @@ async function loadAppointments() {
   const tbody = document.getElementById('appointments-tbody');
   if (!tbody) return;
 
-  const appointments = await AppointmentService.getStudentAppointments(Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER)?.id);
-  const filtered = appointments.filter(a => activeFilter === 'all' ? !['Completed','Cancelled','Rejected','No Show'].includes(a.status) : activeFilter === 'Cancelled' ? ['Cancelled','Rejected','No Show'].includes(a.status) : a.status === activeFilter);
-  if (!filtered.length) { tbody.innerHTML = '<div class="quiet-card"><h3>No appointments here yet</h3><p>Your visits will appear here once you book an appointment.</p><a href="book-appointment.html" class="btn btn-teal">Book Appointment</a></div>'; return; }
-  tbody.innerHTML = filtered.map(apt => {
-    const date = new Date(apt.appointmentDate + 'T12:00:00');
-    const canCancel = ['Pending Approval', 'Approved'].includes(apt.status);
-    return `<article class="appointment-list-card">
-      <div class="appointment-list-top"><div>${Utils.getStatusBadge(apt.status)}<h2>${Utils.escapeHtml(apt.serviceName)}</h2><p>Booking reference  -  ${Utils.escapeHtml(apt.referenceNo || apt.id)}</p></div>
-      <div class="large-date"><strong>${date.getDate()}</strong><span>${date.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}<br>${date.toLocaleDateString('en-GB',{weekday:'long'})}</span></div></div>
-      <div class="appointment-info-grid"><div><span>Scheduled time</span><strong>${Utils.escapeHtml(apt.timeSlot)}</strong></div><div><span>Doctor</span><strong>${Utils.escapeHtml(apt.doctorName)}</strong></div><div><span>Location</span><strong>Care-OAU Health Centre</strong></div></div>
-      ${apt.status === 'Pending Approval' ? '<p class="status-message">Your request is awaiting staff review. Your queue number will be issued at reception after approval.</p>' : ''}
-      ${apt.rejectionReason ? '<p class="status-message">' + Utils.escapeHtml(apt.rejectionReason) + '</p>' : ''}
-      <div class="appointment-list-actions"><button class="btn btn-outline-navy" onclick="viewAppointmentDetails('${apt.id}')">View details</button>
-      ${apt.queueNumber ? '<a href="queue-tracking.html" class="btn btn-teal">Track Queue</a>' : ''}
-      ${canCancel ? '<button class="btn btn-ghost text-danger" onclick="cancelAppointmentRequest(\'' + apt.id + '\')">Cancel appointment</button>' : ''}</div></article>`;
-  }).join('');
+  try {
+    const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
+    const appointments = await AppointmentService.getStudentAppointments(user?.id);
+    const filtered = appointments.filter(a => activeFilter === 'all' ? !['Completed','Cancelled','Rejected','No Show'].includes(a.status) : activeFilter === 'Cancelled' ? ['Cancelled','Rejected','No Show'].includes(a.status) : a.status === activeFilter);
+    if (!filtered.length) { tbody.innerHTML = '<div class="quiet-card"><h3>No appointments here yet</h3><p>Your visits will appear here once you book an appointment.</p><a href="book-appointment.html" class="btn btn-teal">Book Appointment</a></div>'; return; }
+    tbody.innerHTML = filtered.map(apt => {
+      const rawDate = apt.appointmentDate || apt.date;
+      const date = rawDate ? new Date(rawDate.includes('T') ? rawDate : rawDate + 'T12:00:00') : new Date();
+      const canCancel = ['Pending Approval', 'Approved'].includes(apt.status);
+      const displayId = apt.referenceNo || apt.publicId || apt.id;
+      return `<article class="appointment-list-card">
+        <div class="appointment-list-top"><div>${Utils.getStatusBadge(apt.status)}<h2>${Utils.escapeHtml(apt.serviceName || 'General Medical Consultation')}</h2><p>Booking reference  -  ${Utils.escapeHtml(displayId)}</p></div>
+        <div class="large-date"><strong>${date.getDate()}</strong><span>${date.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}<br>${date.toLocaleDateString('en-GB',{weekday:'long'})}</span></div></div>
+        <div class="appointment-info-grid"><div><span>Scheduled time</span><strong>${Utils.escapeHtml(apt.timeSlot || '08:00 AM')}</strong></div><div><span>Doctor</span><strong>${Utils.escapeHtml(apt.doctorName || 'Assigned Physician')}</strong></div><div><span>Location</span><strong>${Utils.escapeHtml(apt.location || 'Care-OAU Health Centre')}</strong></div></div>
+        ${apt.status === 'Pending Approval' ? '<p class="status-message">Your request is awaiting staff review. Your queue number will be issued at reception after approval.</p>' : ''}
+        ${apt.rejectionReason ? '<p class="status-message">' + Utils.escapeHtml(apt.rejectionReason) + '</p>' : ''}
+        <div class="appointment-list-actions"><button class="btn btn-outline-navy" onclick="viewAppointmentDetails('${apt.id}')">View details</button>
+        ${apt.queueNumber ? '<a href="queue-tracking.html" class="btn btn-teal">Track Queue</a>' : ''}
+        ${canCancel ? '<button class="btn btn-ghost text-danger" onclick="cancelAppointmentRequest(\'' + apt.id + '\')">Cancel appointment</button>' : ''}</div></article>`;
+    }).join('');
+  } catch (err) {
+    console.error('[Appointments] Error loading appointments:', err);
+    tbody.innerHTML = '<div class="quiet-card"><h3>Unable to load appointments</h3><p>Please check your connection and try again.</p><button type="button" class="btn btn-outline-teal" onclick="location.reload()">Retry</button></div>';
+  }
 }
 
 // Global cancellation handler
@@ -68,7 +76,11 @@ window.cancelAppointmentRequest = (appointmentId) => {
     confirmText: 'Yes, Cancel Appointment',
     confirmClass: 'btn-danger',
     onConfirm: async () => {
-      await AppointmentService.cancelAppointment(appointmentId, 'Cancelled by student request.');
+      const res = await AppointmentService.cancelAppointment(appointmentId, 'Cancelled by student request.');
+      if (res && res.success === false) {
+        Toast.error(res.message || 'Unable to cancel appointment.');
+        return;
+      }
       Toast.success('Appointment cancelled successfully.');
       loadAppointments();
       StudentSidebar.render();
