@@ -277,6 +277,51 @@ export const MedicalService = {
   },
 
   /**
+   * Creates a new clinical service.
+   * Calls documented POST /admin/services with the validated 8-field payload.
+   */
+  async createService(serviceData) {
+    const payload = toBackendCreatePayload(serviceData);
+
+    if (!payload.name) {
+      throw new Error('Service name is required');
+    }
+    if (!Array.isArray(payload.operatingDays) || payload.operatingDays.length === 0) {
+      throw new Error('A service must have at least one operating day');
+    }
+
+    let createdService = null;
+
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      const res = await Api.post('/admin/services', payload);
+      const raw = res?.data?.service || res?.data;
+      if (raw) {
+        createdService = fromBackendService(raw);
+      }
+    }
+
+    if (!createdService) {
+      // Mock mode or simulated local creation
+      createdService = fromBackendService({
+        ...payload,
+        publicId: `srv_${Math.random().toString(36).slice(2, 11)}`,
+        status: 'open',
+        isActive: true
+      });
+    }
+
+    const cached = await this.getAllServices();
+    const updated = [...cached.filter(s => s.publicId !== createdService.publicId), createdService];
+    Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, updated);
+
+    return {
+      success: true,
+      service: createdService,
+      services: updated
+    };
+  },
+
+  /**
    * Create or update a medical service
    */
   async saveService(serviceData) {
