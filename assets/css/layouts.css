@@ -384,7 +384,7 @@
 }
 
 .header-logo-link {
-  display: flex;
+  display: none;
   align-items: center;
   text-decoration: none;
   flex-shrink: 0;
@@ -504,6 +504,11 @@
 
   /* Mobile bottom tab bar active */
   .mobile-tab-nav {
+    display: flex;
+  }
+
+  /* Show header logo only on mobile where desktop sidebar is hidden */
+  .header-logo-link {
     display: flex;
   }
 
