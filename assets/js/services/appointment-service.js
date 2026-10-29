@@ -22,28 +22,56 @@ export const AppointmentService = {
         const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
         const endpoint = user?.role === 'admin' ? '/appointments/admin/all' : '/appointments/me';
         const res = await Api.get(endpoint);
-        const items = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : null);
+        let items = null;
+        if (Array.isArray(res)) {
+          items = res;
+        } else if (Array.isArray(res?.data?.appointments)) {
+          items = res.data.appointments;
+        } else if (Array.isArray(res?.data)) {
+          items = res.data;
+        } else if (Array.isArray(res?.appointments)) {
+          items = res.appointments;
+        }
+
         if (items !== null) {
-          const mapped = items.map(a => ({
-            id: a.publicId || a.id,
-            publicId: a.publicId || a.id,
-            appointmentDate: a.appointmentDate,
-            timeSlot: a.timeSlot,
-            studentName: a.studentName || a.name,
-            matricNo: a.matricNo,
-            studentId: a.studentPublicId || a.studentId,
-            doctorName: a.doctorName,
-            doctorId: a.doctorPublicId,
-            serviceName: a.serviceName,
-            serviceId: a.servicePublicId,
-            reason: a.reason,
-            status: a.status === 'pending' ? APP_CONFIG.APPOINTMENT_STATUS.PENDING :
-                    a.status === 'confirmed' ? APP_CONFIG.APPOINTMENT_STATUS.APPROVED :
-                    a.status === 'cancelled' ? APP_CONFIG.APPOINTMENT_STATUS.CANCELLED :
-                    a.status === 'completed' ? APP_CONFIG.APPOINTMENT_STATUS.COMPLETED :
-                    a.status === 'in_consultation' ? APP_CONFIG.APPOINTMENT_STATUS.IN_CONSULTATION : a.status,
-            cancellationReason: a.cancellationReason
-          }));
+          const mapped = items.map(a => {
+            const rawDate = a.appointmentDate || a.date;
+            const dateStr = rawDate ? String(rawDate).slice(0, 10) : '';
+            const rawTime = a.timeSlot || a.startTime || a.time || '';
+            const formattedTime = Utils.formatTime(rawTime);
+            const serviceName = typeof a.service === 'string' ? a.service : (a.service?.name || a.serviceName || 'General Consultation');
+            const doctorName = typeof a.doctor === 'string' ? a.doctor : (a.doctor?.name || a.doctorName || 'Assigned Physician');
+            const doctorId = typeof a.doctor === 'object' ? (a.doctor.publicId || a.doctor.id) : (a.doctorPublicId || a.doctorId);
+            const serviceId = typeof a.service === 'object' ? (a.service.publicId || a.service.id) : (a.servicePublicId || a.serviceId);
+
+            return {
+              id: a.publicId || a.id,
+              publicId: a.publicId || a.id,
+              referenceNo: a.referenceNo || a.publicId || a.id,
+              appointmentDate: dateStr,
+              timeSlot: formattedTime,
+              startTime: rawTime,
+              endTime: a.endTime || '',
+              studentName: a.studentName || a.name || user?.name || 'Student',
+              matricNo: a.matricNo || user?.matricNo || '',
+              studentId: a.studentPublicId || a.studentId || user?.id,
+              doctorName,
+              doctorId,
+              serviceName,
+              serviceId,
+              reason: a.reason || '',
+              location: a.location || 'Care-OAU Health Centre',
+              status: a.status === 'pending' ? APP_CONFIG.APPOINTMENT_STATUS.PENDING :
+                      (a.status === 'confirmed' || a.status === 'approved') ? APP_CONFIG.APPOINTMENT_STATUS.APPROVED :
+                      a.status === 'cancelled' ? APP_CONFIG.APPOINTMENT_STATUS.CANCELLED :
+                      a.status === 'completed' ? APP_CONFIG.APPOINTMENT_STATUS.COMPLETED :
+                      a.status === 'in_consultation' ? APP_CONFIG.APPOINTMENT_STATUS.IN_CONSULTATION :
+                      a.status === 'rejected' ? APP_CONFIG.APPOINTMENT_STATUS.REJECTED :
+                      a.status === 'no_show' ? APP_CONFIG.APPOINTMENT_STATUS.NO_SHOW :
+                      (a.status || APP_CONFIG.APPOINTMENT_STATUS.PENDING),
+              cancellationReason: a.cancellationReason || a.reason
+            };
+          });
           Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, mapped);
           return mapped;
         }
@@ -118,6 +146,9 @@ export const AppointmentService = {
    */
   async getStudentAppointments(studentId = 'usr_student_01') {
     const list = await this.getAllAppointments();
+    if (!studentId || !APP_CONFIG.USE_MOCK_DATA) {
+      return list;
+    }
     return list.filter(a => a.studentId === studentId);
   },
 
