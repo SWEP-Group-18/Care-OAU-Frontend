@@ -63,6 +63,15 @@ export const APP_CONFIG = {
   VERSION: '1.0.0-scaffold',
   INSTITUTION: 'Obafemi Awolowo University Health Centre',
   
+  // Emergency Helpline & Direct WhatsApp Contacts
+  EMERGENCY: {
+    PHONE: '+2348033944854',
+    PHONE_DISPLAY: '0803 394 4854',
+    WHATSAPP: '2348033944854',
+    WHATSAPP_DISPLAY: '+234 803 394 4854',
+    MESSAGE: 'Hello Care-OAU Emergency Unit, I need urgent medical assistance.'
+  },
+  
   // Dynamic resolution for backend API endpoint
   get API_BASE_URL() {
     return resolveApiBaseUrl();
