@@ -73,18 +73,26 @@ function initControls() {
         operatingDays: selectedDays,
         startTime: startTimeInput.value,
         endTime: endTimeInput.value,
+        opensAt: startTimeInput.value,
+        closesAt: endTimeInput.value,
         dailyCapacity: parseInt(capacityInput.value, 10) || 50,
         requiresReferral: referralCheck.checked
       };
 
       if (serviceId) {
+        serviceData.publicId = serviceId;
         serviceData.id = serviceId;
       }
 
-      await MedicalService.saveService(serviceData);
-      Modal.close('service-form-modal');
-      Toast.success(serviceId ? 'Service configuration updated!' : 'New medical service created successfully!');
-      loadServicesTable();
+      try {
+        await MedicalService.saveService(serviceData);
+        Modal.close('service-form-modal');
+        Toast.success(serviceId ? 'Service configuration updated successfully!' : 'New clinical service created successfully!');
+        await loadServicesTable();
+      } catch (err) {
+        console.error('[AdminServices] Save failed:', err);
+        Toast.error(err.message || 'Failed to save medical service.');
+      }
     });
   }
 }
