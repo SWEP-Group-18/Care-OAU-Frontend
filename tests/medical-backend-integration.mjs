@@ -237,7 +237,71 @@ try {
   assert.equal(serializedUpdate.dailyCapacity, 40);
   assert.equal(serializedUpdate.category, "other");
 
-  console.log("PASS: MedicalService backend API integration (/admin/services GET, POST, PATCH, status toggle)");
+  // Test 9: Student booking service loading and exclusion of closed services
+  const retrievedServices = await MedicalService.getAllServices();
+  const eligibleBookingServices = retrievedServices.filter(s => s.status === "open" || s.isActive === true);
+  assert.equal(eligibleBookingServices.some(s => s.status === "closed"), false, "Closed services must not be eligible for booking");
+  assert.ok(eligibleBookingServices.some(s => s.publicId === "srv_MqJ4U0Pqgs"), "Open services must be included for booking");
+  assert.equal(eligibleBookingServices.some(s => s.publicId === "srv_Dental8Xk2Lm"), false, "Closed Dental Consultation must be excluded from booking choices");
+
+  // Test 10: Backend error propagation (no false success on rejected mutations)
+  Api.post = async () => {
+    const err = new Error("A service with this name and category already exists");
+    err.status = 409;
+    err.code = "SERVICE_ALREADY_EXISTS";
+    throw err;
+  };
+  await assert.rejects(
+    async () => MedicalService.createService({
+      name: "General Medical Consultation",
+      category: "general_medicine",
+      description: "Duplicate",
+      operatingDays: ["monday"],
+      startTime: "08:00",
+      endTime: "18:00",
+      dailyCapacity: 50,
+      requiresReferral: false
+    }),
+    /SERVICE_ALREADY_EXISTS|A service with this name/i,
+    "Rejected createService must throw error and not report false success"
+  );
+
+  Api.patch = async () => {
+    const err = new Error("Service is already closed");
+    err.status = 400;
+    err.code = "SERVICE_STATUS_UNCHANGED";
+    throw err;
+  };
+  await assert.rejects(
+    async () => MedicalService.updateServiceStatus("srv_Dental8Xk2Lm", "closed"),
+    /SERVICE_STATUS_UNCHANGED|Service is already closed/i,
+    "Rejected updateServiceStatus must throw error and not mutate local state"
+  );
+
+  // Test 11: Mock / demo mode isolation when explicitly enabled
+  APP_CONFIG.USE_MOCK_DATA = true;
+  storageMap.clear();
+  const mockServices = await MedicalService.getAllServices();
+  assert.ok(mockServices.length > 0, "Mock mode must return initial mock services");
+  const mockCreate = await MedicalService.createService({
+    name: "Mock Health Check",
+    category: "general_medicine",
+    description: "Mock description",
+    operatingDays: ["Monday", "Tuesday"],
+    startTime: "08:00",
+    endTime: "16:00",
+    dailyCapacity: 40,
+    requiresReferral: false
+  });
+  assert.ok(mockCreate.success, "Mock mode createService must succeed locally");
+  assert.ok(mockCreate.service.publicId.startsWith("srv_"), "Mock service must receive srv_ publicId");
+
+  const mockToggle = await MedicalService.toggleStatus(mockCreate.service.publicId);
+  assert.ok(mockToggle.success, "Mock mode toggleStatus must succeed locally");
+  assert.equal(mockToggle.service.status, "closed", "Mock status toggle must update to closed");
+  APP_CONFIG.USE_MOCK_DATA = false;
+
+  console.log("PASS: MedicalService backend API integration (/admin/services GET, POST, PATCH, status toggle, error handling, mock mode)");
 } finally {
   Api.get = originalApiGet;
   Api.post = originalApiPost;
