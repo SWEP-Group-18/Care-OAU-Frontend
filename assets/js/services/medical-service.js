@@ -388,26 +388,64 @@ export const MedicalService = {
   },
 
   /**
-   * Toggle service active status
+   * Sets a service's status to 'open' or 'closed'.
+   * Calls documented PATCH /admin/services/{publicId}/status with { status }.
    */
-  async toggleStatus(id) {
+  async updateServiceStatus(publicId, newStatus) {
+    const cleanId = String(publicId || '').trim();
+    if (!cleanId) {
+      throw new Error('Service publicId is required to update status');
+    }
+
+    const targetStatus = String(newStatus).toLowerCase() === 'closed' ? 'closed' : 'open';
+    let updatedService = null;
+
     if (!APP_CONFIG.USE_MOCK_DATA) {
-      try {
-        await Api.patch(`/services/${id}/status`);
-      } catch (err) {
-        // Fallback
+      const res = await Api.patch(`/admin/services/${cleanId}/status`, {
+        status: targetStatus
+      });
+      const raw = res?.data?.service || res?.data;
+      if (raw) {
+        updatedService = fromBackendService(raw);
       }
     }
 
-    const services = await this.getAllServices();
-    const updated = services.map(s => {
-      if (s.id === id || s.publicId === id) {
-        return { ...s, isActive: !s.isActive };
-      }
-      return s;
-    });
+    const cached = await this.getAllServices();
+    const existing = cached.find(s => s.publicId === cleanId || s.id === cleanId);
 
+    if (!updatedService) {
+      if (!existing) {
+        throw new Error('Service not found');
+      }
+      updatedService = fromBackendService({
+        ...existing,
+        status: targetStatus,
+        isActive: targetStatus === 'open',
+        publicId: cleanId,
+        id: cleanId
+      });
+    }
+
+    const updated = cached.map(s => (s.publicId === cleanId || s.id === cleanId) ? updatedService : s);
     Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, updated);
-    return { success: true, services: updated };
+
+    return {
+      success: true,
+      service: updatedService,
+      services: updated
+    };
+  },
+
+  /**
+   * Toggles service status between open and closed.
+   */
+  async toggleStatus(id) {
+    const cleanId = String(id || '').trim();
+    const services = await this.getAllServices();
+    const current = services.find(s => s.publicId === cleanId || s.id === cleanId);
+    const isCurrentlyOpen = current ? (current.status === 'open' || current.isActive === true) : true;
+    const targetStatus = isCurrentlyOpen ? 'closed' : 'open';
+
+    return this.updateServiceStatus(cleanId, targetStatus);
   }
 };
