@@ -134,13 +134,42 @@ function updateDateSlotLabel() {
   label.textContent = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' });
 }
 
-function renderTimeSlots() {
+async function renderTimeSlots() {
   const container = document.getElementById('time-grid-container');
   if (!container) return;
 
-  const slots = availableSlots(selectedServiceObj?.id, isEarliestDoctor ? null : selectedDoctorObj?.id, selectedDateStr);
-  if (!slots.some(s => s.time === selectedTimeStr)) selectedTimeStr = slots[0]?.time || '';
-  if (!slots.length) { container.innerHTML = '<p class="capacity-guidance">No available times on this date. Choose another date or doctor.</p>'; return; }
+  const srvId = selectedServiceObj?.publicId || selectedServiceObj?.id;
+  const docId = isEarliestDoctor ? null : (selectedDoctorObj?.publicId || selectedDoctorObj?.id);
+
+  container.innerHTML = `
+    <div style="grid-column: 1 / -1; padding: 18px; text-align: center;">
+      <p class="text-secondary" style="font-size: var(--font-size-sm);">Checking available times...</p>
+    </div>
+  `;
+
+  let slots = [];
+  try {
+    slots = await AppointmentService.getAvailableSlots({
+      servicePublicId: srvId,
+      date: selectedDateStr,
+      doctorPublicId: docId
+    });
+  } catch (err) {
+    console.warn('[BookAppointment] Error fetching slots:', err);
+    slots = availableSlots(srvId, docId, selectedDateStr);
+  }
+
+  if (!slots.some(s => s.time === selectedTimeStr && !s.full)) {
+    const firstAvailable = slots.find(s => !s.full);
+    selectedTimeStr = firstAvailable ? firstAvailable.time : (slots[0]?.time || '');
+  }
+
+  if (!slots.length) {
+    container.innerHTML = '<p class="capacity-guidance" style="grid-column: 1 / -1;">No available times on this date. Choose another date or doctor.</p>';
+    selectedTimeStr = '';
+    updateSummary();
+    return;
+  }
 
   container.innerHTML = slots.map((s) => {
     const isSelected = selectedTimeStr === s.time;
@@ -160,6 +189,8 @@ function renderTimeSlots() {
       updateSummary();
     });
   });
+
+  updateSummary();
 }
 
 async function initServices(paramDoctorId) {
@@ -273,11 +304,14 @@ function initDoctors(paramDoctorId) {
   const container = document.getElementById('doctor-choices-container');
   if (!container) return;
 
-  const doctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []).filter(d => d.serviceId === selectedServiceObj?.id);
+  const srvId = selectedServiceObj?.publicId || selectedServiceObj?.id;
+  const doctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []).filter(d => 
+    d.serviceId === srvId || d.serviceId === selectedServiceObj?.id || d.serviceId === selectedServiceObj?.publicId
+  );
 
   // Pre-selection if paramDoctorId provided
   if (paramDoctorId) {
-    const match = doctors.find((d) => d.id === paramDoctorId);
+    const match = doctors.find((d) => (d.publicId === paramDoctorId || d.id === paramDoctorId));
     if (match) {
       selectedDoctorObj = match;
       isEarliestDoctor = false;
@@ -302,17 +336,18 @@ function initDoctors(paramDoctorId) {
   `;
 
   const doctorsHtml = doctors.map((doc) => {
-    const isSelected = !isEarliestDoctor && selectedDoctorObj && selectedDoctorObj.id === doc.id;
+    const docId = doc.publicId || doc.id;
+    const isSelected = !isEarliestDoctor && selectedDoctorObj && (selectedDoctorObj.publicId === docId || selectedDoctorObj.id === docId);
     const capacity = doc.dailyCapacity || 25;
     const currentLoad = doc.currentLoad || 0;
-    const isFull = false; // Date-specific attendance is enforced by availableSlots.
+    const isFull = false;
     const slotsRemaining = Math.max(0, capacity - currentLoad);
 
     const parts = (doc.name || 'Doctor').replace(/^Dr\.?\s+/i, '').split(' ');
     const initials = parts.map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 
     return `
-      <button type="button" class="choice-card ${isSelected ? 'selected' : ''}" data-doctor-id="${doc.id}" ${isFull ? 'disabled' : ''}>
+      <button type="button" class="choice-card ${isSelected ? 'selected' : ''}" data-doctor-id="${docId}" ${isFull ? 'disabled' : ''}>
         <span class="choice-radio">
           ${isSelected ? '<span></span>' : ''}
         </span>
@@ -549,11 +584,19 @@ async function submitAppointmentRequest() {
 
   try {
     const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
+    const srvId = selectedServiceObj.publicId || selectedServiceObj.id;
+    const docId = isEarliestDoctor ? null : (selectedDoctorObj?.publicId || selectedDoctorObj?.id);
     const result = await AppointmentService.createAppointment({
-      studentId: user.id, studentName: user.name, matricNo: user.matricNo, phone: user.phone,
-      serviceId: selectedServiceObj.id, serviceName: selectedServiceObj.name,
-      doctorId: isEarliestDoctor ? null : selectedDoctorObj?.id,
-      appointmentDate: selectedDateStr, timeSlot: selectedTimeStr,
+      studentId: user?.id,
+      studentName: user?.name,
+      matricNo: user?.matricNo,
+      phone: user?.phone,
+      serviceId: srvId,
+      serviceName: selectedServiceObj.name,
+      doctorId: docId,
+      doctorName: isEarliestDoctor ? 'Earliest Available' : selectedDoctorObj?.name,
+      appointmentDate: selectedDateStr,
+      timeSlot: selectedTimeStr,
       reason: document.getElementById('booking-reason')?.value.trim() || 'General consultation',
       referralCode: document.getElementById('referral-code')?.value.trim()
     });
