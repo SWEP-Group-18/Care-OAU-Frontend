@@ -171,58 +171,92 @@ export const AppointmentService = {
     reason,
     referralCode
   }) {
-    await new Promise(r => setTimeout(r, 400));
-    const appointments = await this.getAllAppointments();
+    const services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []);
+    const service = (Array.isArray(services) ? services : []).find(s => s.id === serviceId || s.publicId === serviceId);
+    if (service?.requiresReferral && !referralCode?.trim()) {
+      return { success: false, message: 'A clinical referral code is required for this service.' };
+    }
 
-    const slot = availableSlots(serviceId, doctorId, appointmentDate).find(s => s.time === timeSlot);
-    if (!slot) return { success: false, message: 'This time is no longer available. Please select another appointment time.' };
-    const service = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []).find(s => s.id === serviceId);
-    if (service?.requiresReferral && !referralCode?.trim()) return { success: false, message: 'A referral code is required.' };
-    doctorId = slot.doctor.id;
-    doctorName = slot.doctor.name;
+    const servicePublicId = service?.publicId || serviceId;
+    let doctorPublicId = doctorId;
+    const formattedStartTime = Utils.to24HourTime(timeSlot);
 
     let backendAppointment = null;
     if (!APP_CONFIG.USE_MOCK_DATA) {
-      try {
-        const res = await Api.post('/appointments', {
-          doctorPublicId: doctorId,
-          servicePublicId: serviceId,
-          appointmentDate,
-          timeSlot,
-          reason,
-          phone
-        });
-        backendAppointment = res?.data;
-      } catch (err) {
-        if (err.status === 409 || err.code === 'SLOT_CONFLICT') {
-          return { success: false, message: 'This time is no longer available. Please select another appointment time.' };
+      // If doctorPublicId is not provided (e.g. Earliest Available), find doctor from available slots
+      if (!doctorPublicId) {
+        try {
+          const slots = await this.getAvailableSlots({ servicePublicId, date: appointmentDate });
+          const matchingSlot = slots.find(s => s.time === timeSlot || s.startTime === formattedStartTime || s.startTime?.startsWith(formattedStartTime));
+          if (matchingSlot?.doctor?.publicId) {
+            doctorPublicId = matchingSlot.doctor.publicId;
+            doctorName = matchingSlot.doctor.name;
+          }
+        } catch {}
+      }
+
+      if (!doctorPublicId) {
+        const storedDoctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
+        const docMatch = (Array.isArray(storedDoctors) ? storedDoctors : []).find(d => 
+          (d.serviceId === servicePublicId || d.serviceId === serviceId) && d.isActive !== false
+        );
+        if (docMatch) {
+          doctorPublicId = docMatch.publicId || docMatch.id;
+          doctorName = docMatch.name;
         }
-        // Fallback to local
+      }
+
+      if (!doctorPublicId) {
+        return { success: false, message: 'No available physician found for this service at the selected time.' };
+      }
+
+      try {
+        const payload = {
+          servicePublicId,
+          doctorPublicId,
+          appointmentDate,
+          startTime: formattedStartTime,
+          reason: reason || 'General medical consultation'
+        };
+
+        const res = await Api.post('/appointments', payload);
+        backendAppointment = res?.data?.appointment || res?.data;
+      } catch (err) {
+        const errorMsg = err.message || 'Unable to book appointment.';
+        return {
+          success: false,
+          code: err.code || 'BOOKING_FAILED',
+          message: errorMsg
+        };
       }
     }
 
+    const appointments = await this.getAllAppointments();
     const newAppointment = {
       id: backendAppointment?.publicId || `apt_${Date.now()}`,
       publicId: backendAppointment?.publicId || `apt_${Date.now()}`,
-      referenceNo: `CHC-${Date.now().toString().slice(-8)}`,
+      referenceNo: backendAppointment?.publicId || `CHC-${Date.now().toString().slice(-8)}`,
       referralCode: referralCode || null,
       studentId: studentId || 'usr_student_01',
       studentName: studentName || 'Oluwaseun Adeleke',
       matricNo: matricNo || 'CSC/2021/045',
       phone: phone || '08123456789',
-      serviceId,
-      serviceName,
-      doctorId,
-      doctorName,
-      appointmentDate,
-      timeSlot,
-      reason,
+      serviceId: servicePublicId,
+      serviceName: backendAppointment?.service || serviceName || service?.name || 'General Consultation',
+      doctorId: doctorPublicId || doctorId,
+      doctorName: backendAppointment?.doctor || doctorName || 'Assigned Physician',
+      appointmentDate: backendAppointment?.date ? String(backendAppointment.date).slice(0, 10) : appointmentDate,
+      timeSlot: Utils.formatTime(backendAppointment?.startTime || timeSlot),
+      startTime: backendAppointment?.startTime || formattedStartTime,
+      endTime: backendAppointment?.endTime || '',
+      reason: backendAppointment?.reason || reason || 'General consultation',
+      location: backendAppointment?.location || 'Care-OAU Health Centre',
       status: APP_CONFIG.APPOINTMENT_STATUS.PENDING, // Strictly Pending Approval
       queueNumber: null, // Strictly null until staff check-in
       createdAt: new Date().toISOString()
     };
 
-    const updated = [newAppointment, ...appointments];
+    const updated = [newAppointment, ...appointments.filter(a => a.id !== newAppointment.id)];
     Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, updated);
 
     return { success: true, appointment: newAppointment };
@@ -302,7 +336,7 @@ export const AppointmentService = {
           reason: cancellationReason
         });
       } catch (err) {
-        // Fallback
+        return { success: false, message: err.message || 'Unable to cancel appointment.' };
       }
     }
 
