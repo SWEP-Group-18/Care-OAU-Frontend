@@ -166,25 +166,55 @@ async function initServices(paramDoctorId) {
   const container = document.getElementById('service-options-container');
   if (!container) return;
 
+  container.innerHTML = `
+    <div style="padding: var(--space-8); text-align: center;">
+      <p class="text-secondary" style="font-size: var(--font-size-sm);">Loading available clinical services...</p>
+    </div>
+  `;
+
   let services = [];
   try {
     services = await MedicalService.getAllServices();
   } catch (err) {
     console.warn('[BookAppointment] Failed to load services via MedicalService:', err);
     services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []);
+    if (!Array.isArray(services) || services.length === 0) {
+      container.innerHTML = `
+        <div style="padding: var(--space-8); text-align: center; border: 1px solid var(--color-danger); border-radius: var(--radius-lg); background: var(--color-surface);">
+          <p style="color: var(--color-danger); font-weight: 500; margin-bottom: var(--space-2);">Unable to load clinical services.</p>
+          <p class="text-secondary" style="font-size: var(--font-size-xs); margin-bottom: var(--space-4);">${Utils.escapeHtml(err.message || 'Please check your connection and try again.')}</p>
+          <button type="button" class="btn btn-outline-teal btn-sm" id="btn-retry-services">Retry Loading</button>
+        </div>
+      `;
+      const retryBtn = document.getElementById('btn-retry-services');
+      if (retryBtn) {
+        retryBtn.addEventListener('click', () => initServices(paramDoctorId));
+      }
+      return;
+    }
   }
 
   const openServices = (Array.isArray(services) ? services : []).filter(s => s.status === 'open' || s.isActive === true);
 
-  if (openServices.length > 0) {
-    selectedServiceObj = openServices[0];
-    if (paramDoctorId) {
-      const doc = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []).find(d => d.id === paramDoctorId);
-      const match = openServices.find(s => (s.publicId === doc?.serviceId || s.id === doc?.serviceId));
-      if (match) selectedServiceObj = match;
-    }
-  } else {
+  if (openServices.length === 0) {
     selectedServiceObj = null;
+    container.innerHTML = `
+      <div style="padding: var(--space-8); text-align: center; border: 1px dashed var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface);">
+        <p style="font-weight: 500; margin-bottom: var(--space-2);">No clinical services are currently open for booking.</p>
+        <p class="text-secondary" style="font-size: var(--font-size-xs);">Please check back during operating hours or contact the clinic reception.</p>
+      </div>
+    `;
+    const referralWrap = document.getElementById('referral-field-container');
+    if (referralWrap) referralWrap.style.display = 'none';
+    updateSummary();
+    return;
+  }
+
+  selectedServiceObj = openServices[0];
+  if (paramDoctorId) {
+    const doc = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []).find(d => d.id === paramDoctorId);
+    const match = openServices.find(s => (s.publicId === doc?.serviceId || s.id === doc?.serviceId));
+    if (match) selectedServiceObj = match;
   }
 
   container.innerHTML = openServices.map((srv) => {
@@ -233,7 +263,8 @@ async function initServices(paramDoctorId) {
   });
 
   initDoctors(paramDoctorId);
-  document.getElementById('referral-field-container').style.display = selectedServiceObj?.requiresReferral ? 'flex' : 'none';
+  const refWrap = document.getElementById('referral-field-container');
+  if (refWrap) refWrap.style.display = selectedServiceObj?.requiresReferral ? 'flex' : 'none';
   renderTimeSlots();
   updateSummary();
 }
