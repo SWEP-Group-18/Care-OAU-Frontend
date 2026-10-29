@@ -235,11 +235,45 @@ export const MedicalService = {
   },
 
   /**
-   * Get service by ID
+   * Get single service by public ID directly from API or cached list.
+   * Calls documented GET /admin/services/{publicId}.
+   */
+  async getServiceByPublicId(publicId) {
+    if (!publicId) return null;
+    const cleanId = String(publicId).trim();
+
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        const res = await Api.get(`/admin/services/${cleanId}`);
+        const raw = res?.data?.service || res?.data;
+        if (raw) {
+          const service = fromBackendService(raw);
+          const cached = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []);
+          if (Array.isArray(cached)) {
+            const index = cached.findIndex(s => s.publicId === cleanId || s.id === cleanId);
+            if (index >= 0) {
+              cached[index] = service;
+            } else {
+              cached.push(service);
+            }
+            Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, cached);
+          }
+          return service;
+        }
+      } catch (err) {
+        console.warn(`[MedicalService] Failed to fetch service ${cleanId} from /admin/services:`, err.message);
+      }
+    }
+
+    const services = await this.getAllServices();
+    return services.find(s => s.publicId === cleanId || s.id === cleanId) || null;
+  },
+
+  /**
+   * Get service by ID (supports canonical publicId or legacy id)
    */
   async getServiceById(id) {
-    const services = await this.getAllServices();
-    return services.find(s => s.id === id || s.publicId === id) || null;
+    return this.getServiceByPublicId(id);
   },
 
   /**
