@@ -140,6 +140,62 @@ export function fromBackendService(raw) {
   };
 }
 
+/**
+ * Serializes service form/model data into the exact request body required by POST /admin/services.
+ * Guarantees all 8 required fields per Swagger specification and omits frontend-only properties.
+ */
+export function toBackendCreatePayload(data = {}) {
+  const operatingDays = normalizeOperatingDays(data.operatingDays || []);
+  const opensAt = normalizeTimeString(data.opensAt || data.startTime || '08:00', true);
+  const closesAt = normalizeTimeString(data.closesAt || data.endTime || '18:00', true);
+
+  return {
+    name: String(data.name || '').trim(),
+    category: normalizeCategory(data.category),
+    description: String(data.description || '').trim(),
+    operatingDays,
+    opensAt,
+    closesAt,
+    dailyCapacity: parseInt(data.dailyCapacity ?? data.capacityPerDay, 10) || 50,
+    requiresReferral: Boolean(data.requiresReferral)
+  };
+}
+
+/**
+ * Serializes service changes into the exact body accepted by PATCH /admin/services/{publicId}.
+ * Omits frontend-only keys such as id, publicId, isActive, status, startTime, and endTime.
+ */
+export function toBackendUpdatePayload(data = {}) {
+  const payload = {};
+
+  if (data.name !== undefined) {
+    payload.name = String(data.name).trim();
+  }
+  if (data.category !== undefined) {
+    payload.category = normalizeCategory(data.category);
+  }
+  if (data.description !== undefined) {
+    payload.description = String(data.description).trim();
+  }
+  if (data.operatingDays !== undefined) {
+    payload.operatingDays = normalizeOperatingDays(data.operatingDays);
+  }
+  if (data.opensAt !== undefined || data.startTime !== undefined) {
+    payload.opensAt = normalizeTimeString(data.opensAt || data.startTime, true);
+  }
+  if (data.closesAt !== undefined || data.endTime !== undefined) {
+    payload.closesAt = normalizeTimeString(data.closesAt || data.endTime, true);
+  }
+  if (data.dailyCapacity !== undefined || data.capacityPerDay !== undefined) {
+    payload.dailyCapacity = parseInt(data.dailyCapacity ?? data.capacityPerDay, 10);
+  }
+  if (data.requiresReferral !== undefined) {
+    payload.requiresReferral = Boolean(data.requiresReferral);
+  }
+
+  return payload;
+}
+
 export const MedicalService = {
   /**
    * Get all medical services from API or storage fallback
