@@ -373,54 +373,18 @@ export const MedicalService = {
   },
 
   /**
-   * Create or update a medical service
+   * Save (create or update) a medical service.
+   * Dispatches to createService or updateService based on the presence of publicId/id.
    */
   async saveService(serviceData) {
-    const services = await this.getAllServices();
+    if (!serviceData || typeof serviceData !== 'object') {
+      throw new Error('Service data is required');
+    }
     const publicId = serviceData.publicId || serviceData.id;
-    let updated;
-
-    if (!APP_CONFIG.USE_MOCK_DATA) {
-      try {
-        if (publicId && !publicId.startsWith('srv_local_')) {
-          await Api.patch(`/services/${publicId}`, {
-            name: serviceData.name,
-            description: serviceData.description,
-            operatingHours: serviceData.operatingHours,
-            requiresReferral: serviceData.requiresReferral,
-            capacityPerDay: serviceData.capacityPerDay
-          });
-        } else {
-          const res = await Api.post('/services', {
-            name: serviceData.name,
-            description: serviceData.description,
-            operatingHours: serviceData.operatingHours,
-            requiresReferral: serviceData.requiresReferral,
-            capacityPerDay: serviceData.capacityPerDay
-          });
-          if (res?.data?.publicId) {
-            serviceData.id = res.data.publicId;
-            serviceData.publicId = res.data.publicId;
-          }
-        }
-      } catch (err) {
-        // Fallback to local storage
-      }
+    if (publicId && !publicId.startsWith('srv_local_') && !publicId.startsWith('temp_')) {
+      return this.updateService(publicId, serviceData);
     }
-
-    if (serviceData.id) {
-      updated = services.map(s => (s.id === serviceData.id || s.publicId === serviceData.id) ? { ...s, ...serviceData } : s);
-    } else {
-      const newService = {
-        ...serviceData,
-        id: serviceData.id || `srv_${Date.now()}`,
-        isActive: true
-      };
-      updated = [...services, newService];
-    }
-
-    Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, updated);
-    return { success: true, services: updated };
+    return this.createService(serviceData);
   },
 
   /**
