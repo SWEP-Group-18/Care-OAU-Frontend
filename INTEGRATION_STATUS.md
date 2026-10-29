@@ -1,4 +1,4 @@
-﻿# Care-OAU Frontend — Integration & Sync Architecture Status
+# Care-OAU Frontend — Integration & Sync Architecture Status
 
 ## 1. System Integration Overview
 The Care-OAU frontend now provides direct, resilient REST API integration across student and administrative health-centre operations:
@@ -18,9 +18,15 @@ The Care-OAU frontend now provides direct, resilient REST API integration across
    - Modifies profiles via `PATCH /doctors/:id/profile`.
    - Toggles availability via `PATCH /doctors/:id/availability`.
    - Deactivates doctors via `PATCH /doctors/:id/deactivate`.
-2. **`MedicalService`:**
-   - Queries health services via `GET /services`.
-   - Admin management via `POST /services`, `PATCH /services/:id`, and `PATCH /services/:id/status`.
+2. **`MedicalService` (Clinical Services Integration):**
+   - **Service List:** `GET /admin/services` (parses `{ success: true, data: { services: [...] } }` envelope).
+   - **Service Detail:** `GET /admin/services/:publicId` (parses `{ data: { service: {...} } }`).
+   - **Create Service:** `POST /admin/services` (submits 8 required fields: `name`, `category`, `description`, `operatingDays`, `opensAt`, `closesAt`, `dailyCapacity`, `requiresReferral`).
+   - **Update Service:** `PATCH /admin/services/:publicId` (sanitizes frontend fields and updates schedule/quota).
+   - **Toggle Status:** `PATCH /admin/services/:publicId/status` (sends `{ status: 'open' | 'closed' }`).
+   - **Data Alignment Layer:** Maps backend `publicId` <-> `id`, `status` (`open`/`closed`) <-> `isActive`, lowercase days <-> TitleCase display, and enum categories (`general_medicine`, `dental`, `optometry`, `laboratory`, `mental_health`, `other`).
+   - **Student Booking Integration:** `book-appointment.js` asynchronously queries `MedicalService.getAllServices()`, filters for eligible `open` services, excludes closed units, and handles loading, empty, and retry error states.
+   - **Error Handling:** Propagates server errors (e.g. 400 validation, 409 duplicate) without false success toasts or premature UI/cache updates.
 3. **`AppointmentService`:**
    - Queries student appointments via `GET /appointments/me`.
    - Queries administrative logs via `GET /appointments/admin/all`.
