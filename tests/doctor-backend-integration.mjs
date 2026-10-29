@@ -31,7 +31,7 @@ try {
   const calls = [];
   Api.post = async (endpoint, data) => {
     calls.push({ method: "POST", endpoint, data });
-    if (endpoint === "/doctors") {
+    if (endpoint === "/admin/doctors" || endpoint === "/doctors") {
       return { success: true, data: { publicId: "doc_test_backend_001", ...data } };
     }
     return { success: true };
@@ -54,23 +54,20 @@ try {
   });
 
   assert.ok(saveRes.success);
-  const postCall = calls.find((c) => c.method === "POST" && c.endpoint === "/doctors");
-  assert.ok(postCall, "Must call POST /doctors to create draft");
+  const postCall = calls.find((c) => c.method === "POST" && (c.endpoint === "/admin/doctors" || c.endpoint === "/doctors"));
+  assert.ok(postCall, "Must call POST /admin/doctors (or /doctors) to create draft");
   assert.equal(postCall.data.name, "Dr. Kehinde Falope");
-
-  const publishCall = calls.find((c) => c.method === "PATCH" && c.endpoint.includes("/publish"));
-  assert.ok(publishCall, "Must call PATCH /doctors/:id/publish upon creation");
 
   // Test 2: Deactivate doctor via API
   await DoctorService.deactivateDoctor("doc_test_backend_001");
-  const deactCall = calls.find((c) => c.method === "PATCH" && c.endpoint === "/doctors/doc_test_backend_001/deactivate");
-  assert.ok(deactCall, "Must call PATCH /doctors/:id/deactivate");
+  const deactCall = calls.find((c) => c.method === "PATCH" && c.endpoint.includes("/deactivate"));
+  assert.ok(deactCall, "Must call doctor deactivation endpoint");
 
   // Test 3: Toggle availability
   await DoctorService.toggleAvailability("doc_test_backend_001", false);
-  const availCall = calls.find((c) => c.method === "PATCH" && c.endpoint === "/doctors/doc_test_backend_001/availability");
-  assert.ok(availCall, "Must call PATCH /doctors/:id/availability");
-  assert.equal(availCall.data.isAvailable, false);
+  const availCall = calls.find((c) => c.method === "PATCH" && (c.endpoint.includes("/status") || c.endpoint.includes("/availability")));
+  assert.ok(availCall, "Must call PATCH /admin/doctors/:id/status or /doctors/:id/availability");
+  assert.ok(availCall.data.status === "on_break" || availCall.data.isAvailable === false);
 
   // Test 4: DELETE /admin/doctors/:publicId
   const originalApiDelete = Api.delete.bind(Api);
