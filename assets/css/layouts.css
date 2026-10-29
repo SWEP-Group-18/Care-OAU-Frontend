@@ -210,13 +210,13 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(11, 36, 89, 0.1);
-  box-shadow: 0 -4px 20px -2px rgba(11, 36, 89, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  z-index: 80;
+  height: 68px;
+  background: linear-gradient(180deg, rgba(7, 24, 61, 0.96) 0%, rgba(11, 36, 89, 0.98) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1.5px solid rgba(229, 174, 50, 0.35);
+  box-shadow: 0 -8px 30px rgba(7, 24, 61, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  z-index: 500;
   padding: 0 8px env(safe-area-inset-bottom, 0px);
   align-items: center;
   justify-content: space-around;
@@ -228,11 +228,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   height: 100%;
   min-height: 48px;
   text-decoration: none;
-  color: #64748b;
+  color: #94A3B8;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -263,26 +263,27 @@
 .mobile-tab-label {
   font-size: 11px;
   line-height: 1;
+  color: inherit;
 }
 
 .mobile-tab-link:hover,
 .mobile-tab-link:focus-visible {
-  color: var(--oau-navy, #0B2459);
+  color: #E5AE32;
 }
 
 .mobile-tab-link.active {
-  color: var(--oau-navy, #0B2459);
+  color: #E5AE32;
   font-weight: 700;
 }
 
 .mobile-tab-link.active .mobile-tab-icon-wrap {
-  background: rgba(11, 36, 89, 0.08);
-  color: var(--oau-navy, #0B2459);
-  box-shadow: inset 1px 1px 2px rgba(11, 36, 89, 0.12), 0 2px 4px rgba(255, 255, 255, 0.8);
+  background: rgba(229, 174, 50, 0.15);
+  color: #E5AE32;
+  box-shadow: inset 1px 1px 2px rgba(229, 174, 50, 0.2), 0 2px 8px rgba(229, 174, 50, 0.25);
 }
 
 .mobile-tab-link.active .mobile-tab-icon-wrap svg {
-  transform: translateY(-1px) scale(1.05);
+  transform: translateY(-1px) scale(1.08);
 }
 
 .mobile-tab-link.active::before {
@@ -291,22 +292,61 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 28px;
+  width: 32px;
   height: 3px;
-  background: var(--oau-gold, #E5AE32);
+  background: #E5AE32;
   border-radius: 0 0 3px 3px;
-  box-shadow: 0 1px 3px rgba(229, 174, 50, 0.4);
+  box-shadow: 0 2px 8px rgba(229, 174, 50, 0.6);
+}
+
+/* Primary Call To Attention: "Book Appointment" Center Raised Action Button */
+.mobile-tab-link--accent {
+  position: relative;
+  overflow: visible;
 }
 
 .mobile-tab-link--accent .mobile-tab-icon-wrap {
-  background: linear-gradient(135deg, rgba(11, 36, 89, 0.06), rgba(229, 174, 50, 0.12));
-  color: var(--oau-navy, #0B2459);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  transform: translateY(-14px);
+  background: linear-gradient(135deg, #FAD02C 0%, #E5AE32 50%, #C48E1D 100%);
+  color: #07183D;
+  border: 3.5px solid #07183D;
+  box-shadow: 0 8px 22px rgba(229, 174, 50, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35), inset 0 2px 2px rgba(255, 255, 255, 0.65);
+}
+
+.mobile-tab-link--accent .mobile-tab-icon-wrap svg {
+  width: 24px;
+  height: 24px;
+  stroke: #07183D;
+  stroke-width: 2.6;
+}
+
+.mobile-tab-link--accent .mobile-tab-label {
+  transform: translateY(-6px);
+  color: #E5AE32;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.mobile-tab-link--accent:hover .mobile-tab-icon-wrap,
+.mobile-tab-link--accent:focus-visible .mobile-tab-icon-wrap {
+  transform: translateY(-17px) scale(1.06);
+  box-shadow: 0 12px 28px rgba(229, 174, 50, 0.7), 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
 .mobile-tab-link--accent.active .mobile-tab-icon-wrap {
-  background: linear-gradient(135deg, var(--oau-navy, #0B2459), #07183D);
-  color: var(--oau-gold, #E5AE32);
-  box-shadow: 0 4px 10px rgba(11, 36, 89, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #FFE272 0%, #F5B935 50%, #D4981C 100%);
+  color: #0B2459;
+  border-color: #0B2459;
+  transform: translateY(-16px) scale(1.05);
+  box-shadow: 0 10px 26px rgba(229, 174, 50, 0.75), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.mobile-tab-link--accent.active::before {
+  display: none;
 }
 
 /* --------------------------------------------------------------------------
