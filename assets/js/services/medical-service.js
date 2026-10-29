@@ -198,30 +198,38 @@ export function toBackendUpdatePayload(data = {}) {
 
 export const MedicalService = {
   /**
-   * Get all medical services from API or storage fallback
+   * Get all medical services from API or storage fallback.
+   * Calls the documented GET /admin/services route and parses data.services envelope.
    */
-  async getAllServices() {
+  async getAllServices(options = {}) {
+    const { forceRemote = false } = options;
+
     if (!APP_CONFIG.USE_MOCK_DATA) {
       try {
-        const res = await Api.get('/services');
-        const items = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : null);
-        if (items !== null) {
-          Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, items);
-          return items;
+        const res = await Api.get('/admin/services');
+        const rawList = res?.data?.services ?? (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : null));
+        if (rawList !== null) {
+          const normalized = rawList.map(fromBackendService).filter(Boolean);
+          Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, normalized);
+          return normalized;
         }
       } catch (err) {
-        // Fallback to storage
+        if (forceRemote) throw err;
+        console.warn('[MedicalService] Failed to fetch services from /admin/services:', err.message);
+        // Fallback to storage cache
       }
     }
 
     let services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES);
     if (!services) {
       if (APP_CONFIG.USE_MOCK_DATA) {
-        services = INITIAL_SERVICES;
+        services = INITIAL_SERVICES.map(fromBackendService);
         Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, services);
       } else {
         services = [];
       }
+    } else {
+      services = Array.isArray(services) ? services.map(fromBackendService).filter(Boolean) : [];
     }
     return services;
   },
