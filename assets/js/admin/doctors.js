@@ -139,7 +139,7 @@ async function loadDoctorsTable() {
     const load = doctorLoad(doc);
     const status = attendanceStatus(doc);
     const percentage = Math.min(100, load / doc.dailyCapacity * 100);
-    return `<article class="management-doctor"><div class="avatar">${Utils.escapeHtml(doc.name.replace(/^Dr\.?\s*/,'').slice(0,2))}</div><div class="management-name"><h3>${Utils.escapeHtml(doc.name)}</h3><p>${Utils.escapeHtml(doc.specialization)}</p></div><div><span>Working days</span><strong>${doc.workingDays.map(d=>d.slice(0,3)).join(', ')}</strong><small>${doc.startTime} – ${doc.endTime}</small></div><div><span>Daily capacity</span><strong>${load} / ${doc.dailyCapacity} patients</strong><div class="capacity-bar"><div class="capacity-fill" style="width:${percentage}%"></div></div></div><div><span class="badge badge-${statusTone(status)}">${status}</span>${load >= doc.dailyCapacity ? '<span class="badge badge-warning">Fully Booked</span>' : ''}<small>${Utils.escapeHtml(doc.room)}</small></div><div class="management-actions"><button class="btn btn-outline-teal btn-sm" onclick="editDoctorSchedule('${doc.id}')">Edit schedule</button><label class="text-xs" for="status-${doc.id}">Attendance status</label><select class="form-control doctor-status-select" id="status-${doc.id}" data-doctor-id="${doc.id}" aria-label="Attendance status for ${Utils.escapeHtml(doc.name)}">${DOCTOR_STATUSES.map(value => '<option ' + (value === status ? 'selected' : '') + '>' + value + '</option>').join('')}</select>${status === 'Arriving Soon' && doc.expectedArrivalAt ? '<small>Expected at ' + new Date(doc.expectedArrivalAt).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) + '</small>' : ''}</div></article>`;
+    return `<article class="management-doctor"><div class="avatar">${Utils.escapeHtml(doc.name.replace(/^Dr\.?\s*/,'').slice(0,2))}</div><div class="management-name"><h3>${Utils.escapeHtml(doc.name)}</h3><p>${Utils.escapeHtml(doc.specialization)}</p></div><div><span>Working days</span><strong>${doc.workingDays.map(d=>d.slice(0,3)).join(', ')}</strong><small>${doc.startTime} – ${doc.endTime}</small></div><div><span>Daily capacity</span><strong>${load} / ${doc.dailyCapacity} patients</strong><div class="capacity-bar"><div class="capacity-fill" style="width:${percentage}%"></div></div></div><div><span class="badge badge-${statusTone(status)}">${status}</span>${load >= doc.dailyCapacity ? '<span class="badge badge-warning">Fully Booked</span>' : ''}<small>${Utils.escapeHtml(doc.room)}</small></div><div class="management-actions"><div style="display:flex; gap:6px; width:100%;"><button class="btn btn-outline-teal btn-sm" style="flex:1;" onclick="editDoctorSchedule('${doc.publicId || doc.id}')">Edit schedule</button><button type="button" class="btn btn-outline-danger btn-sm" title="Delete physician" onclick="deleteDoctorProfile('${doc.publicId || doc.id}', '${Utils.escapeHtml(doc.name)}')">Delete</button></div><label class="text-xs" for="status-${doc.id}">Attendance status</label><select class="form-control doctor-status-select" id="status-${doc.id}" data-doctor-id="${doc.id}" aria-label="Attendance status for ${Utils.escapeHtml(doc.name)}">${DOCTOR_STATUSES.map(value => '<option ' + (value === status ? 'selected' : '') + '>' + value + '</option>').join('')}</select>${status === 'Arriving Soon' && doc.expectedArrivalAt ? '<small>Expected at ' + new Date(doc.expectedArrivalAt).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) + '</small>' : ''}</div></article>`;
   }).join('');
   tbody.querySelectorAll('.doctor-status-select').forEach(select => select.addEventListener('change', () => {
     const id = select.dataset.doctorId;
@@ -213,6 +213,32 @@ window.editDoctorSchedule = async (id) => {
   const doctors = await DoctorService.getAllDoctors();
   const doc = doctors.find(d => d.id === id);
   if (doc) await openDoctorModal(doc);
+};
+
+window.deleteDoctorProfile = (publicId, doctorName) => {
+  const name = doctorName || 'this physician';
+  Modal.confirm({
+    title: 'Delete Physician',
+    message: `
+      <div style="text-align: left;">
+        <p style="margin-bottom: var(--space-2); color: var(--color-text);">Are you sure you want to remove <strong>${Utils.escapeHtml(name)}</strong>?</p>
+        <p class="text-xs text-secondary">The doctor will be excluded from new appointment bookings. Historical records will be preserved.</p>
+      </div>
+    `,
+    confirmText: 'Delete Physician',
+    cancelText: 'Cancel',
+    confirmClass: 'btn-danger',
+    onConfirm: async () => {
+      try {
+        await DoctorService.deleteDoctor(publicId);
+        Toast.info(`${name} removed successfully.`);
+        await loadDoctorsTable();
+      } catch (err) {
+        console.error('[AdminDoctors] Delete failed:', err);
+        Toast.error(err.message || 'Failed to remove physician.');
+      }
+    }
+  });
 };
 
 window.addEventListener('storage', event => { if ([APP_CONFIG.STORAGE_KEYS.DOCTORS, APP_CONFIG.STORAGE_KEYS.APPOINTMENTS].includes(event.key)) loadDoctorsTable(); });

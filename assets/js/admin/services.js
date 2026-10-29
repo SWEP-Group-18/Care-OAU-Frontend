@@ -230,18 +230,28 @@ window.toggleServiceActiveStatus = async (publicId) => {
   }
 };
 
-window.deleteMedicalService = async (publicId, serviceName) => {
-  const title = serviceName || 'this service';
-  if (!confirm(`Are you sure you want to remove "${title}"?`)) {
-    return;
-  }
-
-  try {
-    await MedicalService.deleteService(publicId);
-    Toast.info(`Service "${title}" removed.`);
-    await loadServicesTable();
-  } catch (err) {
-    console.error('[AdminServices] Delete failed:', err);
-    Toast.error(err.message || 'Failed to remove service.');
-  }
+window.deleteMedicalService = (publicId, serviceName) => {
+  const title = serviceName || 'this clinical service';
+  Modal.confirm({
+    title: 'Delete Clinical Service',
+    message: `
+      <div style="text-align: left;">
+        <p style="margin-bottom: var(--space-2); color: var(--color-text);">Are you sure you want to delete <strong>${Utils.escapeHtml(title)}</strong>?</p>
+        <p class="text-xs text-secondary">This service will be removed from hospital clinic operations and student appointment booking.</p>
+      </div>
+    `,
+    confirmText: 'Delete Service',
+    cancelText: 'Cancel',
+    confirmClass: 'btn-danger',
+    onConfirm: async () => {
+      try {
+        await MedicalService.deleteService(publicId);
+        Toast.info(`Service "${title}" removed successfully.`);
+        await loadServicesTable();
+      } catch (err) {
+        console.error('[AdminServices] Delete failed:', err);
+        Toast.error(err.message || 'Failed to remove service.');
+      }
+    }
+  });
 };

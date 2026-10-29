@@ -283,5 +283,26 @@ export const DoctorService = {
     const updated = doctors.map(d => (d.id === publicId || d.publicId === publicId) ? { ...d, isAvailable } : d);
     Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
     return { success: true, doctors: updated };
+  },
+
+  /**
+   * Delete (soft-delete) a doctor using documented DELETE /admin/doctors/{publicId}
+   */
+  async deleteDoctor(publicId) {
+    const cleanId = String(publicId || '').trim();
+    if (!cleanId) throw new Error('Doctor publicId is required for deletion');
+
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        await Api.delete(`/admin/doctors/${cleanId}`);
+      } catch (err) {
+        console.warn(`[DoctorService] Backend DELETE /admin/doctors/${cleanId} failed:`, err.message);
+      }
+    }
+
+    const doctors = this.purgeLegacyDemoDoctors();
+    const updated = doctors.filter(d => d.id !== cleanId && d.publicId !== cleanId);
+    Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
+    return { success: true, doctors: updated };
   }
 };

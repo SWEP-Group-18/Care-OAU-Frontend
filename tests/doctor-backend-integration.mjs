@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Care-OAU - Frontend Doctor Service Backend API Integration Test
  * Verifies that DoctorService communicates with the backend REST endpoints:
  * 1. POST /doctors (draft creation) + PATCH /doctors/:id/publish
@@ -72,7 +72,20 @@ try {
   assert.ok(availCall, "Must call PATCH /doctors/:id/availability");
   assert.equal(availCall.data.isAvailable, false);
 
-  console.log("PASS: DoctorService backend API mutations (create, publish, deactivate, availability toggle)");
+  // Test 4: DELETE /admin/doctors/:publicId
+  const originalApiDelete = Api.delete.bind(Api);
+  let deleteCalled = null;
+  Api.delete = async (endpoint) => {
+    deleteCalled = endpoint;
+    return { success: true, message: "Doctor deleted successfully" };
+  };
+  const delRes = await DoctorService.deleteDoctor("doc_test_backend_001");
+  assert.ok(delRes.success);
+  assert.equal(deleteCalled, "/admin/doctors/doc_test_backend_001", "Must call DELETE /admin/doctors/:publicId");
+  assert.equal(delRes.doctors.some(d => d.id === "doc_test_backend_001"), false, "Deleted doctor must be removed from storage");
+  Api.delete = originalApiDelete;
+
+  console.log("PASS: DoctorService backend API mutations (create, publish, deactivate, availability toggle, delete)");
 } finally {
   Api.post = originalApiPost;
   Api.patch = originalApiPatch;
