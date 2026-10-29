@@ -59,9 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Set greeting & current date eyebrow
   renderWelcomeRow(user);
 
-  // Launch rotating health tips popup
-  initHealthTipsPopup();
-
   // Load appointment and queue state
   loadDashboardData();
 
@@ -73,75 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   dashboardPoller.start();
 });
-
-function initHealthTipsPopup() {
-  const tips = [
-    'Drink water steadily throughout the day to stay hydrated and support your energy levels.',
-    'Aim for at least 30 minutes of movement most days to support heart health and stress reduction.',
-    'Seek professional support when stress becomes difficult to manage.',
-    'Take regular breaks and stretch if you are studying or using screens for long periods.',
-    'Eat balanced meals with fruits, vegetables, protein, and whole grains for steady energy.',
-    'Make time for hobbies and activities you enjoy.',
-    'Don\'t neglect your mental health.',
-    'Get adequate sleep each night to support learning, memory, and overall health.',
-    'Practice good hand hygiene to prevent the spread of illness.',
-    'Schedule regular check-ups and screenings with your healthcare provider.'
-  ];
-
-  const existing = document.querySelector('.health-tip-popup');
-  if (existing) return;
-
-  const popup = document.createElement('aside');
-  popup.className = 'health-tip-popup visible';
-  popup.setAttribute('role', 'dialog');
-  popup.setAttribute('aria-live', 'polite');
-  popup.setAttribute('aria-label', 'Health tips');
-
-  popup.innerHTML = `
-    <div class="health-tip-header">
-      <span class="health-tip-label">Health tip</span>
-      <button type="button" class="health-tip-close" aria-label="Close health tip">×</button>
-    </div>
-    <p class="health-tip-message">Drink water steadily throughout the day to stay hydrated and support your energy levels.</p>
-    <div class="health-tip-footer">
-      <span class="health-tip-count">1 / 5</span>
-      <span class="health-tip-badge">Wellness</span>
-    </div>
-  `;
-
-  document.body.appendChild(popup);
-
-  const messageEl = popup.querySelector('.health-tip-message');
-  const countEl = popup.querySelector('.health-tip-count');
-  const closeBtn = popup.querySelector('.health-tip-close');
-
-  let currentIndex = 0;
-
-  const renderTip = () => {
-    messageEl.textContent = tips[currentIndex];
-    countEl.textContent = `${currentIndex + 1} / ${tips.length}`;
-  };
-
-  renderTip();
-
-  const rotationTimer = window.setInterval(() => {
-    currentIndex = (currentIndex + 1) % tips.length;
-    renderTip();
-  }, 30000);
-
-  closeBtn.addEventListener('click', () => {
-    popup.classList.remove('visible');
-    window.clearInterval(rotationTimer);
-    window.setTimeout(() => {
-      popup.classList.add('visible');
-      renderTip();
-      window.setInterval(() => {
-        currentIndex = (currentIndex + 1) % tips.length;
-        renderTip();
-      }, 30000);
-    }, 15000);
-  });
-}
 
 function renderWelcomeRow(user) {
   const dateEyebrow = document.getElementById('dashboard-date-eyebrow');
