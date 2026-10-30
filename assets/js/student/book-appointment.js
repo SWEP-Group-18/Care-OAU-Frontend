@@ -300,13 +300,46 @@ async function initServices(paramDoctorId) {
   updateSummary();
 }
 
+export function doctorMatchesService(doc, service) {
+  if (!doc || !service) return false;
+  const srvId = String(service.publicId || service.id || '').trim();
+  const srvName = String(service.name || '').toLowerCase().trim();
+  const srvCat = String(service.category || '').toLowerCase().trim();
+
+  // 1. Direct ID matches
+  if (doc.serviceId && (doc.serviceId === srvId || doc.serviceId === service.id || doc.serviceId === service.publicId)) {
+    return true;
+  }
+  if (doc.service?.publicId && (doc.service.publicId === srvId || doc.service.publicId === service.id)) {
+    return true;
+  }
+
+  // 2. Name or specialization matches
+  const docSpec = String(doc.specialization || '').toLowerCase().trim();
+  const docSrvName = String(doc.serviceName || doc.service?.name || '').toLowerCase().trim();
+
+  if (docSpec && (docSpec === srvName || srvName.includes(docSpec) || docSpec.includes(srvName))) {
+    return true;
+  }
+  if (docSrvName && (docSrvName === srvName || srvName.includes(docSrvName) || docSrvName.includes(srvName))) {
+    return true;
+  }
+
+  // 3. Category match
+  if (srvCat && (docSpec.includes(srvCat) || srvCat.includes(docSpec))) {
+    return true;
+  }
+
+  return false;
+}
+
 function initDoctors(paramDoctorId) {
   const container = document.getElementById('doctor-choices-container');
   if (!container) return;
 
-  const srvId = selectedServiceObj?.publicId || selectedServiceObj?.id;
-  const doctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []).filter(d => 
-    d.serviceId === srvId || d.serviceId === selectedServiceObj?.id || d.serviceId === selectedServiceObj?.publicId
+  const storedDoctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
+  const doctors = (Array.isArray(storedDoctors) ? storedDoctors : []).filter(d => 
+    doctorMatchesService(d, selectedServiceObj)
   );
 
   // Pre-selection if paramDoctorId provided

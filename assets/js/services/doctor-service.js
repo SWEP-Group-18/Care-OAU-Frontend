@@ -259,11 +259,12 @@ export const DoctorService = {
   async saveDoctor(doctorData) {
     const doctors = this.purgeLegacyDemoDoctors();
     const publicId = doctorData.publicId || doctorData.id;
+    let createdOnBackend = false;
+    let updatedOnBackend = false;
 
     if (!APP_CONFIG.USE_MOCK_DATA) {
       try {
         if (publicId && !publicId.startsWith('doc_admin_') && !publicId.startsWith('doc_local_')) {
-          let updatedOnBackend = false;
           try {
             const shortDays = (doctorData.workingDays || []).map(d => DAY_LONG_TO_SHORT[d] || d);
             const patchPayload = {
@@ -306,7 +307,6 @@ export const DoctorService = {
             }
           }
         } else {
-          let createdOnBackend = false;
           try {
             const shortDays = (doctorData.workingDays || ['Monday', 'Tuesday', 'Wednesday']).map(d => DAY_LONG_TO_SHORT[d] || d);
             let servicePublicId = doctorData.serviceId || 'srv_general';
@@ -410,7 +410,7 @@ export const DoctorService = {
     }
 
     Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
-    return { success: true, doctor: normalizedDoctor, doctors: updated };
+    return { success: true, doctor: normalizedDoctor, doctors: updated, createdOnBackend };
   },
 
   /**

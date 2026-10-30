@@ -48,7 +48,12 @@ function nextOpening(doctor, date) {
 }
 
 function doctorState(doctor, services) {
-  const service = services.find(item => item.id === doctor.serviceId);
+  const service = (Array.isArray(services) ? services : []).find(item => 
+    (item.id && (item.id === doctor.serviceId || item.id === doctor.service?.publicId)) ||
+    (item.publicId && (item.publicId === doctor.serviceId || item.publicId === doctor.service?.publicId)) ||
+    (item.name && doctor.specialization && item.name.toLowerCase() === doctor.specialization.toLowerCase()) ||
+    (item.name && doctor.serviceName && item.name.toLowerCase() === doctor.serviceName.toLowerCase())
+  ) || (Array.isArray(services) && services[0]);
   const today = selectedDate === localDate();
   const now = new Date();
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;

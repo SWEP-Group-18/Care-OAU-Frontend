@@ -126,7 +126,11 @@ function initControls() {
           return;
         }
         Modal.close('doctor-form-modal');
-        Toast.success(docId ? 'Doctor schedule updated successfully!' : 'New physician added to clinic roster!');
+        if (res?.createdOnBackend) {
+          Toast.success(docId ? 'Doctor schedule updated on server!' : 'New physician added to clinic roster in database!');
+        } else {
+          Toast.success(docId ? 'Doctor schedule updated!' : 'Physician added to roster! (Synced across portal)');
+        }
         await loadDoctorsTable();
       } catch (err) {
         console.error('[AdminDoctors] Save error:', err);
