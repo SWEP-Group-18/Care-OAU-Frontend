@@ -288,12 +288,12 @@ async function initServices(paramDoctorId) {
 
       updateSummary();
       selectedDoctorObj = null; isEarliestDoctor = true;
-      initDoctors();
+      await initDoctors();
       renderTimeSlots();
     });
   });
 
-  initDoctors(paramDoctorId);
+  await initDoctors(paramDoctorId);
   const refWrap = document.getElementById('referral-field-container');
   if (refWrap) refWrap.style.display = selectedServiceObj?.requiresReferral ? 'flex' : 'none';
   renderTimeSlots();
@@ -333,11 +333,18 @@ export function doctorMatchesService(doc, service) {
   return false;
 }
 
-function initDoctors(paramDoctorId) {
+async function initDoctors(paramDoctorId) {
   const container = document.getElementById('doctor-choices-container');
   if (!container) return;
 
-  const storedDoctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
+  let storedDoctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
+  if (!Array.isArray(storedDoctors) || storedDoctors.length === 0) {
+    try {
+      const avail = await DoctorService.getDoctorAvailability();
+      storedDoctors = avail?.doctors || [];
+    } catch {}
+  }
+
   const doctors = (Array.isArray(storedDoctors) ? storedDoctors : []).filter(d => 
     doctorMatchesService(d, selectedServiceObj)
   );

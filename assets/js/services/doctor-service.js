@@ -44,34 +44,35 @@ export const DAY_LONG_TO_SHORT = {
  */
 export function fromBackendDoctor(raw) {
   if (!raw || typeof raw !== 'object') return null;
-  const publicId = String(raw.publicId || raw.id || '').trim();
-  const schedule = raw.schedule || {};
-  const rawDays = schedule.workingDays || raw.workingDays || [];
+  const item = raw.doctor || raw;
+  const publicId = String(item.publicId || item.id || '').trim();
+  const schedule = item.schedule || {};
+  const rawDays = schedule.workingDays || item.workingDays || [];
   const workingDays = Array.isArray(rawDays)
     ? rawDays.map(d => DAY_SHORT_TO_LONG[d] || d)
     : [];
 
-  const serviceId = raw.service?.publicId || raw.serviceId || '';
-  const serviceName = raw.service?.name || raw.serviceName || raw.specialization || 'General Medical Consultation';
-  const specialization = raw.specialization || serviceName;
+  const serviceId = item.service?.publicId || item.serviceId || '';
+  const serviceName = item.service?.name || item.serviceName || item.specialization || 'General Medical Consultation';
+  const specialization = item.specialization || serviceName;
 
-  const rawStatus = raw.status ? String(raw.status).toLowerCase() : 'available';
-  const isAvailable = rawStatus === 'available' || raw.isAvailable === true;
+  const rawStatus = item.status ? String(item.status).toLowerCase() : 'available';
+  const isAvailable = rawStatus === 'available' || item.isAvailable === true;
 
-  const startTime = schedule.startTime || raw.startTime || '08:00:00';
-  const endTime = schedule.endTime || raw.endTime || '16:00:00';
-  const dailyCapacity = Number(schedule.dailyPatientLimit || raw.dailyCapacity || 25);
-  const room = schedule.consultingRoom || raw.consultingRoom || raw.room || 'Consulting Room 1';
+  const startTime = schedule.startTime || item.startTime || '08:00:00';
+  const endTime = schedule.endTime || item.endTime || '16:00:00';
+  const dailyCapacity = Number(schedule.dailyPatientLimit || item.dailyCapacity || 25);
+  const room = schedule.consultingRoom || item.consultingRoom || item.room || 'Consulting Room 1';
 
   return {
     id: publicId,
     publicId,
-    name: raw.name || '',
-    title: raw.title || 'Medical Doctor',
+    name: item.name || '',
+    title: item.title || 'Medical Doctor',
     specialization,
     serviceId,
     serviceName,
-    service: raw.service || { publicId: serviceId, name: serviceName },
+    service: item.service || { publicId: serviceId, name: serviceName },
     workingDays,
     startTime: startTime.slice(0, 5),
     endTime: endTime.slice(0, 5),
@@ -82,7 +83,7 @@ export function fromBackendDoctor(raw) {
     consultingRoom: room,
     status: rawStatus,
     isAvailable,
-    currentLoad: raw.currentLoad || 0,
+    currentLoad: item.currentLoad || 0,
     isAdminCreated: true
   };
 }
@@ -163,6 +164,60 @@ export const DoctorService = {
           return { status: 'available', doctors: merged };
         }
       } catch (err) {
+        // Backend /admin/doctors returned 403 (for student users) or was unavailable.
+        // For students, doctor availability is provided via GET /appointments/slots.
+        try {
+          const servicesRes = await Api.get('/services').catch(() => null);
+          const servicesList = servicesRes?.data?.services ?? (Array.isArray(servicesRes?.data) ? servicesRes.data : []);
+          const today = new Date().toISOString().slice(0, 10);
+          const targetServices = servicesList.length > 0 ? servicesList : [{ publicId: 'srv_7tVzVRGyLC', name: 'General Medical Consultation' }];
+          const doctorsMap = new Map();
+
+          for (const srv of targetServices) {
+            try {
+              const slotsRes = await Api.get(`/appointments/slots?servicePublicId=${encodeURIComponent(srv.publicId)}&date=${today}`);
+              const slots = slotsRes?.data?.slots || [];
+              for (const slot of slots) {
+                if (!slot.doctor?.publicId) continue;
+                const dId = slot.doctor.publicId;
+                if (!doctorsMap.has(dId)) {
+                  doctorsMap.set(dId, {
+                    id: dId,
+                    publicId: dId,
+                    name: slot.doctor.name,
+                    title: slot.doctor.title || 'Medical Doctor',
+                    serviceId: srv.publicId,
+                    serviceName: srv.name || 'General Medical Consultation',
+                    specialization: srv.name || 'General Medical Consultation',
+                    service: { publicId: srv.publicId, name: srv.name },
+                    isAvailable: slot.status === 'available',
+                    status: 'available',
+                    startTime: (slot.startTime || '08:00').slice(0, 5),
+                    endTime: (slot.endTime || '16:00').slice(0, 5),
+                    dailyCapacity: 25,
+                    room: 'Consulting Room',
+                    consultingRoom: 'Consulting Room',
+                    workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                    isAdminCreated: true
+                  });
+                } else {
+                  const doc = doctorsMap.get(dId);
+                  const end = (slot.endTime || '').slice(0, 5);
+                  if (end && end > doc.endTime) {
+                    doc.endTime = end;
+                  }
+                }
+              }
+            } catch {}
+          }
+
+          if (doctorsMap.size > 0) {
+            const slotDoctors = Array.from(doctorsMap.values());
+            Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, slotDoctors);
+            return { status: 'available', doctors: slotDoctors };
+          }
+        } catch {}
+
         // Backend /admin/doctors or /doctors endpoint is not yet supported or returned an error
         // Check if admin has explicitly published doctor records in storage
         if (localDoctors.length > 0) {
@@ -328,6 +383,21 @@ export const DoctorService = {
               }
             }
 
+            if (!servicePublicId || servicePublicId.startsWith('srv_gen_') || servicePublicId.startsWith('srv_dent') || servicePublicId === 'srv_general') {
+              try {
+                const srvRes = await Api.get('/admin/services').catch(() => Api.get('/services'));
+                const liveServices = srvRes?.data?.services ?? (Array.isArray(srvRes?.data) ? srvRes.data : []);
+                const found = liveServices.find(s => 
+                  s.publicId === doctorData.serviceId || 
+                  s.id === doctorData.serviceId ||
+                  s.name?.toLowerCase() === doctorData.specialization?.toLowerCase()
+                ) || liveServices[0];
+                if (found?.publicId) {
+                  servicePublicId = found.publicId;
+                }
+              } catch {}
+            }
+
             const postPayload = {
               name: String(doctorData.name).trim(),
               title: String(doctorData.title || 'Medical Doctor').trim(),
@@ -347,6 +417,13 @@ export const DoctorService = {
             }
           } catch (postErr) {
             console.warn('[DoctorService] POST /admin/doctors notice:', postErr.message);
+            if (!APP_CONFIG.USE_MOCK_DATA) {
+              return {
+                success: false,
+                message: postErr.message || 'Unable to save physician to server database. Please verify your connection or session.',
+                error: postErr
+              };
+            }
           }
 
           if (!createdOnBackend) {
