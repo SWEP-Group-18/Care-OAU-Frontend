@@ -136,11 +136,16 @@ export const DoctorService = {
     // 1. If not strictly configured for mock/test data, attempt real backend API
     if (!APP_CONFIG.USE_MOCK_DATA) {
       try {
+        const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
         let response = null;
-        try {
+        if (user?.role === 'admin') {
           response = await Api.get('/admin/doctors');
-        } catch {
-          response = await Api.get('/doctors');
+        } else {
+          try {
+            response = await Api.get('/doctors');
+          } catch {
+            response = await Api.get('/admin/doctors').catch(() => null);
+          }
         }
         const rawList = response?.data?.doctors ?? (Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : null));
 
@@ -309,7 +314,7 @@ export const DoctorService = {
 
   /**
    * Save or update doctor record (Used in Admin portal).
-   * Attempts live backend mutation and maintains persistent fallback cache.
+   * Calls documented POST /admin/doctors (create) or PATCH /admin/doctors/{publicId} (update).
    */
   async saveDoctor(doctorData) {
     const doctors = this.purgeLegacyDemoDoctors();
@@ -317,140 +322,98 @@ export const DoctorService = {
     let createdOnBackend = false;
     let updatedOnBackend = false;
 
+    // Convert workingDays to short days required by backend enum ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    const shortDays = (doctorData.workingDays || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])
+      .map(d => DAY_LONG_TO_SHORT[d] || (typeof d === 'string' ? d.slice(0, 3) : 'Mon'));
+
+    // Format start and end times to 24-hour HH:mm:ss
+    const toSeconds = (t, fallback) => {
+      if (!t) return fallback;
+      const s = String(t).trim();
+      if (/^\d{2}:\d{2}:\d{2}$/.test(s)) return s;
+      if (/^\d{2}:\d{2}$/.test(s)) return `${s}:00`;
+      return fallback;
+    };
+    const startTimeFormatted = toSeconds(doctorData.startTime, '08:00:00');
+    const endTimeFormatted = toSeconds(doctorData.endTime, '16:00:00');
+    const dailyLimit = parseInt(doctorData.dailyCapacity, 10) || 25;
+    const room = String(doctorData.room || doctorData.consultingRoom || 'Consulting Room 1').trim();
+
+    // Resolve clinical service public ID
+    let servicePublicId = doctorData.serviceId || doctorData.service?.publicId;
+    const cachedServices = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []);
+    if (Array.isArray(cachedServices) && cachedServices.length > 0) {
+      const matched = cachedServices.find(s => 
+        (s.publicId && (s.publicId === servicePublicId || s.id === servicePublicId)) ||
+        (s.name && doctorData.specialization && s.name.toLowerCase() === doctorData.specialization.toLowerCase())
+      );
+      if (matched?.publicId) {
+        servicePublicId = matched.publicId;
+      }
+    }
+
     if (!APP_CONFIG.USE_MOCK_DATA) {
-      try {
-        if (publicId && !publicId.startsWith('doc_admin_') && !publicId.startsWith('doc_local_')) {
-          try {
-            const shortDays = (doctorData.workingDays || []).map(d => DAY_LONG_TO_SHORT[d] || d);
-            const patchPayload = {
-              name: doctorData.name,
-              title: doctorData.title || 'Medical Doctor',
-              consultingRoom: doctorData.room || doctorData.consultingRoom
-            };
-            if (doctorData.serviceId) {
-              patchPayload.service = { publicId: doctorData.serviceId };
-            }
-            if (doctorData.workingDays || doctorData.startTime || doctorData.endTime || doctorData.dailyCapacity) {
-              patchPayload.schedule = {
-                workingDays: shortDays,
-                startTime: doctorData.startTime ? (doctorData.startTime.length === 5 ? doctorData.startTime + ':00' : doctorData.startTime) : '08:00:00',
-                endTime: doctorData.endTime ? (doctorData.endTime.length === 5 ? doctorData.endTime + ':00' : doctorData.endTime) : '16:00:00',
-                dailyPatientLimit: Number(doctorData.dailyCapacity) || 25,
-                consultingRoom: doctorData.room || doctorData.consultingRoom
-              };
-            }
-            await Api.patch(`/admin/doctors/${publicId}`, patchPayload);
-            updatedOnBackend = true;
-          } catch {
-            // Fallback for legacy or mock-test routes
+      if (publicId && !publicId.startsWith('doc_admin_') && !publicId.startsWith('doc_local_')) {
+        // UPDATE existing doctor on backend: PATCH /admin/doctors/{publicId}
+        const patchPayload = {
+          name: String(doctorData.name).trim(),
+          title: String(doctorData.title || 'Medical Doctor').trim(),
+          consultingRoom: room,
+          schedule: {
+            workingDays: shortDays,
+            startTime: startTimeFormatted,
+            endTime: endTimeFormatted,
+            dailyPatientLimit: dailyLimit,
+            consultingRoom: room
           }
-
-          if (!updatedOnBackend) {
-            await Api.patch(`/doctors/${publicId}/profile`, {
-              name: doctorData.name,
-              title: doctorData.title,
-              specialization: doctorData.specialization,
-              room: doctorData.room
-            });
-            if (doctorData.workingDays && doctorData.startTime && doctorData.endTime) {
-              await Api.patch(`/doctors/${publicId}/schedule`, {
-                workingDays: doctorData.workingDays,
-                startTime: doctorData.startTime,
-                endTime: doctorData.endTime,
-                dailyCapacity: Number(doctorData.dailyCapacity) || 20
-              });
-            }
-          }
-        } else {
-          try {
-            const shortDays = (doctorData.workingDays || ['Monday', 'Tuesday', 'Wednesday']).map(d => DAY_LONG_TO_SHORT[d] || d);
-            let servicePublicId = doctorData.serviceId || 'srv_general';
-
-            const cachedServices = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []);
-            if (Array.isArray(cachedServices) && cachedServices.length > 0) {
-              const matchedService = cachedServices.find(s => 
-                s.publicId === doctorData.serviceId || 
-                s.id === doctorData.serviceId ||
-                s.name?.toLowerCase() === doctorData.specialization?.toLowerCase()
-              );
-              if (matchedService && matchedService.publicId && !matchedService.publicId.startsWith('srv_gen_') && !matchedService.publicId.startsWith('srv_dent')) {
-                servicePublicId = matchedService.publicId;
-              } else {
-                const realService = cachedServices.find(s => s.publicId && !s.publicId.startsWith('srv_gen_') && !s.publicId.startsWith('srv_dent') && !s.publicId.startsWith('srv_opt') && !s.publicId.startsWith('srv_lab'));
-                if (realService) {
-                  servicePublicId = realService.publicId;
-                }
-              }
-            }
-
-            if (!servicePublicId || servicePublicId.startsWith('srv_gen_') || servicePublicId.startsWith('srv_dent') || servicePublicId === 'srv_general') {
-              try {
-                const srvRes = await Api.get('/admin/services').catch(() => Api.get('/services'));
-                const liveServices = srvRes?.data?.services ?? (Array.isArray(srvRes?.data) ? srvRes.data : []);
-                const found = liveServices.find(s => 
-                  s.publicId === doctorData.serviceId || 
-                  s.id === doctorData.serviceId ||
-                  s.name?.toLowerCase() === doctorData.specialization?.toLowerCase()
-                ) || liveServices[0];
-                if (found?.publicId) {
-                  servicePublicId = found.publicId;
-                }
-              } catch {}
-            }
-
-            const postPayload = {
-              name: String(doctorData.name).trim(),
-              title: String(doctorData.title || 'Medical Doctor').trim(),
-              service: { publicId: servicePublicId },
-              workingDays: shortDays,
-              startTime: doctorData.startTime ? (doctorData.startTime.length === 5 ? doctorData.startTime + ':00' : doctorData.startTime) : '08:00:00',
-              endTime: doctorData.endTime ? (doctorData.endTime.length === 5 ? doctorData.endTime + ':00' : doctorData.endTime) : '16:00:00',
-              dailyPatientLimit: parseInt(doctorData.dailyCapacity, 10) || 25,
-              consultingRoom: doctorData.room || doctorData.consultingRoom || 'Consulting Room 1'
-            };
-            const res = await Api.post('/admin/doctors', postPayload);
-            const createdDoc = res?.data?.doctor || res?.data;
-            if (createdDoc?.publicId) {
-              doctorData.id = createdDoc.publicId;
-              doctorData.publicId = createdDoc.publicId;
-              createdOnBackend = true;
-            }
-          } catch (postErr) {
-            console.warn('[DoctorService] POST /admin/doctors notice:', postErr.message);
-            if (!APP_CONFIG.USE_MOCK_DATA) {
-              return {
-                success: false,
-                message: postErr.message || 'Unable to save physician to server database. Please verify your connection or session.',
-                error: postErr
-              };
-            }
-          }
-
-          if (!createdOnBackend) {
-            try {
-              const res = await Api.post('/doctors', {
-                name: doctorData.name,
-                title: doctorData.title || 'Medical Officer',
-                specialization: doctorData.specialization,
-                room: doctorData.room || 'Consulting Room 1',
-                workingDays: doctorData.workingDays || ['Monday', 'Tuesday', 'Wednesday'],
-                startTime: doctorData.startTime || '08:00',
-                endTime: doctorData.endTime || '16:00',
-                dailyCapacity: Number(doctorData.dailyCapacity) || 20
-              });
-              const createdDoc = res?.data;
-              if (createdDoc?.publicId) {
-                await Api.patch(`/doctors/${createdDoc.publicId}/publish`).catch(() => {});
-                doctorData.id = createdDoc.publicId;
-                doctorData.publicId = createdDoc.publicId;
-              }
-            } catch (legErr) {
-              console.warn('[DoctorService] Legacy /doctors route notice:', legErr.message);
-            }
-          }
+        };
+        if (servicePublicId) {
+          patchPayload.service = { publicId: servicePublicId };
         }
-      } catch (err) {
-        // Fallback to local storage persistence
+
+        try {
+          const res = await Api.patch(`/admin/doctors/${publicId}`, patchPayload);
+          const updatedDoc = res?.data?.doctor || res?.data;
+          if (updatedDoc) {
+            updatedOnBackend = true;
+          }
+        } catch (patchErr) {
+          console.error('[DoctorService] PATCH /admin/doctors error:', patchErr);
+          return {
+            success: false,
+            message: patchErr.message || 'Unable to update doctor profile on server.',
+            error: patchErr
+          };
+        }
+      } else {
+        // CREATE new doctor on backend: POST /admin/doctors
+        const postPayload = {
+          name: String(doctorData.name).trim(),
+          title: String(doctorData.title || 'Medical Doctor').trim(),
+          service: { publicId: servicePublicId },
+          workingDays: shortDays,
+          startTime: startTimeFormatted,
+          endTime: endTimeFormatted,
+          dailyPatientLimit: dailyLimit,
+          consultingRoom: room
+        };
+
+        try {
+          const res = await Api.post('/admin/doctors', postPayload);
+          const createdDoc = res?.data?.doctor || res?.data;
+          if (createdDoc?.publicId) {
+            doctorData.id = createdDoc.publicId;
+            doctorData.publicId = createdDoc.publicId;
+            createdOnBackend = true;
+          }
+        } catch (postErr) {
+          console.error('[DoctorService] POST /admin/doctors error:', postErr);
+          return {
+            success: false,
+            message: postErr.message || 'Unable to save physician to server database.',
+            error: postErr
+          };
+        }
       }
     }
 
@@ -465,11 +428,13 @@ export const DoctorService = {
       status: doctorData.status || 'available',
       workingDays: (doctorData.workingDays || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])
         .map(d => DAY_SHORT_TO_LONG[d] || d),
-      startTime: (doctorData.startTime || '08:00').slice(0, 5),
-      endTime: (doctorData.endTime || '16:00').slice(0, 5),
-      dailyCapacity: parseInt(doctorData.dailyCapacity, 10) || 25,
-      room: doctorData.room || doctorData.consultingRoom || 'Consulting Room 1',
-      consultingRoom: doctorData.room || doctorData.consultingRoom || 'Consulting Room 1',
+      startTime: startTimeFormatted.slice(0, 5),
+      endTime: endTimeFormatted.slice(0, 5),
+      rawStartTime: startTimeFormatted,
+      rawEndTime: endTimeFormatted,
+      dailyCapacity: dailyLimit,
+      room,
+      consultingRoom: room,
       specialization: doctorData.specialization || doctorData.serviceName || 'General Medical Consultation'
     };
 
@@ -487,59 +452,61 @@ export const DoctorService = {
     }
 
     Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
-    return { success: true, doctor: normalizedDoctor, doctors: updated, createdOnBackend };
+    return { success: true, doctor: normalizedDoctor, doctors: updated, createdOnBackend, updatedOnBackend };
   },
 
   /**
-   * Explicitly publish a doctor draft
+   * Update doctor attendance status using documented PATCH /admin/doctors/{publicId}/status
    */
-  async publishDoctor(publicId) {
-    try {
-      await Api.patch(`/doctors/${publicId}/publish`);
-    } catch (err) {
-      // Fallback
-    }
-    const doctors = this.purgeLegacyDemoDoctors();
-    const updated = doctors.map(d => (d.id === publicId || d.publicId === publicId) ? { ...d, status: 'published', isAvailable: true } : d);
-    Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
-    return { success: true, doctors: updated };
-  },
+  async updateDoctorStatus(publicId, status) {
+    const cleanId = String(publicId || '').trim();
+    if (!cleanId) throw new Error('Doctor publicId is required to update status');
 
-  /**
-   * Deactivate a doctor (preserves historical bookings)
-   */
-  async deactivateDoctor(publicId) {
-    try {
-      await Api.patch(`/doctors/${publicId}/deactivate`);
-    } catch (err) {
-      // Fallback
+    const statusMap = {
+      'available': 'available',
+      'Available': 'available',
+      'in_consultation': 'in_consultation',
+      'In Consultation': 'in_consultation',
+      'on_break': 'on_break',
+      'On Break': 'on_break',
+      'arriving_soon': 'arriving_soon',
+      'Arriving Soon': 'arriving_soon',
+      'off_duty': 'off_duty',
+      'Off Duty': 'off_duty',
+      'on_leave': 'on_leave',
+      'On Leave': 'on_leave'
+    };
+    const backendStatus = statusMap[status] || 'available';
+
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      await Api.patch(`/admin/doctors/${cleanId}/status`, { status: backendStatus });
     }
+
     const doctors = this.purgeLegacyDemoDoctors();
-    const updated = doctors.map(d => (d.id === publicId || d.publicId === publicId) ? { ...d, status: 'deactivated', isAvailable: false } : d);
+    const updated = doctors.map(d => (d.id === cleanId || d.publicId === cleanId) ? { ...d, status: backendStatus, isAvailable: backendStatus === 'available' } : d);
     Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
-    return { success: true, doctors: updated };
+    return { success: true, doctors: updated, status: backendStatus };
   },
 
   /**
    * Toggle temporary doctor availability
    */
   async toggleAvailability(publicId, isAvailable) {
-    const cleanId = String(publicId || '').trim();
-    if (!APP_CONFIG.USE_MOCK_DATA && cleanId) {
-      try {
-        await Api.patch(`/admin/doctors/${cleanId}/status`, {
-          status: isAvailable ? 'available' : 'on_break'
-        });
-      } catch (err) {
-        try {
-          await Api.patch(`/doctors/${cleanId}/availability`, { isAvailable });
-        } catch {}
-      }
-    }
-    const doctors = this.purgeLegacyDemoDoctors();
-    const updated = doctors.map(d => (d.id === cleanId || d.publicId === cleanId) ? { ...d, isAvailable, status: isAvailable ? 'available' : 'on_break' } : d);
-    Storage.set(APP_CONFIG.STORAGE_KEYS.DOCTORS, updated);
-    return { success: true, doctors: updated };
+    return this.updateDoctorStatus(publicId, isAvailable ? 'available' : 'on_break');
+  },
+
+  /**
+   * Publish a doctor roster
+   */
+  async publishDoctor(publicId) {
+    return this.updateDoctorStatus(publicId, 'available');
+  },
+
+  /**
+   * Deactivate a doctor (preserves historical bookings)
+   */
+  async deactivateDoctor(publicId) {
+    return this.updateDoctorStatus(publicId, 'off_duty');
   },
 
   /**
@@ -550,11 +517,7 @@ export const DoctorService = {
     if (!cleanId) throw new Error('Doctor publicId is required for deletion');
 
     if (!APP_CONFIG.USE_MOCK_DATA) {
-      try {
-        await Api.delete(`/admin/doctors/${cleanId}`);
-      } catch (err) {
-        console.warn(`[DoctorService] Backend DELETE /admin/doctors/${cleanId} failed:`, err.message);
-      }
+      await Api.delete(`/admin/doctors/${cleanId}`);
     }
 
     const doctors = this.purgeLegacyDemoDoctors();

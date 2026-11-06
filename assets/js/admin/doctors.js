@@ -180,8 +180,8 @@ async function loadDoctorsTable() {
   tbody.querySelectorAll('.doctor-status-select').forEach(select => select.addEventListener('change', () => {
     const id = select.dataset.doctorId;
     const status = select.value;
-    const save = minutes => {
-      try { saveDoctorStatus(id, status, minutes); Toast.success('Doctor attendance updated.'); loadDoctorsTable(); }
+    const save = async minutes => {
+      try { await saveDoctorStatus(id, status, minutes); Toast.success('Doctor attendance updated.'); loadDoctorsTable(); }
       catch (error) { Toast.error(error.message); loadDoctorsTable(); return false; }
     };
     if (status !== 'Arriving Soon') { save(); return; }

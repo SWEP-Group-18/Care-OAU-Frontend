@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Care-OAU - Queue Service Backend API Integration Test
  * Verifies QueueService communicates with /queue REST endpoints:
  * 1. POST /queue/check-in
@@ -86,15 +86,15 @@ try {
   const getMeCall = calls.find((c) => c.method === "GET" && c.endpoint === "/queue/me");
   assert.ok(getMeCall, "Must call GET /queue/me");
 
-  // Test 3: Call patient
+  // Test 3: Call next patient
   await QueueService.callPatient("qtk_001");
-  const callCall = calls.find((c) => c.method === "PATCH" && c.endpoint === "/queue/qtk_001/call");
-  assert.ok(callCall, "Must call PATCH /queue/:id/call");
+  const callCall = calls.find((c) => c.method === "PATCH" && c.endpoint === "/admin/queue/call-next");
+  assert.ok(callCall, "Must call PATCH /admin/queue/call-next");
 
   // Test 4: Mark no-show
   await QueueService.markNoShow("qtk_001");
-  const noShowCall = calls.find((c) => c.method === "PATCH" && c.endpoint === "/queue/qtk_001/no-show");
-  assert.ok(noShowCall, "Must call PATCH /queue/:id/no-show");
+  const noShowCall = calls.find((c) => c.method === "PATCH" && c.endpoint === "/admin/queue/qtk_001/no-show");
+  assert.ok(noShowCall, "Must call PATCH /admin/queue/:id/no-show");
 
   console.log("PASS: QueueService backend API integration (check-in, student ticket & wait time, calling, absent)");
 } finally {

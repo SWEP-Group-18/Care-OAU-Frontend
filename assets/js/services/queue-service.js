@@ -48,7 +48,7 @@ export const QueueService = {
   async callPatient(queueId) {
     if (!APP_CONFIG.USE_MOCK_DATA) {
       try {
-        await Api.patch(`/queue/${queueId}/call`);
+        await Api.patch('/admin/queue/call-next');
       } catch (err) {
         if (err.code === 'ACTIVE_VISIT_IN_PROGRESS') {
           return { success: false, message: err.message };
@@ -67,9 +67,10 @@ export const QueueService = {
   },
 
   async markNoShow(queueId) {
-    if (!APP_CONFIG.USE_MOCK_DATA) {
+    const cleanId = String(queueId || '').trim();
+    if (!APP_CONFIG.USE_MOCK_DATA && cleanId && !cleanId.startsWith('emg_')) {
       try {
-        await Api.patch(`/queue/${queueId}/no-show`);
+        await Api.patch(`/admin/queue/${cleanId}/no-show`);
       } catch (err) {
         // Fallback
       }
@@ -93,25 +94,32 @@ export const QueueService = {
       try {
         const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
         if (user?.role === 'admin') {
-          const res = await Api.get('/queue/admin');
-          const items = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : null);
-          if (items !== null) {
-            const mapped = items.map(q => ({
-              id: q.publicId,
-              publicId: q.publicId,
-              queueNumber: q.ticketNumber,
-              ticketNumber: q.ticketNumber,
-              appointmentId: q.appointmentPublicId,
-              studentName: q.studentName,
-              matricNo: q.matricNo,
-              doctorName: q.doctorName,
-              serviceName: q.serviceName,
-              status: q.status === 'waiting' ? APP_CONFIG.QUEUE_STATUS.WAITING :
-                      q.status === 'called' ? APP_CONFIG.QUEUE_STATUS.CALLED :
-                      q.status === 'in_consultation' ? APP_CONFIG.QUEUE_STATUS.IN_CONSULTATION : q.status,
-              checkInTime: q.checkInTime,
-              calledAt: q.calledAt
-            }));
+          const res = await Api.get('/admin/queue');
+          const raw = res?.data?.queue || res?.data || (Array.isArray(res) ? res : null);
+          if (raw !== null) {
+            const mapped = raw.map(q => {
+              const queueNum = q.queueNumber || q.ticketNumber;
+              const ticketStr = typeof queueNum === 'number' ? `Q-${String(queueNum).padStart(3, '0')}` : String(queueNum || '');
+              return {
+                id: q.publicId || `que_${queueNum}`,
+                publicId: q.publicId || `que_${queueNum}`,
+                queueNumber: ticketStr,
+                ticketNumber: ticketStr,
+                appointmentId: q.appointmentPublicId || q.appointment?.publicId,
+                studentName: q.student?.name || q.studentName,
+                matricNo: q.student?.matricNumber || q.matricNo,
+                doctorName: q.doctor?.name || q.doctorName,
+                serviceName: q.assignedClinic?.name || q.serviceName,
+                room: q.assignedClinic?.consultingRoom || q.room || 'Consulting Room',
+                status: q.status === 'waiting' ? APP_CONFIG.QUEUE_STATUS.WAITING :
+                        q.status === 'called' ? APP_CONFIG.QUEUE_STATUS.CALLED :
+                        q.status === 'in_consultation' ? APP_CONFIG.QUEUE_STATUS.IN_CONSULTATION :
+                        q.status === 'completed' ? APP_CONFIG.QUEUE_STATUS.COMPLETED :
+                        q.status === 'no_show' ? APP_CONFIG.QUEUE_STATUS.NO_SHOW : q.status,
+                checkInTime: q.checkInTime,
+                calledAt: q.calledAt
+              };
+            });
             Storage.set(APP_CONFIG.STORAGE_KEYS.QUEUE, mapped);
             return mapped;
           }
@@ -202,6 +210,14 @@ export const QueueService = {
    * Staff Action: Call next waiting patient
    */
   async callNextPatient() {
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        await Api.patch('/admin/queue/call-next');
+      } catch (err) {
+        console.warn('[QueueService] /admin/queue/call-next notice:', err.message);
+      }
+    }
+
     const queue = await this.getQueue();
     if (queue.some(q => ['Called', 'In Consultation'].includes(q.status))) {
       return { success: false, message: 'Finish the current visit or mark the called patient absent before calling the next patient.' };
@@ -223,11 +239,20 @@ export const QueueService = {
    * Staff Action: Start Consultation
    */
   async startConsultation(queueId) {
+    const cleanId = String(queueId || '').trim();
+    if (!APP_CONFIG.USE_MOCK_DATA && cleanId && !cleanId.startsWith('emg_')) {
+      try {
+        await Api.patch(`/admin/queue/${cleanId}/start`);
+      } catch (err) {
+        console.warn(`[QueueService] /admin/queue/${cleanId}/start notice:`, err.message);
+      }
+    }
+
     const queue = await this.getQueue();
-    const target = queue.find(q => q.id === queueId || q.queueNumber === queueId);
+    const target = queue.find(q => q.id === queueId || q.publicId === queueId || q.queueNumber === queueId);
     if (!target || target.status !== APP_CONFIG.QUEUE_STATUS.CALLED) return { success: false, message: 'Call the patient before starting consultation.' };
     const updated = queue.map(q => {
-      if (q.id === queueId || q.queueNumber === queueId) {
+      if (q.id === queueId || q.publicId === queueId || q.queueNumber === queueId) {
         return {
           ...q,
           status: APP_CONFIG.QUEUE_STATUS.IN_CONSULTATION,
@@ -247,8 +272,17 @@ export const QueueService = {
    * Staff Action: Complete Patient Visit
    */
   async completeVisit(queueId) {
+    const cleanId = String(queueId || '').trim();
+    if (!APP_CONFIG.USE_MOCK_DATA && cleanId && !cleanId.startsWith('emg_')) {
+      try {
+        await Api.patch(`/admin/queue/${cleanId}/complete`);
+      } catch (err) {
+        console.warn(`[QueueService] /admin/queue/${cleanId}/complete notice:`, err.message);
+      }
+    }
+
     const queue = await this.getQueue();
-    const target = queue.find(q => q.id === queueId || q.queueNumber === queueId);
+    const target = queue.find(q => q.id === queueId || q.publicId === queueId || q.queueNumber === queueId);
     if (!target || !['Called', 'In Consultation'].includes(target.status)) return { success: false, message: 'This patient has no active visit.' };
     const appointments = Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, []);
 

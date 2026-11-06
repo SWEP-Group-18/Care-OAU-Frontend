@@ -1,6 +1,7 @@
 import { Storage } from '../core/storage.js';
 import { APP_CONFIG } from '../core/config.js';
 import { INITIAL_APPOINTMENTS } from '../data/mock-data.js';
+import { Api } from './api-client.js';
 
 export const DOCTOR_STATUSES = ['Available', 'In Consultation', 'On Break', 'Arriving Soon', 'Off Duty', 'On Leave'];
 export const statusTone = status => ({ Available: 'success', 'In Consultation': 'info', 'On Break': 'warning', 'Arriving Soon': 'info', 'Off Duty': 'neutral', 'On Leave': 'neutral' })[status] || 'neutral';
@@ -38,10 +39,29 @@ export function doctorLoad(doctor, date = dateKey()) {
   const booked = Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, []).filter(a => (a.doctorId === docId || a.doctorId === doctor.id) && (a.appointmentDate || a.date) === date && !['Cancelled', 'Rejected'].includes(a.status));
   return date === dateKey() ? (doctor.currentLoad || 0) + booked.filter(a => !initialIds.has(a.id)).length : booked.length;
 }
-export function saveDoctorStatus(id, status, arrivalMinutes) {
+export async function saveDoctorStatus(id, status, arrivalMinutes) {
   if (Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER)?.role !== 'admin') throw new Error('Please sign in as staff to update attendance.');
   if (!DOCTOR_STATUSES.includes(status)) throw new Error('Choose a valid status.');
   if (status === 'Arriving Soon' && ![15, 30, 45, 60].includes(Number(arrivalMinutes))) throw new Error('Choose an expected arrival time.');
+
+  const statusMap = {
+    'Available': 'available',
+    'In Consultation': 'in_consultation',
+    'On Break': 'on_break',
+    'Arriving Soon': 'arriving_soon',
+    'Off Duty': 'off_duty',
+    'On Leave': 'on_leave'
+  };
+  const backendStatus = statusMap[status] || 'available';
+
+  if (!APP_CONFIG.USE_MOCK_DATA && id && !id.startsWith('doc_admin_') && !id.startsWith('doc_local_')) {
+    try {
+      await Api.patch(`/admin/doctors/${id}/status`, { status: backendStatus });
+    } catch (err) {
+      console.warn(`[DoctorStatus] Backend status update failed for ${id}:`, err.message);
+    }
+  }
+
   const doctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
   if (!doctors.some(d => d.id === id || d.publicId === id)) throw new Error('Doctor not found.');
   const updated = doctors.map(d => (d.id === id || d.publicId === id) ? { ...d, status, statusDate: dateKey(), expectedArrivalAt: status === 'Arriving Soon' ? new Date(Date.now() + Number(arrivalMinutes) * 60000).toISOString() : null } : d);
