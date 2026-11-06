@@ -189,7 +189,7 @@ window.adminApprove = async (id) => {
     return;
   }
   Toast.success('Appointment approved. Patient is now eligible for on-site check-in.');
-  loadAppointments();
+  await loadAppointments();
   AdminSidebar.render();
 };
 
@@ -206,7 +206,7 @@ window.adminComplete = async (id) => {
         return false;
       }
       Toast.success('Appointment marked as completed.');
-      loadAppointments();
+      await loadAppointments();
       AdminSidebar.render();
     }
   });
@@ -224,7 +224,7 @@ window.adminReject = (id) => {
       const result = await AppointmentService.rejectAppointment(id, reason);
       if (!result.success) { Toast.warning(result.message); return false; }
       Toast.warning('Appointment rejected.');
-      loadAppointments();
+      await loadAppointments();
       AdminSidebar.render();
     }
   });
@@ -234,7 +234,7 @@ window.adminCheckIn = async (id) => {
   const res = await AppointmentService.checkInPatient(id);
   if (res.success) {
     Toast.success(`Patient ${res.queueItem.patientName} checked in! Queue Ticket ${res.queueNumber} issued.`);
-    loadAppointments();
+    await loadAppointments();
     AdminSidebar.render();
   } else {
     Toast.error(res.message);

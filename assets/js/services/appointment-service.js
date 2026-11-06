@@ -34,47 +34,69 @@ export const AppointmentService = {
         }
 
         if (items !== null) {
+          const cachedAppointments = Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, []);
           const mapped = items.map(a => {
+            const rawId = a.publicId || a.id;
+            const localMatch = cachedAppointments.find(c => c.id === rawId || c.publicId === rawId);
+
             const rawDate = a.appointmentDate || a.date;
-            const dateStr = rawDate ? String(rawDate).slice(0, 10) : '';
-            const rawTime = a.timeSlot || a.startTime || a.time || '';
+            const dateStr = rawDate ? String(rawDate).slice(0, 10) : (localMatch?.appointmentDate || '');
+            const rawTime = a.timeSlot || a.startTime || a.time || (localMatch?.timeSlot || '');
             const formattedTime = Utils.formatTime(rawTime);
-            const serviceName = typeof a.service === 'string' ? a.service : (a.service?.name || a.serviceName || 'General Consultation');
-            const doctorName = typeof a.doctor === 'string' ? a.doctor : (a.doctor?.name || a.doctorName || 'Assigned Physician');
-            const doctorId = typeof a.doctor === 'object' ? (a.doctor.publicId || a.doctor.id) : (a.doctorPublicId || a.doctorId);
-            const serviceId = typeof a.service === 'object' ? (a.service.publicId || a.service.id) : (a.servicePublicId || a.serviceId);
+            const serviceName = typeof a.service === 'string' ? a.service : (a.service?.name || a.serviceName || localMatch?.serviceName || 'General Consultation');
+            const doctorName = typeof a.doctor === 'string' ? a.doctor : (a.doctor?.name || a.doctorName || localMatch?.doctorName || 'Assigned Physician');
+            const doctorId = typeof a.doctor === 'object' ? (a.doctor.publicId || a.doctor.id) : (a.doctorPublicId || a.doctorId || localMatch?.doctorId);
+            const serviceId = typeof a.service === 'object' ? (a.service.publicId || a.service.id) : (a.servicePublicId || a.serviceId || localMatch?.serviceId);
+
+            let resolvedStatus = a.status === 'pending' ? APP_CONFIG.APPOINTMENT_STATUS.PENDING :
+                    (a.status === 'confirmed' || a.status === 'approved') ? APP_CONFIG.APPOINTMENT_STATUS.APPROVED :
+                    a.status === 'checked_in' ? APP_CONFIG.APPOINTMENT_STATUS.CHECKED_IN :
+                    a.status === 'cancelled' ? APP_CONFIG.APPOINTMENT_STATUS.CANCELLED :
+                    a.status === 'completed' ? APP_CONFIG.APPOINTMENT_STATUS.COMPLETED :
+                    a.status === 'in_consultation' ? APP_CONFIG.APPOINTMENT_STATUS.IN_CONSULTATION :
+                    a.status === 'rejected' ? APP_CONFIG.APPOINTMENT_STATUS.REJECTED :
+                    a.status === 'no_show' ? APP_CONFIG.APPOINTMENT_STATUS.NO_SHOW :
+                    (a.status || APP_CONFIG.APPOINTMENT_STATUS.PENDING);
+
+            // Preserve local state transitions (approved, rejected, checked-in, completed) if remote status is still pending
+            if (resolvedStatus === APP_CONFIG.APPOINTMENT_STATUS.PENDING && localMatch) {
+              if (localMatch.status === APP_CONFIG.APPOINTMENT_STATUS.APPROVED || localMatch.approvedAt) {
+                resolvedStatus = APP_CONFIG.APPOINTMENT_STATUS.APPROVED;
+              } else if (localMatch.status === APP_CONFIG.APPOINTMENT_STATUS.REJECTED) {
+                resolvedStatus = APP_CONFIG.APPOINTMENT_STATUS.REJECTED;
+              } else if (localMatch.status === APP_CONFIG.APPOINTMENT_STATUS.CHECKED_IN) {
+                resolvedStatus = APP_CONFIG.APPOINTMENT_STATUS.CHECKED_IN;
+              } else if (localMatch.status === APP_CONFIG.APPOINTMENT_STATUS.COMPLETED) {
+                resolvedStatus = APP_CONFIG.APPOINTMENT_STATUS.COMPLETED;
+              }
+            }
 
             return {
-              id: a.publicId || a.id,
-              publicId: a.publicId || a.id,
-              referenceNo: a.referenceNo || a.publicId || a.id,
+              id: rawId,
+              publicId: rawId,
+              referenceNo: a.referenceNo || localMatch?.referenceNo || rawId,
               appointmentDate: dateStr,
               timeSlot: formattedTime,
               startTime: rawTime,
-              endTime: a.endTime || '',
-              studentName: a.student?.name || a.studentName || a.name || user?.name || 'Student',
-              matricNo: a.student?.matricNumber || a.matricNo || user?.matricNo || '',
-              phone: a.student?.phone || a.phone || '',
-              studentId: a.studentPublicId || a.studentId || user?.id,
+              endTime: a.endTime || localMatch?.endTime || '',
+              studentName: a.student?.name || a.studentName || a.name || localMatch?.studentName || user?.name || 'Student',
+              matricNo: a.student?.matricNumber || a.matricNo || localMatch?.matricNo || user?.matricNo || '',
+              phone: a.student?.phone || a.phone || localMatch?.phone || '',
+              studentId: a.studentPublicId || a.studentId || localMatch?.studentId || user?.id,
               doctorName,
               doctorId,
               serviceName,
               serviceId,
-              reason: a.reason || '',
-              location: a.consultingRoom || a.location || 'Care-OAU Health Centre',
-              consultingRoom: a.consultingRoom || a.location || 'Care-OAU Health Centre',
-              status: a.status === 'pending' ? APP_CONFIG.APPOINTMENT_STATUS.PENDING :
-                      (a.status === 'confirmed' || a.status === 'approved') ? APP_CONFIG.APPOINTMENT_STATUS.APPROVED :
-                      a.status === 'checked_in' ? APP_CONFIG.APPOINTMENT_STATUS.CHECKED_IN :
-                      a.status === 'cancelled' ? APP_CONFIG.APPOINTMENT_STATUS.CANCELLED :
-                      a.status === 'completed' ? APP_CONFIG.APPOINTMENT_STATUS.COMPLETED :
-                      a.status === 'in_consultation' ? APP_CONFIG.APPOINTMENT_STATUS.IN_CONSULTATION :
-                      a.status === 'rejected' ? APP_CONFIG.APPOINTMENT_STATUS.REJECTED :
-                      a.status === 'no_show' ? APP_CONFIG.APPOINTMENT_STATUS.NO_SHOW :
-                      (a.status || APP_CONFIG.APPOINTMENT_STATUS.PENDING),
-              cancellationReason: a.cancellationReason || a.reason
+              reason: a.reason || localMatch?.reason || '',
+              location: a.consultingRoom || a.location || localMatch?.location || 'Care-OAU Health Centre',
+              consultingRoom: a.consultingRoom || a.location || localMatch?.consultingRoom || 'Care-OAU Health Centre',
+              status: resolvedStatus,
+              queueNumber: a.queueNumber || localMatch?.queueNumber || null,
+              approvedAt: localMatch?.approvedAt || (resolvedStatus === APP_CONFIG.APPOINTMENT_STATUS.APPROVED ? new Date().toISOString() : undefined),
+              cancellationReason: a.cancellationReason || a.reason || localMatch?.cancellationReason
             };
           });
+
           Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, mapped);
           return mapped;
         }
@@ -149,10 +171,17 @@ export const AppointmentService = {
    */
   async getStudentAppointments(studentId = 'usr_student_01') {
     const list = await this.getAllAppointments();
-    if (!studentId || !APP_CONFIG.USE_MOCK_DATA) {
+    const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
+    if (!APP_CONFIG.USE_MOCK_DATA && user?.role === 'student') {
       return list;
     }
-    return list.filter(a => a.studentId === studentId);
+    const targetId = studentId || user?.id;
+    const targetMatric = user?.matricNo;
+    return list.filter(a => {
+      if (targetId && (String(a.studentId) === String(targetId) || String(a.studentPublicId) === String(targetId))) return true;
+      if (targetMatric && a.matricNo && String(a.matricNo).trim().toUpperCase() === String(targetMatric).trim().toUpperCase()) return true;
+      return false;
+    });
   },
 
   /**

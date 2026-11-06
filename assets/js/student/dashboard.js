@@ -96,7 +96,7 @@ function renderWelcomeRow(user) {
 
 async function loadDashboardData() {
   const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
-  const appointments = (await AppointmentService.getAllAppointments()).filter(a => a.studentId === user.id || a.matricNo === user.matricNo);
+  const appointments = await AppointmentService.getStudentAppointments(user?.id);
   const doctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
   const queue = Storage.get(APP_CONFIG.STORAGE_KEYS.QUEUE, []);
 
@@ -173,7 +173,7 @@ function renderUpcomingAppointment(appointments) {
 
   if (activeAppt.status === APP_CONFIG.APPOINTMENT_STATUS.APPROVED) {
     badgeTone = 'badge-success';
-    statusText = 'Confirmed';
+    statusText = 'Approved';
   } else if (activeAppt.status === APP_CONFIG.APPOINTMENT_STATUS.REJECTED) {
     badgeTone = 'badge-danger';
     statusText = 'Rejected';
