@@ -280,15 +280,25 @@ export const AppointmentService = {
     if (!cleanId) return { success: false, message: 'Appointment ID is required.' };
 
     const appointments = await this.getAllAppointments();
-    if (!appointments.some(a => (a.id === cleanId || a.publicId === cleanId) && a.status === APP_CONFIG.APPOINTMENT_STATUS.PENDING)) {
+    const targetApt = appointments.find(a => a.id === cleanId || a.publicId === cleanId);
+    if (!targetApt) {
+      return { success: false, message: 'Appointment not found in roster.' };
+    }
+    if (targetApt.status !== APP_CONFIG.APPOINTMENT_STATUS.PENDING) {
       return { success: false, message: 'Only pending requests can be approved.' };
     }
 
-    if (!APP_CONFIG.USE_MOCK_DATA) {
+    const isLocalDemo = cleanId.startsWith('apt_00') || cleanId.startsWith('apt_demo_') || cleanId.startsWith('apt_mock_');
+
+    if (!APP_CONFIG.USE_MOCK_DATA && !isLocalDemo) {
       try {
         await Api.patch(`/admin/appointments/${cleanId}/approve`);
       } catch (err) {
-        return { success: false, message: err.message || 'Unable to approve appointment on backend.' };
+        if (err.status === 404 || err.code === 'APPOINTMENT_NOT_FOUND') {
+          console.warn(`[AppointmentService] Appointment ${cleanId} not found on server; approving in local storage.`);
+        } else {
+          return { success: false, message: err.message || 'Unable to approve appointment on backend.' };
+        }
       }
     }
 
@@ -316,15 +326,25 @@ export const AppointmentService = {
     if (!cleanId) return { success: false, message: 'Appointment ID is required.' };
 
     const appointments = await this.getAllAppointments();
-    if (!appointments.some(a => (a.id === cleanId || a.publicId === cleanId) && a.status === APP_CONFIG.APPOINTMENT_STATUS.PENDING)) {
+    const targetApt = appointments.find(a => a.id === cleanId || a.publicId === cleanId);
+    if (!targetApt) {
+      return { success: false, message: 'Appointment not found in roster.' };
+    }
+    if (targetApt.status !== APP_CONFIG.APPOINTMENT_STATUS.PENDING) {
       return { success: false, message: 'Only pending requests can be rejected.' };
     }
 
-    if (!APP_CONFIG.USE_MOCK_DATA) {
+    const isLocalDemo = cleanId.startsWith('apt_00') || cleanId.startsWith('apt_demo_') || cleanId.startsWith('apt_mock_');
+
+    if (!APP_CONFIG.USE_MOCK_DATA && !isLocalDemo) {
       try {
         await Api.patch(`/admin/appointments/${cleanId}/reject`);
       } catch (err) {
-        return { success: false, message: err.message || 'Unable to reject appointment on backend.' };
+        if (err.status === 404 || err.code === 'APPOINTMENT_NOT_FOUND') {
+          console.warn(`[AppointmentService] Appointment ${cleanId} not found on server; rejecting in local storage.`);
+        } else {
+          return { success: false, message: err.message || 'Unable to reject appointment on backend.' };
+        }
       }
     }
 
@@ -433,11 +453,17 @@ export const AppointmentService = {
 
     if (targetApt.appointmentDate !== localDate()) return { success: false, message: 'Check-in is available on the appointment date.' };
 
-    if (!APP_CONFIG.USE_MOCK_DATA) {
+    const isLocalDemo = cleanId.startsWith('apt_00') || cleanId.startsWith('apt_demo_') || cleanId.startsWith('apt_mock_');
+
+    if (!APP_CONFIG.USE_MOCK_DATA && !isLocalDemo) {
       try {
         await Api.patch(`/admin/appointments/${cleanId}/check-in`);
       } catch (err) {
-        return { success: false, message: err.message || 'Unable to check in patient on backend.' };
+        if (err.status === 404 || err.code === 'APPOINTMENT_NOT_FOUND') {
+          console.warn(`[AppointmentService] Appointment ${cleanId} not found on server; checking in locally.`);
+        } else {
+          return { success: false, message: err.message || 'Unable to check in patient on backend.' };
+        }
       }
     }
 
@@ -491,11 +517,17 @@ export const AppointmentService = {
     const targetApt = appointments.find(a => a.id === cleanId || a.publicId === cleanId);
     if (!targetApt) return { success: false, message: 'Appointment not found.' };
 
-    if (!APP_CONFIG.USE_MOCK_DATA) {
+    const isLocalDemo = cleanId.startsWith('apt_00') || cleanId.startsWith('apt_demo_') || cleanId.startsWith('apt_mock_');
+
+    if (!APP_CONFIG.USE_MOCK_DATA && !isLocalDemo) {
       try {
         await Api.patch(`/admin/appointments/${cleanId}/complete`);
       } catch (err) {
-        return { success: false, message: err.message || 'Unable to complete appointment.' };
+        if (err.status === 404 || err.code === 'APPOINTMENT_NOT_FOUND') {
+          console.warn(`[AppointmentService] Appointment ${cleanId} not found on server; completing locally.`);
+        } else {
+          return { success: false, message: err.message || 'Unable to complete appointment.' };
+        }
       }
     }
 
