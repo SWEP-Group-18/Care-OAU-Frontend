@@ -434,7 +434,7 @@ async function initDoctors(paramDoctorId) {
   container.querySelectorAll('button[data-doctor-id]:not(:disabled)').forEach((btn) => {
     btn.addEventListener('click', () => {
       const docId = btn.dataset.doctorId;
-      selectedDoctorObj = doctors.find((d) => d.publicId === docId || d.id === docId);
+      selectedDoctorObj = doctors.find((d) => d.id === docId);
       isEarliestDoctor = false;
       refreshDoctorSelectionUI(container);
       renderTimeSlots();
@@ -458,8 +458,7 @@ function refreshDoctorSelectionUI(container) {
       if (radio) radio.innerHTML = '<span></span>';
     }
   } else if (selectedDoctorObj) {
-    const docId = selectedDoctorObj.publicId || selectedDoctorObj.id;
-    const selectedBtn = container.querySelector(`button[data-doctor-id="${docId}"]`);
+    const selectedBtn = container.querySelector(`button[data-doctor-id="${selectedDoctorObj.id}"]`);
     if (selectedBtn) {
       selectedBtn.classList.add('selected');
       const radio = selectedBtn.querySelector('.choice-radio');
@@ -477,18 +476,12 @@ function updateSummary() {
   if (srvEl) srvEl.textContent = selectedServiceObj ? selectedServiceObj.name : 'General Consultation';
   if (docEl) docEl.textContent = isEarliestDoctor ? 'Earliest available doctor' : (selectedDoctorObj ? selectedDoctorObj.name : 'Earliest available');
   
-  if (dateEl) {
-    if (selectedDateStr) {
-      const d = new Date(selectedDateStr + 'T12:00:00');
-      dateEl.textContent = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    } else {
-      dateEl.textContent = '—';
-    }
+  if (dateEl && selectedDateStr) {
+    const d = new Date(selectedDateStr + 'T12:00:00');
+    dateEl.textContent = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   }
 
-  if (timeEl) {
-    timeEl.textContent = selectedTimeStr || '—';
-  }
+  if (timeEl) timeEl.textContent = selectedTimeStr;
 
   // Also update Step 4 review elements
   const reviewSrv = document.getElementById('review-service');
@@ -498,14 +491,10 @@ function updateSummary() {
 
   if (reviewSrv) reviewSrv.textContent = selectedServiceObj ? selectedServiceObj.name : 'General Consultation';
   if (reviewDoc) reviewDoc.textContent = isEarliestDoctor ? 'Earliest available doctor' : (selectedDoctorObj ? selectedDoctorObj.name : 'Earliest available');
-  if (reviewDt) {
-    if (selectedDateStr && selectedTimeStr) {
-      const d = new Date(selectedDateStr + 'T12:00:00');
-      const shortDay = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
-      reviewDt.textContent = `${shortDay} · ${selectedTimeStr}`;
-    } else {
-      reviewDt.textContent = '—';
-    }
+  if (reviewDt && selectedDateStr) {
+    const d = new Date(selectedDateStr + 'T12:00:00');
+    const shortDay = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+    reviewDt.textContent = `${shortDay} · ${selectedTimeStr}`;
   }
 
   if (user) {
