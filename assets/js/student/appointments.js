@@ -12,8 +12,10 @@ import { Modal } from '../components/modal.js';
 import { Toast } from '../components/toast.js';
 import { Utils } from '../core/utils.js';
 import { APP_CONFIG } from '../core/config.js';
+import { SyncManager } from '../core/sync-manager.js';
 
 let activeFilter = 'all';
+let appointmentsPoller = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('student')) return;
@@ -22,6 +24,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initStatusTabs();
   loadAppointments();
+
+  appointmentsPoller = SyncManager.createPoller({
+    name: 'student-appointments-sync',
+    interval: 8000,
+    fetchFn: () => loadAppointments(),
+    immediate: false
+  });
+  appointmentsPoller.start();
 });
 
 function initStatusTabs() {
@@ -45,8 +55,29 @@ async function loadAppointments() {
   try {
     const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
     const appointments = await AppointmentService.getStudentAppointments(user?.id);
-    const filtered = appointments.filter(a => activeFilter === 'all' ? !['Completed','Cancelled','Rejected','No Show'].includes(a.status) : activeFilter === 'Cancelled' ? ['Cancelled','Rejected','No Show'].includes(a.status) : a.status === activeFilter);
-    if (!filtered.length) { tbody.innerHTML = '<div class="quiet-card"><h3>No appointments here yet</h3><p>Your visits will appear here once you book an appointment.</p><a href="book-appointment.html" class="btn btn-teal">Book Appointment</a></div>'; return; }
+    const filtered = appointments.filter(a => {
+      if (activeFilter === 'all') return true; // Never hide any appointment in All Visits
+      if (activeFilter === 'upcoming') {
+        return ['Pending Approval', 'Approved', 'Checked In', 'In Consultation'].includes(a.status) ||
+          !['Completed', 'Cancelled', 'Rejected', 'No Show'].includes(a.status);
+      }
+      if (activeFilter === 'Completed' || activeFilter === 'completed') {
+        return a.status === 'Completed';
+      }
+      if (activeFilter === 'Cancelled' || activeFilter === 'cancelled') {
+        return ['Cancelled', 'Rejected', 'No Show'].includes(a.status);
+      }
+      return a.status === activeFilter;
+    });
+
+    if (!filtered.length) {
+      const msg = activeFilter === 'all'
+        ? 'Your visits will appear here once you book an appointment.'
+        : `No ${activeFilter.toLowerCase()} appointments found.`;
+      tbody.innerHTML = `<div class="quiet-card"><h3>No appointments here yet</h3><p>${msg}</p><a href="book-appointment.html" class="btn btn-teal">Book Appointment</a></div>`;
+      return;
+    }
+
     tbody.innerHTML = filtered.map(apt => {
       const rawDate = apt.appointmentDate || apt.date;
       const date = rawDate ? new Date(rawDate.includes('T') ? rawDate : rawDate + 'T12:00:00') : new Date();
@@ -57,7 +88,9 @@ async function loadAppointments() {
         <div class="large-date"><strong>${date.getDate()}</strong><span>${date.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}<br>${date.toLocaleDateString('en-GB',{weekday:'long'})}</span></div></div>
         <div class="appointment-info-grid"><div><span>Scheduled time</span><strong>${Utils.escapeHtml(apt.timeSlot || '08:00 AM')}</strong></div><div><span>Doctor</span><strong>${Utils.escapeHtml(apt.doctorName || 'Assigned Physician')}</strong></div><div><span>Location</span><strong>${Utils.escapeHtml(apt.location || 'Care-OAU Health Centre')}</strong></div></div>
         ${apt.status === 'Pending Approval' ? '<p class="status-message">Your request is awaiting staff review. Your queue number will be issued at reception after approval.</p>' : ''}
-        ${apt.rejectionReason ? '<p class="status-message">' + Utils.escapeHtml(apt.rejectionReason) + '</p>' : ''}
+        ${apt.status === 'Approved' ? '<p class="status-message text-teal"><strong>Approved:</strong> Your visit is confirmed. Please arrive 10 minutes prior to scheduled time for reception check-in.</p>' : ''}
+        ${apt.rejectionReason ? '<p class="status-message text-danger"><strong>Reason:</strong> ' + Utils.escapeHtml(apt.rejectionReason) + '</p>' : ''}
+        ${apt.cancellationReason ? '<p class="status-message text-muted"><strong>Cancellation notice:</strong> ' + Utils.escapeHtml(apt.cancellationReason) + '</p>' : ''}
         <div class="appointment-list-actions"><button class="btn btn-outline-navy" onclick="viewAppointmentDetails('${apt.id}')">View details</button>
         ${apt.queueNumber ? '<a href="queue-tracking.html" class="btn btn-teal">Track Queue</a>' : ''}
         ${canCancel ? '<button class="btn btn-ghost text-danger" onclick="cancelAppointmentRequest(\'' + apt.id + '\')">Cancel appointment</button>' : ''}</div></article>`;

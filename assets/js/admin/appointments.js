@@ -14,9 +14,11 @@ import { Toast } from '../components/toast.js';
 import { Modal } from '../components/modal.js';
 import { Utils } from '../core/utils.js';
 import { APP_CONFIG } from '../core/config.js';
+import { SyncManager } from '../core/sync-manager.js';
 
 let activeFilter = 'all';
 let searchQuery = '';
+let adminAppointmentsPoller = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('admin')) return;
@@ -25,6 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initControls();
   loadAppointments();
+
+  adminAppointmentsPoller = SyncManager.createPoller({
+    name: 'admin-appointments-sync',
+    interval: 8000,
+    fetchFn: () => loadAppointments(),
+    immediate: false
+  });
+  adminAppointmentsPoller.start();
 });
 
 function initControls() {

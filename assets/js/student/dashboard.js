@@ -129,10 +129,11 @@ function renderUpcomingAppointment(appointments) {
   const container = document.getElementById('latest-appointment-container');
   if (!container) return;
 
-  // Find most relevant student appointment (excluding cancelled)
-  const activeAppt = appointments.find(
+  // Prioritize active upcoming appointments; fall back to most recent historical visit so data doesn't disappear
+  const upcomingAppt = appointments.find(
     (a) => !['Cancelled', 'Rejected', 'Completed', 'No Show'].includes(a.status)
   );
+  const activeAppt = upcomingAppt || appointments[0];
 
   if (!activeAppt) {
     container.innerHTML = `
@@ -145,8 +146,8 @@ function renderUpcomingAppointment(appointments) {
             <line x1="3" y1="10" x2="21" y2="10"></line>
           </svg>
         </div>
-        <h3>No upcoming appointments</h3>
-        <p>When you book a visit, the appointment details will appear here.</p>
+        <h3>No appointments on record</h3>
+        <p>When you book a visit, the appointment details and history will appear here.</p>
         <a href="book-appointment.html" class="button button-primary">Book Appointment</a>
       </div>
     `;
@@ -159,7 +160,7 @@ function renderUpcomingAppointment(appointments) {
   let dayName = 'Thursday';
 
   if (activeAppt.appointmentDate) {
-    const d = new Date(activeAppt.appointmentDate);
+    const d = new Date(activeAppt.appointmentDate.includes('T') ? activeAppt.appointmentDate : activeAppt.appointmentDate + 'T12:00:00');
     if (!isNaN(d.getTime())) {
       month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
       dayNum = d.getDate();
@@ -169,7 +170,7 @@ function renderUpcomingAppointment(appointments) {
 
   // Status badge logic
   let badgeTone = 'badge-warning';
-  let statusText = 'Pending Approval';
+  let statusText = activeAppt.status || 'Pending Approval';
 
   if (activeAppt.status === APP_CONFIG.APPOINTMENT_STATUS.APPROVED) {
     badgeTone = 'badge-success';
@@ -180,7 +181,15 @@ function renderUpcomingAppointment(appointments) {
   } else if (activeAppt.status === APP_CONFIG.APPOINTMENT_STATUS.CHECKED_IN) {
     badgeTone = 'badge-info';
     statusText = 'Checked In';
+  } else if (activeAppt.status === APP_CONFIG.APPOINTMENT_STATUS.COMPLETED) {
+    badgeTone = 'badge-success';
+    statusText = 'Completed';
+  } else if (activeAppt.status === APP_CONFIG.APPOINTMENT_STATUS.CANCELLED) {
+    badgeTone = 'badge-warning';
+    statusText = 'Cancelled';
   }
+
+  const isHistorical = ['Completed', 'Cancelled', 'Rejected'].includes(activeAppt.status);
 
   container.innerHTML = `
     <article class="appointment-card">
@@ -218,9 +227,12 @@ function renderUpcomingAppointment(appointments) {
         </div>
         <div class="appointment-actions">
           <span>Ref: ${activeAppt.referenceNo || activeAppt.id}</span>
-          <a href="my-appointments.html" class="button button-secondary">
-            View appointment
-          </a>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <a href="my-appointments.html" class="button button-secondary">
+              ${isHistorical ? 'View history' : 'View appointment'}
+            </a>
+            ${isHistorical ? '<a href="book-appointment.html" class="button button-primary">Book New</a>' : ''}
+          </div>
         </div>
       </div>
     </article>
