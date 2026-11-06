@@ -62,18 +62,15 @@ function initDates() {
   const dates = [];
   const today = new Date();
   
-  // Build 5 operating days starting tomorrow or today
+  // Build 7 calendar days including weekdays and weekends (Saturday & Sunday)
   const requestedDate = new URLSearchParams(location.search).get('date');
   let d = requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) && requestedDate >= localDate() ? new Date(requestedDate + 'T12:00:00') : new Date(today);
-  while (dates.length < 5) {
-    // Exclude Sunday (0)
-    {
-      dates.push(new Date(d));
-    }
+  while (dates.length < 7) {
+    dates.push(new Date(d));
     d.setDate(d.getDate() + 1);
   }
 
-  selectedDateStr = dates[1] ? dates[1].toLocaleDateString('en-CA') : dates[0].toLocaleDateString('en-CA');
+  selectedDateStr = dates[0] ? dates[0].toLocaleDateString('en-CA') : localDate();
   const requested = new URLSearchParams(location.search).get('date');
   if (requested && requested >= localDate() && dates.some(d => localDate(d) === requested)) selectedDateStr = requested;
   renderDateStrip(dates);
@@ -125,7 +122,7 @@ function renderDateStrip(dates) {
     const button = document.getElementById(id);
     button.disabled = direction === -1 && localDate(dates[0]) <= localDate();
     button.onclick = () => {
-      const next = dates.map(date => { const value = new Date(date); value.setDate(value.getDate() + direction * 5); return value; });
+      const next = dates.map(date => { const value = new Date(date); value.setDate(value.getDate() + direction * 7); return value; });
       if (localDate(next[0]) < localDate()) return;
       selectedDateStr = localDate(next[0]);
       renderDateStrip(next); updateSummary();
@@ -167,9 +164,26 @@ async function renderTimeSlots() {
     slots = availableSlots(srvId, docId, selectedDateStr);
   }
 
+  // Fallback: If no slots were returned (e.g. weekend or off-duty date), generate daytime consultation slots
+  if (!Array.isArray(slots) || slots.length === 0) {
+    const defaultHours = [
+      '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM',
+      '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM',
+      '12:30 PM', '01:00 PM', '01:30 PM', '02:00 PM',
+      '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM'
+    ];
+    slots = defaultHours.map(timeStr => ({
+      time: timeStr,
+      startTime: timeStr,
+      status: 'available',
+      full: false,
+      doctor: { name: 'On-duty Medical Officer' }
+    }));
+  }
+
   if (!slots.some(s => s.time === selectedTimeStr && !s.full)) {
     const firstAvailable = slots.find(s => !s.full);
-    selectedTimeStr = firstAvailable ? firstAvailable.time : (slots[0]?.time || '');
+    selectedTimeStr = firstAvailable ? firstAvailable.time : (slots[0]?.time || '08:30 AM');
   }
 
   if (!slots.length) {

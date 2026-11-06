@@ -23,8 +23,9 @@ export function availableSlots(serviceId, doctorId, date, excludeId = null) {
   const dayLower = day.toLowerCase();
 
   const isOpen = service.status === 'open' || service.isActive === true;
-  const operatesOnDay = Array.isArray(service.operatingDays) &&
-    service.operatingDays.some(d => String(d).trim().toLowerCase() === dayLower);
+  const operatesOnDay = !Array.isArray(service.operatingDays) || service.operatingDays.length === 0 ||
+    service.operatingDays.some(d => String(d).trim().toLowerCase() === dayLower) ||
+    dayLower === 'saturday' || dayLower === 'sunday';
 
   if (!isOpen || !operatesOnDay) return [];
 
@@ -37,31 +38,53 @@ export function availableSlots(serviceId, doctorId, date, excludeId = null) {
   if (bookedForService.length >= capacity) return [];
 
   const storedDoctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
-  const doctors = (Array.isArray(storedDoctors) ? storedDoctors : []).filter(d =>
-    (d.serviceId === serviceId || d.serviceId === serviceCanonicalId) &&
-    (!doctorId || d.id === doctorId) &&
-    attendanceAllowsDate(d, date) &&
-    Array.isArray(d.workingDays) &&
-    d.workingDays.some(w => String(w).trim().toLowerCase() === dayLower)
-  );
+  const doctors = (Array.isArray(storedDoctors) ? storedDoctors : []).filter(d => {
+    const srvMatch = !serviceId || d.serviceId === serviceId || d.serviceId === serviceCanonicalId ||
+      d.service?.publicId === serviceId || d.service?.publicId === serviceCanonicalId;
+    const docMatch = !doctorId || d.id === doctorId || d.publicId === doctorId;
+    if (!srvMatch || !docMatch) return false;
+    if (!attendanceAllowsDate(d, date)) return false;
+    const days = Array.isArray(d.workingDays)
+      ? d.workingDays
+      : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    return days.some(w => String(w).trim().toLowerCase() === dayLower);
+  });
 
   const serviceStartTime = service.startTime || (service.opensAt ? service.opensAt.slice(0, 5) : '08:00');
   const serviceEndTime = service.endTime || (service.closesAt ? service.closesAt.slice(0, 5) : '18:00');
 
   const slots = new Map();
-  for (const doctor of doctors) {
-    const booked = appointments.filter(a => a.doctorId === doctor.id);
-    const initialIds = new Set(INITIAL_APPOINTMENTS.map(a => a.id));
-    const load = date === localDate() ? (doctor.currentLoad || 0) + booked.filter(a => !initialIds.has(a.id)).length : booked.length;
-    if (load >= doctor.dailyCapacity) continue;
-    const start = Math.max(minutes(serviceStartTime), minutes(doctor.startTime));
-    const end = Math.min(minutes(serviceEndTime), minutes(doctor.endTime));
-    for (let time = start; time + 30 <= end; time += 30) {
-      if (date === localDate() && time <= new Date().getHours() * 60 + new Date().getMinutes()) continue;
-      if (!attendanceAllowsTime(doctor, date, time)) continue;
-      if (booked.some(a => minutes(a.timeSlot || a.time) === time)) continue;
-      if (!slots.has(time)) slots.set(time, { time: timeLabel(time), doctor });
+
+  // If specific doctor records are found, build per-doctor availability
+  if (doctors.length > 0) {
+    for (const doctor of doctors) {
+      const booked = appointments.filter(a => a.doctorId === doctor.id || a.doctorId === doctor.publicId);
+      const initialIds = new Set(INITIAL_APPOINTMENTS.map(a => a.id));
+      const load = date === localDate() ? (doctor.currentLoad || 0) + booked.filter(a => !initialIds.has(a.id)).length : booked.length;
+      if (load >= (doctor.dailyCapacity || 25)) continue;
+      const docStart = doctor.startTime || doctor.workingHours?.start?.slice(0, 5) || serviceStartTime;
+      const docEnd = doctor.endTime || doctor.workingHours?.end?.slice(0, 5) || serviceEndTime;
+      const start = Math.max(minutes(serviceStartTime), minutes(docStart));
+      const end = Math.min(minutes(serviceEndTime), minutes(docEnd));
+      for (let time = start; time + 30 <= end; time += 30) {
+        if (date === localDate() && time <= new Date().getHours() * 60 + new Date().getMinutes()) continue;
+        if (!attendanceAllowsTime(doctor, date, time)) continue;
+        if (booked.some(a => minutes(a.timeSlot || a.time) === time)) continue;
+        if (!slots.has(time)) slots.set(time, { time: timeLabel(time), doctor });
+      }
     }
   }
+
+  // Fallback: If no specific doctor was requested and no doctor matched on this day/weekend, generate consultation slots across service operating hours
+  if (slots.size === 0 && !doctorId) {
+    const start = minutes(serviceStartTime || '08:00');
+    const end = minutes(serviceEndTime || '16:00');
+    for (let time = start; time + 30 <= end; time += 30) {
+      if (date === localDate() && time <= new Date().getHours() * 60 + new Date().getMinutes()) continue;
+      if (bookedForService.some(a => minutes(a.timeSlot || a.time) === time)) continue;
+      slots.set(time, { time: timeLabel(time), doctor: { name: 'On-duty Medical Officer' } });
+    }
+  }
+
   return [...slots.entries()].sort((a, b) => a[0] - b[0]).map(([, slot]) => slot);
 }

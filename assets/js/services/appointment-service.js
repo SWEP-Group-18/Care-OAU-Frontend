@@ -133,12 +133,24 @@ export const AppointmentService = {
     if (!APP_CONFIG.USE_MOCK_DATA && servicePublicId && date) {
       try {
         let query = `/appointments/slots?servicePublicId=${encodeURIComponent(servicePublicId)}&date=${encodeURIComponent(date)}`;
-        if (doctorPublicId) {
-          query += `&doctorPublicId=${encodeURIComponent(doctorPublicId)}`;
+        
+        let docParam = doctorPublicId;
+        if (!docParam) {
+          const storedDocs = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
+          const matchDoc = storedDocs.find(d =>
+            (d.serviceId === servicePublicId || d.service?.publicId === servicePublicId) && d.isAvailable !== false
+          );
+          if (matchDoc) {
+            docParam = matchDoc.publicId || matchDoc.id;
+          }
         }
+        if (docParam) {
+          query += `&doctorPublicId=${encodeURIComponent(docParam)}`;
+        }
+
         const res = await Api.get(query);
         const slotData = res?.data?.slots || (Array.isArray(res?.data) ? res.data : []);
-        if (Array.isArray(slotData)) {
+        if (Array.isArray(slotData) && slotData.length > 0) {
           return slotData.map(s => {
             const rawTime = s.startTime || s.time || '';
             const formattedTime = Utils.formatTime(rawTime);
@@ -151,8 +163,8 @@ export const AppointmentService = {
               status: s.status || (isFull ? 'fully_booked' : 'available'),
               full: isFull,
               doctor: {
-                id: s.doctor?.publicId || s.doctor?.id || doctorPublicId,
-                publicId: s.doctor?.publicId || s.doctor?.id || doctorPublicId,
+                id: s.doctor?.publicId || s.doctor?.id || docParam,
+                publicId: s.doctor?.publicId || s.doctor?.id || docParam,
                 name: s.doctor?.name || 'Assigned Physician'
               }
             };
@@ -235,9 +247,14 @@ export const AppointmentService = {
 
       if (!doctorPublicId) {
         const storedDoctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
-        const docMatch = (Array.isArray(storedDoctors) ? storedDoctors : []).find(d => 
-          (d.serviceId === servicePublicId || d.serviceId === serviceId) && d.isActive !== false
+        const docs = Array.isArray(storedDoctors) ? storedDoctors : [];
+        let docMatch = docs.find(d => 
+          (d.serviceId === servicePublicId || d.serviceId === serviceId || d.service?.publicId === servicePublicId) &&
+          (d.isAvailable !== false && d.isActive !== false)
         );
+        if (!docMatch && docs.length > 0) {
+          docMatch = docs.find(d => d.isAvailable !== false && d.isActive !== false) || docs[0];
+        }
         if (docMatch) {
           doctorPublicId = docMatch.publicId || docMatch.id;
           doctorName = docMatch.name;

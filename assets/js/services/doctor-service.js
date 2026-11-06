@@ -48,9 +48,9 @@ export function fromBackendDoctor(raw) {
   const publicId = String(item.publicId || item.id || '').trim();
   const schedule = item.schedule || {};
   const rawDays = schedule.workingDays || item.workingDays || [];
-  const workingDays = Array.isArray(rawDays)
+  const workingDays = Array.isArray(rawDays) && rawDays.length > 0
     ? rawDays.map(d => DAY_SHORT_TO_LONG[d] || d)
-    : [];
+    : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   const serviceId = item.service?.publicId || item.serviceId || '';
   const serviceName = item.service?.name || item.serviceName || item.specialization || 'General Medical Consultation';
@@ -59,9 +59,9 @@ export function fromBackendDoctor(raw) {
   const rawStatus = item.status ? String(item.status).toLowerCase() : 'available';
   const isAvailable = rawStatus === 'available' || item.isAvailable === true;
 
-  const startTime = schedule.startTime || item.startTime || '08:00:00';
-  const endTime = schedule.endTime || item.endTime || '16:00:00';
-  const dailyCapacity = Number(schedule.dailyPatientLimit || item.dailyCapacity || 25);
+  const startTime = schedule.startTime || item.startTime || item.workingHours?.start || '08:00:00';
+  const endTime = schedule.endTime || item.endTime || item.workingHours?.end || '16:00:00';
+  const dailyCapacity = Number(schedule.dailyPatientLimit || item.dailyCapacity || item.appointmentSlots?.total || 25);
   const room = schedule.consultingRoom || item.consultingRoom || item.room || 'Consulting Room 1';
 
   return {
