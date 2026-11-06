@@ -15,9 +15,10 @@ for (const file of pages) {
   }
 }
 for (const file of scripts) {
-  const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
-  assert.equal(result.status, 0, result.stderr);
-  for (const [, target] of fs.readFileSync(file, 'utf8').matchAll(/(?:from\s+|import\s*)['"](\.[^'"]+)['"]/g)) {
+  const code = fs.readFileSync(file, 'utf8');
+  const result = spawnSync(process.execPath, ['--input-type=module', '--check'], { input: code, encoding: 'utf8' });
+  assert.equal(result.status, 0, `${file} syntax error:\n${result.stderr}`);
+  for (const [, target] of code.matchAll(/(?:from\s+|import\s*)['"](\.[^'"]+)['"]/g)) {
     assert.ok(fs.existsSync(path.resolve(path.dirname(file), target)), `${file}: missing module ${target}`);
   }
 }

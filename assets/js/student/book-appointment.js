@@ -14,7 +14,7 @@ import { StudentSidebar } from '../components/student-sidebar.js';
 import { Header } from '../components/header.js';
 import { Toast } from '../components/toast.js';
 import { DoctorService } from '../services/doctor-service.js';
-import { MedicalService } from '../services/medical-service.js';
+import { MedicalService, fromBackendService } from '../services/medical-service.js';
 import { INITIAL_SERVICES, INITIAL_APPOINTMENTS } from '../data/mock-data.js';
 
 let currentStep = 1;
@@ -25,7 +25,7 @@ let selectedDateStr = '';
 let selectedTimeStr = '10:30 AM';
 let referralCode = '';
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initBookingWizard() {
   if (!Navigation.requireAuth('student')) return;
   DoctorService.purgeLegacyDemoDoctors();
   Header.render('Book an Appointment');
@@ -48,7 +48,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   initDates();
   await initServices(paramDoctorId);
   bindNavigationEvents();
-});
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBookingWizard);
+  } else {
+    initBookingWizard();
+  }
+}
 
 function initDates() {
   const dates = [];
@@ -209,20 +217,12 @@ async function initServices(paramDoctorId) {
   } catch (err) {
     console.warn('[BookAppointment] Failed to load services via MedicalService:', err);
     services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []);
-    if (!Array.isArray(services) || services.length === 0) {
-      container.innerHTML = `
-        <div style="padding: var(--space-8); text-align: center; border: 1px solid var(--color-danger); border-radius: var(--radius-lg); background: var(--color-surface);">
-          <p style="color: var(--color-danger); font-weight: 500; margin-bottom: var(--space-2);">Unable to load clinical services.</p>
-          <p class="text-secondary" style="font-size: var(--font-size-xs); margin-bottom: var(--space-4);">${Utils.escapeHtml(err.message || 'Please check your connection and try again.')}</p>
-          <button type="button" class="btn btn-outline-teal btn-sm" id="btn-retry-services">Retry Loading</button>
-        </div>
-      `;
-      const retryBtn = document.getElementById('btn-retry-services');
-      if (retryBtn) {
-        retryBtn.addEventListener('click', () => initServices(paramDoctorId));
-      }
-      return;
-    }
+  }
+
+  // Gracefully fallback to initial clinic services if neither API nor local cache has records
+  if (!Array.isArray(services) || services.length === 0) {
+    services = INITIAL_SERVICES.map(fromBackendService);
+    Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, services);
   }
 
   const openServices = (Array.isArray(services) ? services : []).filter(s => s.status === 'open' || s.isActive === true);
@@ -243,7 +243,7 @@ async function initServices(paramDoctorId) {
 
   selectedServiceObj = openServices[0];
   if (paramDoctorId) {
-    const doc = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []).find(d => d.id === paramDoctorId);
+    const doc = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []).find(d => d.id === paramDoctorId || d.publicId === paramDoctorId);
     const match = openServices.find(s => (s.publicId === doc?.serviceId || s.id === doc?.serviceId));
     if (match) selectedServiceObj = match;
   }
@@ -266,7 +266,7 @@ async function initServices(paramDoctorId) {
   }).join('');
 
   container.querySelectorAll('.choice-card').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const clickedId = btn.dataset.serviceId;
       selectedServiceObj = openServices.find((s) => s.publicId === clickedId || s.id === clickedId) || openServices[0];
       
@@ -287,7 +287,8 @@ async function initServices(paramDoctorId) {
       }
 
       updateSummary();
-      selectedDoctorObj = null; isEarliestDoctor = true;
+      selectedDoctorObj = null;
+      isEarliestDoctor = true;
       await initDoctors();
       renderTimeSlots();
     });
@@ -433,7 +434,7 @@ async function initDoctors(paramDoctorId) {
   container.querySelectorAll('button[data-doctor-id]:not(:disabled)').forEach((btn) => {
     btn.addEventListener('click', () => {
       const docId = btn.dataset.doctorId;
-      selectedDoctorObj = doctors.find((d) => d.id === docId);
+      selectedDoctorObj = doctors.find((d) => d.publicId === docId || d.id === docId);
       isEarliestDoctor = false;
       refreshDoctorSelectionUI(container);
       renderTimeSlots();
@@ -457,7 +458,8 @@ function refreshDoctorSelectionUI(container) {
       if (radio) radio.innerHTML = '<span></span>';
     }
   } else if (selectedDoctorObj) {
-    const selectedBtn = container.querySelector(`button[data-doctor-id="${selectedDoctorObj.id}"]`);
+    const docId = selectedDoctorObj.publicId || selectedDoctorObj.id;
+    const selectedBtn = container.querySelector(`button[data-doctor-id="${docId}"]`);
     if (selectedBtn) {
       selectedBtn.classList.add('selected');
       const radio = selectedBtn.querySelector('.choice-radio');
@@ -475,12 +477,18 @@ function updateSummary() {
   if (srvEl) srvEl.textContent = selectedServiceObj ? selectedServiceObj.name : 'General Consultation';
   if (docEl) docEl.textContent = isEarliestDoctor ? 'Earliest available doctor' : (selectedDoctorObj ? selectedDoctorObj.name : 'Earliest available');
   
-  if (dateEl && selectedDateStr) {
-    const d = new Date(selectedDateStr + 'T12:00:00');
-    dateEl.textContent = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  if (dateEl) {
+    if (selectedDateStr) {
+      const d = new Date(selectedDateStr + 'T12:00:00');
+      dateEl.textContent = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    } else {
+      dateEl.textContent = '—';
+    }
   }
 
-  if (timeEl) timeEl.textContent = selectedTimeStr;
+  if (timeEl) {
+    timeEl.textContent = selectedTimeStr || '—';
+  }
 
   // Also update Step 4 review elements
   const reviewSrv = document.getElementById('review-service');
@@ -490,10 +498,14 @@ function updateSummary() {
 
   if (reviewSrv) reviewSrv.textContent = selectedServiceObj ? selectedServiceObj.name : 'General Consultation';
   if (reviewDoc) reviewDoc.textContent = isEarliestDoctor ? 'Earliest available doctor' : (selectedDoctorObj ? selectedDoctorObj.name : 'Earliest available');
-  if (reviewDt && selectedDateStr) {
-    const d = new Date(selectedDateStr + 'T12:00:00');
-    const shortDay = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
-    reviewDt.textContent = `${shortDay} · ${selectedTimeStr}`;
+  if (reviewDt) {
+    if (selectedDateStr && selectedTimeStr) {
+      const d = new Date(selectedDateStr + 'T12:00:00');
+      const shortDay = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+      reviewDt.textContent = `${shortDay} · ${selectedTimeStr}`;
+    } else {
+      reviewDt.textContent = '—';
+    }
   }
 
   if (user) {

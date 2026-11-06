@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
 
 const memory = new Map();
-globalThis.window = { localStorage: {
-  getItem: key => memory.get(key) ?? null,
-  setItem: (key, value) => memory.set(key, value),
-  removeItem: key => memory.delete(key)
-} };
+globalThis.window = {
+  __CARE_OAU_USE_MOCK__: true,
+  localStorage: {
+    getItem: key => memory.get(key) ?? null,
+    setItem: (key, value) => memory.set(key, value),
+    removeItem: key => memory.delete(key)
+  }
+};
 const { Storage } = await import('../assets/js/core/storage.js');
 const { APP_CONFIG: { STORAGE_KEYS: keys } } = await import('../assets/js/core/config.js');
 const { availableSlots, localDate } = await import('../assets/js/services/availability.js');

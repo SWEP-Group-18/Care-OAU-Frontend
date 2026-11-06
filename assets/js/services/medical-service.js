@@ -282,13 +282,9 @@ export const MedicalService = {
     }
 
     let services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES);
-    if (!services) {
-      if (APP_CONFIG.USE_MOCK_DATA) {
-        services = INITIAL_SERVICES.map(fromBackendService);
-        Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, services);
-      } else {
-        services = [];
-      }
+    if (!services || (Array.isArray(services) && services.length === 0)) {
+      services = INITIAL_SERVICES.map(fromBackendService);
+      Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, services);
     } else {
       services = Array.isArray(services) ? services.map(fromBackendService).filter(Boolean) : [];
     }

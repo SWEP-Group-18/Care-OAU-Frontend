@@ -185,7 +185,13 @@ export const AppointmentService = {
     const formattedStartTime = Utils.to24HourTime(timeSlot);
 
     let backendAppointment = null;
-    if (!APP_CONFIG.USE_MOCK_DATA) {
+    if (APP_CONFIG.USE_MOCK_DATA) {
+      const slots = availableSlots(servicePublicId, doctorPublicId, appointmentDate);
+      const isSlotAvailable = slots.some(s => s.time === timeSlot || Utils.formatTime(s.time) === Utils.formatTime(timeSlot));
+      if (!isSlotAvailable) {
+        return { success: false, message: 'The selected appointment slot is no longer available or exceeds capacity.' };
+      }
+    } else {
       // If doctorPublicId is not provided (e.g. Earliest Available), find doctor from available slots
       if (!doctorPublicId) {
         try {
