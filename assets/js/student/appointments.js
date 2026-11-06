@@ -14,7 +14,7 @@ import { Utils } from '../core/utils.js';
 import { APP_CONFIG } from '../core/config.js';
 import { SyncManager } from '../core/sync-manager.js';
 
-let activeFilter = 'all';
+let activeFilter = 'upcoming';
 let appointmentsPoller = null;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -38,6 +38,16 @@ function initStatusTabs() {
   const container = document.getElementById('appointment-status-tabs');
   if (!container) return;
 
+  const urlTab = new URLSearchParams(window.location.search).get('tab');
+  if (urlTab) {
+    const matchingBtn = container.querySelector(`[data-filter="${urlTab}"]`);
+    if (matchingBtn) {
+      container.querySelectorAll('.tab-filter-btn').forEach(b => b.classList.remove('active'));
+      matchingBtn.classList.add('active');
+      activeFilter = urlTab;
+    }
+  }
+
   container.querySelectorAll('.tab-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       container.querySelectorAll('.tab-filter-btn').forEach(b => b.classList.remove('active'));
@@ -56,25 +66,47 @@ async function loadAppointments() {
     const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
     const appointments = await AppointmentService.getStudentAppointments(user?.id);
     const filtered = appointments.filter(a => {
-      if (activeFilter === 'all') return true; // Never hide any appointment in All Visits
+      if (activeFilter === 'all') return true;
       if (activeFilter === 'upcoming') {
         return ['Pending Approval', 'Approved', 'Checked In', 'In Consultation'].includes(a.status) ||
           !['Completed', 'Cancelled', 'Rejected', 'No Show'].includes(a.status);
       }
-      if (activeFilter === 'Completed' || activeFilter === 'completed') {
-        return a.status === 'Completed';
-      }
-      if (activeFilter === 'Cancelled' || activeFilter === 'cancelled') {
-        return ['Cancelled', 'Rejected', 'No Show'].includes(a.status);
+      if (activeFilter === 'history') {
+        return ['Completed', 'Cancelled', 'Rejected', 'No Show'].includes(a.status);
       }
       return a.status === activeFilter;
     });
 
     if (!filtered.length) {
-      const msg = activeFilter === 'all'
-        ? 'Your visits will appear here once you book an appointment.'
-        : `No ${activeFilter.toLowerCase()} appointments found.`;
-      tbody.innerHTML = `<div class="quiet-card"><h3>No appointments here yet</h3><p>${msg}</p><a href="book-appointment.html" class="btn btn-teal">Book Appointment</a></div>`;
+      const hasHistory = appointments.some(a => ['Completed', 'Cancelled', 'Rejected', 'No Show'].includes(a.status));
+      if (activeFilter === 'upcoming') {
+        tbody.innerHTML = `
+          <div class="quiet-card">
+            <h3>No upcoming appointments</h3>
+            <p>You have no pending or scheduled appointments right now.</p>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 14px;">
+              <a href="book-appointment.html" class="btn btn-teal">Book Appointment</a>
+              ${hasHistory ? '<button type="button" class="btn btn-outline-navy" onclick="document.querySelector(\'[data-filter=\\\'history\\\']\').click()">View History</button>' : ''}
+            </div>
+          </div>
+        `;
+      } else if (activeFilter === 'history') {
+        tbody.innerHTML = `
+          <div class="quiet-card">
+            <h3>No past appointment history</h3>
+            <p>Completed, cancelled, or past consultation records will appear here.</p>
+            <a href="book-appointment.html" class="btn btn-teal">Book Appointment</a>
+          </div>
+        `;
+      } else {
+        tbody.innerHTML = `
+          <div class="quiet-card">
+            <h3>No appointments here yet</h3>
+            <p>Your visits will appear here once you book an appointment.</p>
+            <a href="book-appointment.html" class="btn btn-teal">Book Appointment</a>
+          </div>
+        `;
+      }
       return;
     }
 
