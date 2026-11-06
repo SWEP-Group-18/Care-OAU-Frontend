@@ -194,8 +194,11 @@ function renderPendingTable(appointments) {
         <div class="text-xs text-secondary">${Utils.formatDate(apt.appointmentDate)}  -  ${apt.timeSlot}</div>
       </td>
       <td style="text-align: right;">
-        <div style="display: inline-flex; gap: 4px;">
-          <button type="button" class="btn btn-teal btn-sm" onclick="window.quickApproveRequest('${apt.id}')">
+        <div style="display: inline-flex; gap: 6px; align-items: center;">
+          <button type="button" class="btn btn-approve btn-sm" onclick="window.quickApproveRequest('${apt.id}')" title="Approve patient appointment">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
             Approve
           </button>
           <button type="button" class="btn btn-outline-danger btn-sm" onclick="window.quickRejectRequest('${apt.id}')">

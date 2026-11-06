@@ -2,6 +2,8 @@ import { Utils } from '../core/utils.js';
 import { availableSlots, localDate } from '../services/availability.js';
 import { AppointmentService } from '../services/appointment-service.js';
 import { Navigation } from '../core/navigation.js';
+import { Modal } from '../components/modal.js';
+import { Toast } from '../components/toast.js';
 /**
  * OAU Health Care - Student Dashboard Logic (Figma Aligned)
  * Handles welcome banner, availability stats, upcoming appointment card, and queue state.
@@ -225,7 +227,17 @@ function renderUpcomingAppointment(appointments) {
         </div>
         <div class="appointment-actions">
           <span>Ref: ${activeAppt.referenceNo || activeAppt.id}</span>
-          <div style="display: flex; gap: 8px; align-items: center;">
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            ${activeAppt.status === 'Approved' ? `
+              <button type="button" class="button button-primary" onclick="window.studentCheckIn('${activeAppt.id}')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align: text-bottom; margin-right: 4px;">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <polyline points="16 11 18 13 22 9"/>
+                </svg>
+                Confirm Arrival & Check In
+              </button>
+            ` : ''}
             <a href="my-appointments.html" class="button button-secondary">
               View appointment
             </a>
@@ -303,3 +315,27 @@ function renderQueueStatus(queue, appointments) {
 }
 
 window.addEventListener('storage', event => { if (event.key?.startsWith('care_oau_')) loadDashboardData(); });
+
+// Global student check-in handler from dashboard
+window.studentCheckIn = (appointmentId) => {
+  Modal.confirm({
+    title: 'Confirm Clinic Arrival & Check In',
+    message: 'Are you currently at the Care-OAU Health Centre? Confirming arrival will check you in and issue your sequential live queue ticket.',
+    confirmText: 'Yes, Check In Now',
+    confirmClass: 'button-primary',
+    cancelText: 'Not Yet',
+    onConfirm: async () => {
+      const res = await AppointmentService.checkInPatient(appointmentId);
+      if (res && res.success === false) {
+        Toast.warning(res.message || 'Unable to check in at this time.');
+        return false;
+      }
+      Toast.success(`Check-in successful! Assigned Queue Ticket: ${res.queueNumber || ''}`);
+      await loadDashboardData();
+      StudentSidebar.render();
+      setTimeout(() => {
+        window.location.href = 'queue-tracking.html';
+      }, 1200);
+    }
+  });
+};

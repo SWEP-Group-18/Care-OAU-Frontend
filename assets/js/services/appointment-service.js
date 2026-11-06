@@ -503,7 +503,14 @@ export const AppointmentService = {
 
     if (!APP_CONFIG.USE_MOCK_DATA && !isLocalDemo) {
       try {
-        await Api.patch(`/admin/appointments/${cleanId}/check-in`);
+        const currentUser = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
+        const endpoint = currentUser?.role === 'admin'
+          ? `/admin/appointments/${cleanId}/check-in`
+          : `/appointments/${cleanId}/check-in`;
+        const checkInRes = await Api.patch(endpoint);
+        if (checkInRes?.data?.appointment?.queue?.queueNumber) {
+          targetApt.queueNumber = checkInRes.data.appointment.queue.queueNumber;
+        }
       } catch (err) {
         if (err.status === 404 || err.code === 'APPOINTMENT_NOT_FOUND') {
           console.warn(`[AppointmentService] Appointment ${cleanId} not found on server; checking in locally.`);

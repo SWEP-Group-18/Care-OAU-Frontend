@@ -123,9 +123,21 @@ async function loadAppointments() {
         ${apt.status === 'Approved' ? '<p class="status-message text-teal"><strong>Approved:</strong> Your visit is confirmed. Please arrive 10 minutes prior to scheduled time for reception check-in.</p>' : ''}
         ${apt.rejectionReason ? '<p class="status-message text-danger"><strong>Reason:</strong> ' + Utils.escapeHtml(apt.rejectionReason) + '</p>' : ''}
         ${apt.cancellationReason ? '<p class="status-message text-muted"><strong>Cancellation notice:</strong> ' + Utils.escapeHtml(apt.cancellationReason) + '</p>' : ''}
-        <div class="appointment-list-actions"><button class="btn btn-outline-navy" onclick="viewAppointmentDetails('${apt.id}')">View details</button>
-        ${apt.queueNumber ? '<a href="queue-tracking.html" class="btn btn-teal">Track Queue</a>' : ''}
-        ${canCancel ? '<button class="btn btn-ghost text-danger" onclick="cancelAppointmentRequest(\'' + apt.id + '\')">Cancel appointment</button>' : ''}</div></article>`;
+        <div class="appointment-list-actions">
+          <button class="btn btn-outline-navy" onclick="viewAppointmentDetails('${apt.id}')">View details</button>
+          ${apt.status === 'Approved' ? `
+            <button type="button" class="btn btn-teal" onclick="window.studentCheckIn('${apt.id}')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <polyline points="16 11 18 13 22 9"/>
+              </svg>
+              Confirm Arrival & Check In
+            </button>
+          ` : ''}
+          ${apt.queueNumber ? '<a href="queue-tracking.html" class="btn btn-teal">Track Queue</a>' : ''}
+          ${canCancel ? '<button class="btn btn-ghost text-danger" onclick="cancelAppointmentRequest(\'' + apt.id + '\')">Cancel appointment</button>' : ''}
+        </div></article>`;
     }).join('');
   } catch (err) {
     console.error('[Appointments] Error loading appointments:', err);
@@ -204,3 +216,27 @@ window.viewAppointmentDetails = async (appointmentId) => {
 };
 
 window.addEventListener('storage', event => { if (event.key?.startsWith('care_oau_')) loadAppointments(); });
+
+// Global student check-in handler from appointments list
+window.studentCheckIn = (appointmentId) => {
+  Modal.confirm({
+    title: 'Confirm Clinic Arrival & Check In',
+    message: 'Are you currently at the Care-OAU Health Centre? Confirming arrival will check you in and issue your sequential live queue ticket.',
+    confirmText: 'Yes, Check In Now',
+    confirmClass: 'btn-teal',
+    cancelText: 'Not Yet',
+    onConfirm: async () => {
+      const res = await AppointmentService.checkInPatient(appointmentId);
+      if (res && res.success === false) {
+        Toast.warning(res.message || 'Unable to check in at this time.');
+        return false;
+      }
+      Toast.success(`Check-in successful! Assigned Queue Ticket: ${res.queueNumber || ''}`);
+      await loadAppointments();
+      StudentSidebar.render();
+      setTimeout(() => {
+        window.location.href = 'queue-tracking.html';
+      }, 1200);
+    }
+  });
+};

@@ -145,7 +145,10 @@ async function loadAppointments() {
           <div style="display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
             
             ${isPending ? `
-              <button type="button" class="btn btn-teal btn-sm" onclick="window.adminApprove('${apt.id}')">
+              <button type="button" class="btn btn-approve btn-sm" onclick="window.adminApprove('${apt.id}')" title="Approve patient appointment">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 Approve
               </button>
               <button type="button" class="btn btn-outline-danger btn-sm" onclick="window.adminReject('${apt.id}')">
