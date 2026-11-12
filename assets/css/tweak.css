@@ -201,8 +201,82 @@
 #admin-appointments-table td:nth-child(7) {
     width: 170px;
     margin-left: -100px;
-    background-color: bisque;
 }
 
 
 
+/* Completed appointment: Details only */
+#admin-appointments-table tbody td:last-child > div:has(> button:only-child) {
+    display: grid !important;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 34px auto;
+    gap: 6px;
+}
+
+#admin-appointments-table tbody td:last-child > div:has(> button:only-child) > button:only-child {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+/* Two action buttons + Details */
+#admin-appointments-table tbody td:last-child > div:has(> button:nth-child(3):last-child) {
+    display: grid !important;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+#admin-appointments-table tbody td:last-child > div:has(> button:nth-child(3):last-child) > button:last-child {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+/* Check In Patient spans both columns */
+#admin-appointments-table tbody td:last-child > div:has(> :nth-child(3):last-child) > .btn-teal {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-self: stretch;
+}
+
+/* Refer stays bottom-left */
+#admin-appointments-table tbody td:last-child > div:has(> :nth-child(3):last-child) > button:nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+/* Details stays bottom-right */
+#admin-appointments-table tbody td:last-child > div:has(> :nth-child(3):last-child) > button:last-child {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+/* Checked-in appointment: Complete, Queue, Details */
+#admin-appointments-table tbody td:last-child > div:has(> button.btn-navy:first-child + a:nth-child(2) + button:last-child) {
+    display: grid !important;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 34px auto;
+    gap: 6px;
+}
+
+/* Complete spans the entire top row */
+#admin-appointments-table tbody td:last-child > div:has(> button.btn-navy:first-child + a:nth-child(2) + button:last-child) > button:first-child {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-self: stretch;
+}
+
+/* Queue bottom-left */
+#admin-appointments-table tbody td:last-child > div:has(> button.btn-navy:first-child + a:nth-child(2) + button:last-child) > a {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+}
+
+/* Details bottom-right */
+#admin-appointments-table tbody td:last-child > div:has(> button.btn-navy:first-child + a:nth-child(2) + button:last-child) > button:last-child {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+}

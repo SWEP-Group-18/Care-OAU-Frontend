@@ -174,12 +174,12 @@ async function loadAppointments() {
             ` : ''}
 
             ${isCheckedIn ? `
-              <a href="queue-management.html" class="btn btn-outline-teal btn-sm">
-                Queue (${apt.queueNumber || 'Active'})
-              </a>
               <button type="button" class="btn btn-navy btn-sm" onclick="window.adminComplete('${apt.id}')">
-                Complete
+              Complete
               </button>
+              <a href="queue-management.html" class="btn btn-outline-teal btn-sm">
+                Queue
+              </a>
             ` : ''}
 
             <button type="button" class="btn btn-ghost btn-sm" onclick="window.adminViewDetails('${apt.id}')">
