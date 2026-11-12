@@ -136,7 +136,7 @@ async function loadAppointments() {
         <td>
           ${apt.referral ? '<div class="text-sm"><strong>Referral: ' + Utils.escapeHtml(apt.referral.department) + '</strong><p>' + Utils.escapeHtml(apt.referral.notes) + '</p></div>' : ''}
         ${apt.queueNumber ? `
-            <span class="badge badge-teal" style="font-weight: 700; font-size: 13px;">${apt.queueNumber}</span>
+            <span class="badge badge-teal" style="font-weight: 700; font-size: 13px;">Q-${String(apt.queueNumber).padStart(3, '0')}</span>
           ` : `
             <span class="text-xs text-muted">&mdash;</span>
           `}
