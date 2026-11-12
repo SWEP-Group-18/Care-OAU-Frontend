@@ -1,0 +1,53 @@
+.filter-bar {
+
+}
+
+/* Search field */
+.filter-bar .input-with-icon {
+
+}
+
+#admin-apt-search {
+
+}
+
+/* Status filter container */
+#admin-status-tabs {
+    display: flex;
+    gap: 10px;
+}
+
+
+/* All status filter buttons */
+#admin-status-tabs .tab-filter-btn {
+}
+
+/* Active status filter */
+#admin-status-tabs .tab-filter-btn.active {
+    padding: 5px 16px;
+    color: white;
+    background-color: var(--navy);
+    border-radius: 22px;
+}
+
+/* All status filter buttons */
+#admin-status-tabs .tab-filter-btn {
+    transition: all 0.2s ease;
+}
+
+/* Hover effect */
+#admin-status-tabs .tab-filter-btn:hover:not(.active) {
+    padding: 5px 16px;
+    background-color: #F1F5F9;
+    color: var(--navy);
+    border-radius: 22px;
+    transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+
+}
+
+@media (max-width: 480px) {
+}
