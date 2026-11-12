@@ -342,6 +342,45 @@ export const MedicalService = {
   },
 
   /**
+   * Get doctors providing a specific service via GET /services/{publicId}/doctors
+   */
+  async getServiceDoctors(servicePublicId) {
+    const cleanId = String(servicePublicId || '').trim();
+    if (!cleanId) return [];
+
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        const res = await Api.get(`/services/${cleanId}/doctors`);
+        const list = res?.data?.doctors || res?.data || res?.doctors;
+        if (Array.isArray(list)) {
+          return list;
+        }
+      } catch (err) {
+        console.warn(`[MedicalService] Failed to fetch doctors for service ${cleanId}:`, err.message);
+      }
+    }
+    return [];
+  },
+
+  /**
+   * Get earliest available appointment slot for a service via GET /services/{publicId}/earliest-slot
+   */
+  async getEarliestSlot(servicePublicId) {
+    const cleanId = String(servicePublicId || '').trim();
+    if (!cleanId) return null;
+
+    if (!APP_CONFIG.USE_MOCK_DATA) {
+      try {
+        const res = await Api.get(`/services/${cleanId}/earliest-slot`);
+        return res?.data || res;
+      } catch (err) {
+        console.warn(`[MedicalService] Failed to fetch earliest slot for service ${cleanId}:`, err.message);
+      }
+    }
+    return null;
+  },
+
+  /**
    * Creates a new clinical service.
    * Calls documented POST /admin/services with the validated 8-field payload.
    */

@@ -233,7 +233,18 @@ export const AppointmentService = {
         return { success: false, message: 'The selected appointment slot is no longer available or exceeds capacity.' };
       }
     } else {
-      // If doctorPublicId is not provided (e.g. Earliest Available), find doctor from available slots
+      // If doctorPublicId is not provided (e.g. Earliest Available), find doctor from earliest slot or available slots
+      if (!doctorPublicId) {
+        try {
+          const earliestRes = await Api.get(`/services/${servicePublicId}/earliest-slot`);
+          const earliest = earliestRes?.data || earliestRes;
+          if (earliest?.doctor?.publicId) {
+            doctorPublicId = earliest.doctor.publicId;
+            doctorName = earliest.doctor.name || doctorName;
+          }
+        } catch {}
+      }
+
       if (!doctorPublicId) {
         try {
           const slots = await this.getAvailableSlots({ servicePublicId, date: appointmentDate });
@@ -497,10 +508,13 @@ export const AppointmentService = {
       };
     }
 
-    if (targetApt.appointmentDate !== localDate()) return { success: false, message: 'Check-in is available on the appointment date.' };
+    if (APP_CONFIG.USE_MOCK_DATA && targetApt.appointmentDate && targetApt.appointmentDate !== localDate()) {
+      return { success: false, message: 'Check-in is available on the appointment date.' };
+    }
 
     const isLocalDemo = cleanId.startsWith('apt_00') || cleanId.startsWith('apt_demo_') || cleanId.startsWith('apt_mock_');
 
+    let backendQueueNumber = null;
     if (!APP_CONFIG.USE_MOCK_DATA && !isLocalDemo) {
       try {
         const currentUser = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
@@ -508,8 +522,9 @@ export const AppointmentService = {
           ? `/admin/appointments/${cleanId}/check-in`
           : `/appointments/${cleanId}/check-in`;
         const checkInRes = await Api.patch(endpoint);
-        if (checkInRes?.data?.appointment?.queue?.queueNumber) {
-          targetApt.queueNumber = checkInRes.data.appointment.queue.queueNumber;
+        backendQueueNumber = checkInRes?.data?.appointment?.queue?.queueNumber || checkInRes?.data?.queue?.queueNumber;
+        if (backendQueueNumber) {
+          targetApt.queueNumber = backendQueueNumber;
         }
       } catch (err) {
         if (err.status === 404 || err.code === 'APPOINTMENT_NOT_FOUND') {
@@ -521,7 +536,7 @@ export const AppointmentService = {
     }
 
     // Generate next queue ticket
-    const ticketNumber = Utils.generateQueueTicket(queueList);
+    const ticketNumber = backendQueueNumber || targetApt.queueNumber || Utils.generateQueueTicket(queueList);
 
     // Update appointment record
     const updatedAppointments = appointments.map(apt => {
