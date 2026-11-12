@@ -56,11 +56,153 @@
     border: none;
 }
 
+/* =========================================
+   CLINICAL ACTIONS - SIMPLE TWO COLUMN LAYOUT
+========================================= */
 
-/* Responsive */
+#admin-appointments-table tbody td:last-child > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+/* Action buttons */
+#admin-appointments-table tbody td:last-child > div > button,
+#admin-appointments-table tbody td:last-child > div > a {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+    box-sizing: border-box;
+    white-space: nowrap;
+    justify-content: center;
+}
+
+/* Check In Patient occupies the full row */
+#admin-appointments-table tbody td:last-child button.btn-teal {
+    flex-basis: 100%;
+}
+
+
+/* Tablet */
+@media (max-width: 900px) {
+    #admin-appointments-table tbody td:last-child > div > button,
+    #admin-appointments-table tbody td:last-child > div > a {
+        flex-basis: 100px;
+        width: 100px;
+        min-height: 34px;
+        font-size: 11px;
+    }
+}
+
+/* Check In Patient button */
+#admin-appointments-table tbody td:last-child button.btn-teal {
+    width: auto;
+    min-width: 125px;
+    padding: 6px 9px;
+    font-size: 11px;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+#admin-appointments-table tbody td:last-child button.btn-teal svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+/* Center empty queue number */
+#admin-appointments-tbody td:nth-child(6) {
+    text-align: center;
+    vertical-align: middle;
+}
+
+#admin-appointments-tbody td:nth-child(6) > .text-xs.text-muted {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+}
+
+
+
+
+/* Responsive
 @media (max-width: 900px) {
 
 }
 
 @media (max-width: 480px) {
+} */
+
+
+
+
+
+
+
+
+/* =========================================
+   ADMIN APPOINTMENTS TABLE - COLUMN LAYOUT
+========================================= */
+
+#admin-appointments-table {
+    width: 100%;
+    /* min-width: 1200px; */
+    table-layout: fixed;
 }
+
+/* Keep column headings on one line */
+#admin-appointments-table thead th {
+    white-space: nowrap;
+}
+
+/* Student Details */
+#admin-appointments-table th:nth-child(1),
+#admin-appointments-table td:nth-child(1) {
+    width: 140px;
+}
+
+/* Service & Doctor */
+#admin-appointments-table th:nth-child(2),
+#admin-appointments-table td:nth-child(2) {
+    width: 140px;
+}
+
+/* Date & Slot */
+#admin-appointments-table th:nth-child(3),
+#admin-appointments-table td:nth-child(3) {
+    width: 125px;
+}
+
+#admin-appointments-table tbody td:nth-child(3) > div {
+    white-space: nowrap;
+}
+
+/* Symptoms / Notes */
+#admin-appointments-table th:nth-child(4),
+#admin-appointments-table td:nth-child(4) {
+    width: 180px;
+}
+
+/* Status */
+#admin-appointments-table th:nth-child(5),
+#admin-appointments-table td:nth-child(5) {
+    width: 100px;
+    text-align: center;
+}
+
+/* Queue Ticket */
+#admin-appointments-table th:nth-child(6),
+#admin-appointments-table td:nth-child(6) {
+    width: 115px;
+}
+
+/* Clinical Actions */
+#admin-appointments-table th:nth-child(7),
+#admin-appointments-table td:nth-child(7) {
+    width: 170px;
+    margin-left: -100px;
+    background-color: bisque;
+}
+
+
+
