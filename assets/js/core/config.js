@@ -107,7 +107,7 @@ export const APP_CONFIG = {
 
   // Appointment Status Definitions
   APPOINTMENT_STATUS: {
-    PENDING: 'Pending Approval',
+    PENDING: 'Pending',
     APPROVED: 'Approved',
     REJECTED: 'Rejected',
     CHECKED_IN: 'Checked In',
