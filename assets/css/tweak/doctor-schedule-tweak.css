@@ -1,27 +1,36 @@
+/* Doctor Management List Container */
+.management-list {
+    padding: 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+    border: none;
+    overflow: hidden;
+}
+
 /* Doctor Management Empty State */
 #doctors-manage-tbody .quiet-card {
-  min-height: 260px;
-  padding: 40px 24px;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  box-sizing: border-box;
+    min-height: 260px;
+    padding: 40px 24px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
 }
 
 #doctors-manage-tbody .quiet-card h3 {
-  color: #102A44;
-  font-size: 17px;
-  font-weight: 700;
-  margin: 0 0 8px;
+    color: #102A44;
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 8px;
 }
 
 #doctors-manage-tbody .quiet-card p {
-  max-width: 360px;
-  color: #64748b;
-  font-size: 13px;
-  line-height: 1.6;
-  margin: 0;
+    max-width: 360px;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0;
 }
