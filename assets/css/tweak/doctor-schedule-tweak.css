@@ -79,3 +79,51 @@
     border-radius: 5px;
     border: none;
 }
+
+/* Doctor Management Action Buttons */
+
+/* Edit button */
+.management-actions .btn-outline-teal {
+    color: #0F766E;
+    background: rgba(15, 118, 110, 0.10);
+    border: none;
+    box-shadow: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.management-actions .btn-outline-teal:hover {
+    color: #ffffff;
+    background: #0F766E;
+    border: none;
+    transform: translateY(-1px);
+}
+
+/* Delete button */
+.management-actions .btn-outline-danger {
+    color: #DC2626;
+    background: rgba(220, 38, 38, 0.10);
+    border: none;
+    box-shadow: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.management-actions .btn-outline-danger:hover {
+    color: #ffffff;
+    background: #DC2626;
+    border: none;
+    transform: translateY(-1px);
+}
+
+.management-actions .doctor-status-select {
+    min-width: 150px;
+    width: 100%;
+    font-size: 12px;
+    min-height: 40px;
+    padding: 0 15px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+}
