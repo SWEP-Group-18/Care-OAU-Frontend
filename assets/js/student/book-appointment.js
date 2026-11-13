@@ -24,6 +24,8 @@ let isEarliestDoctor = true;
 let selectedDateStr = '';
 let selectedTimeStr = '';
 let referralCode = '';
+let skippedStep3 = false;
+let earliestMatchedDoctor = null;
 
 async function initBookingWizard() {
   if (!Navigation.requireAuth('student')) return;
@@ -477,6 +479,8 @@ async function initDoctors(paramDoctorId) {
     earliestBtn.addEventListener('click', () => {
       isEarliestDoctor = true;
       selectedDoctorObj = null;
+      earliestMatchedDoctor = null;
+      skippedStep3 = false;
       refreshDoctorSelectionUI(container);
       renderTimeSlots();
       updateSummary();
@@ -489,6 +493,8 @@ async function initDoctors(paramDoctorId) {
       const docId = btn.dataset.doctorId;
       selectedDoctorObj = doctors.find((d) => (d.publicId === docId || d.id === docId));
       isEarliestDoctor = false;
+      earliestMatchedDoctor = null;
+      skippedStep3 = false;
       refreshDoctorSelectionUI(container);
       renderTimeSlots();
       updateSummary();
@@ -527,15 +533,19 @@ function updateSummary() {
   const dateEl = document.getElementById('summary-date');
   const timeEl = document.getElementById('summary-time');
 
+  const displayDocName = isEarliestDoctor
+    ? (earliestMatchedDoctor?.name ? `${earliestMatchedDoctor.name} (Assigned)` : 'Earliest available doctor')
+    : (selectedDoctorObj ? selectedDoctorObj.name : 'Earliest available doctor');
+
   if (srvEl) srvEl.textContent = selectedServiceObj ? selectedServiceObj.name : 'General Consultation';
-  if (docEl) docEl.textContent = isEarliestDoctor ? 'Earliest available doctor' : (selectedDoctorObj ? selectedDoctorObj.name : 'Earliest available');
+  if (docEl) docEl.textContent = displayDocName;
 
   if (dateEl && selectedDateStr) {
     const d = new Date(selectedDateStr + 'T12:00:00');
     dateEl.textContent = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   }
 
-  if (timeEl) timeEl.textContent = selectedTimeStr;
+  if (timeEl) timeEl.textContent = selectedTimeStr || '—';
 
   // Also update Step 4 review elements
   const reviewSrv = document.getElementById('review-service');
@@ -544,11 +554,29 @@ function updateSummary() {
   const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
 
   if (reviewSrv) reviewSrv.textContent = selectedServiceObj ? selectedServiceObj.name : 'General Consultation';
-  if (reviewDoc) reviewDoc.textContent = isEarliestDoctor ? 'Earliest available doctor' : (selectedDoctorObj ? selectedDoctorObj.name : 'Earliest available');
-  if (reviewDt && selectedDateStr) {
+  if (reviewDoc) reviewDoc.textContent = displayDocName;
+  if (reviewDt && selectedDateStr && selectedTimeStr) {
     const d = new Date(selectedDateStr + 'T12:00:00');
     const shortDay = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
     reviewDt.textContent = `${shortDay} · ${selectedTimeStr}`;
+  } else if (reviewDt) {
+    reviewDt.textContent = '—';
+  }
+
+  // Update recommended earliest match callout banner in Step 4
+  const banner = document.getElementById('earliest-match-banner');
+  const bannerText = document.getElementById('earliest-match-text');
+  if (banner) {
+    if (isEarliestDoctor && earliestMatchedDoctor && selectedDateStr && selectedTimeStr) {
+      banner.style.display = 'flex';
+      const d = new Date(selectedDateStr + 'T12:00:00');
+      const dateText = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      if (bannerText) {
+        bannerText.innerHTML = `We matched you with <strong>${Utils.escapeHtml(earliestMatchedDoctor.name)}</strong> for the earliest available consultation on <strong>${dateText}</strong> at <strong>${selectedTimeStr}</strong>. If this time works for you, submit your request below. If you prefer another date or time, click <em>Edit</em> next to Date &amp; time or click <em>Back</em> to change.`;
+      }
+    } else {
+      banner.style.display = 'none';
+    }
   }
 
   if (user) {
@@ -578,8 +606,26 @@ async function autoSelectSlotForStep3() {
           const rawDate = String(appointment.date).slice(0, 10);
           const formattedTime = Utils.formatTime(appointment.startTime);
           if (rawDate >= localDate()) {
-            initDates(rawDate);
+            selectedDateStr = rawDate;
             selectedTimeStr = formattedTime;
+
+            const docData = appointment.doctor;
+            if (docData) {
+              const storedDocs = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
+              const match = (storedDocs || []).find(d =>
+                (docData.publicId && (d.publicId === docData.publicId || d.id === docData.publicId)) ||
+                (docData.name && d.name === docData.name)
+              );
+              earliestMatchedDoctor = match || {
+                id: docData.publicId || 'doc_assigned',
+                publicId: docData.publicId || 'doc_assigned',
+                name: docData.name || 'Assigned On-duty Physician',
+                specialization: selectedServiceObj?.name || 'General Practitioner'
+              };
+              selectedDoctorObj = earliestMatchedDoctor;
+            }
+
+            initDates(selectedDateStr);
             await renderTimeSlots();
             updateSummary();
             return;
@@ -608,8 +654,25 @@ async function autoSelectSlotForStep3() {
       }
       const freeSlot = (daySlots || []).find(s => !s.full && s.status !== 'fully_booked');
       if (freeSlot) {
-        initDates(dateStr);
+        selectedDateStr = dateStr;
         selectedTimeStr = freeSlot.time;
+        const docData = freeSlot.doctor;
+        if (docData) {
+          const storedDocs = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
+          const match = (storedDocs || []).find(d =>
+            (docData.publicId && (d.publicId === docData.publicId || d.id === docData.publicId)) ||
+            (docData.id && (d.id === docData.id || d.publicId === docData.id)) ||
+            (docData.name && d.name === docData.name)
+          );
+          earliestMatchedDoctor = match || {
+            id: docData.publicId || docData.id || 'doc_assigned',
+            publicId: docData.publicId || docData.id || 'doc_assigned',
+            name: docData.name || 'Assigned On-duty Physician',
+            specialization: selectedServiceObj?.name || 'General Practitioner'
+          };
+          selectedDoctorObj = earliestMatchedDoctor;
+        }
+        initDates(selectedDateStr);
         await renderTimeSlots();
         updateSummary();
         return;
@@ -699,6 +762,11 @@ function bindNavigationEvents() {
   if (btnPrev) {
     btnPrev.addEventListener('click', () => {
       if (currentStep > 1) {
+        if (currentStep === 4 && skippedStep3) {
+          skippedStep3 = false;
+          goToStep(2);
+          return;
+        }
         goToStep(currentStep - 1);
       }
     });
@@ -733,6 +801,12 @@ function bindNavigationEvents() {
             btnNext.disabled = false;
             btnNext.innerHTML = originalText;
           }
+
+          if (isEarliestDoctor) {
+            skippedStep3 = true;
+            goToStep(4);
+            return;
+          }
         }
 
         goToStep(currentStep + 1);
@@ -747,14 +821,34 @@ function bindNavigationEvents() {
     btn.addEventListener('click', () => {
       const step = parseInt(btn.dataset.gotoStep, 10);
       if (step >= 1 && step <= 4) {
+        if (step !== 4) skippedStep3 = false;
         goToStep(step);
       }
     });
   });
+
+  // Stepper clicks for previous steps
+  const stepper = document.getElementById('booking-stepper');
+  if (stepper) {
+    stepper.querySelectorAll('div[data-step]').forEach((item) => {
+      item.addEventListener('click', () => {
+        const targetStep = parseInt(item.dataset.step, 10);
+        if (targetStep < currentStep) {
+          if (targetStep !== 4) skippedStep3 = false;
+          goToStep(targetStep);
+        }
+      });
+    });
+  }
 }
 
 function goToStep(step) {
   currentStep = step;
+
+  if (step === 3) {
+    initDates(selectedDateStr);
+    renderTimeSlots();
+  }
 
   // Update stepper UI
   const stepper = document.getElementById('booking-stepper');
@@ -825,7 +919,9 @@ async function submitAppointmentRequest() {
   try {
     const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
     const srvId = selectedServiceObj.publicId || selectedServiceObj.id;
-    const docId = isEarliestDoctor ? null : (selectedDoctorObj?.publicId || selectedDoctorObj?.id);
+    const assignedDoc = isEarliestDoctor ? (earliestMatchedDoctor || selectedDoctorObj) : selectedDoctorObj;
+    const docId = assignedDoc?.publicId || assignedDoc?.id || null;
+    const docName = assignedDoc?.name || (isEarliestDoctor ? 'Earliest Available' : 'Doctor');
     const result = await AppointmentService.createAppointment({
       studentId: user?.id,
       studentName: user?.name,
@@ -834,7 +930,7 @@ async function submitAppointmentRequest() {
       serviceId: srvId,
       serviceName: selectedServiceObj.name,
       doctorId: docId,
-      doctorName: isEarliestDoctor ? 'Earliest Available' : selectedDoctorObj?.name,
+      doctorName: docName,
       appointmentDate: selectedDateStr,
       timeSlot: selectedTimeStr,
       reason: document.getElementById('booking-reason')?.value.trim() || 'General consultation',
@@ -852,7 +948,7 @@ async function submitAppointmentRequest() {
 
     if (ticketRef) ticketRef.textContent = refCode;
     if (ticketSrv) ticketSrv.textContent = serviceName;
-    if (ticketDoc) ticketDoc.textContent = doctorName;
+    if (ticketDoc) ticketDoc.textContent = doctorName || docName;
     if (ticketDate) ticketDate.textContent = formattedDate;
     if (ticketTime) ticketTime.textContent = selectedTimeStr;
 
