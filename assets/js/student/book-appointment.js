@@ -61,7 +61,7 @@ if (typeof document !== 'undefined') {
 function initDates() {
   const dates = [];
   const today = new Date();
-  
+
   // Build 7 calendar days including weekdays and weekends (Saturday & Sunday)
   const requestedDate = new URLSearchParams(location.search).get('date');
   let d = requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) && requestedDate >= localDate() ? new Date(requestedDate + 'T12:00:00') : new Date(today);
@@ -89,17 +89,17 @@ function renderDateStrip(dates) {
       </svg>
     </button>
     ${dates.map((dt) => {
-      const iso = dt.toLocaleDateString('en-CA');
-      const isSelected = iso === selectedDateStr;
-      const dayShort = dayNamesShort[dt.getDay()];
-      const dayNum = dt.getDate();
-      return `
+    const iso = dt.toLocaleDateString('en-CA');
+    const isSelected = iso === selectedDateStr;
+    const dayShort = dayNamesShort[dt.getDay()];
+    const dayNum = dt.getDate();
+    return `
         <button type="button" class="${isSelected ? 'active' : ''}" data-date="${iso}">
           <span>${dayShort}</span>
           <strong>${dayNum}</strong>
         </button>
       `;
-    }).join('')}
+  }).join('')}
     <button type="button" id="btn-date-next" aria-label="Next date">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="9 18 15 12 9 6"></polyline>
@@ -283,7 +283,7 @@ async function initServices(paramDoctorId) {
     btn.addEventListener('click', async () => {
       const clickedId = btn.dataset.serviceId;
       selectedServiceObj = openServices.find((s) => s.publicId === clickedId || s.id === clickedId) || openServices[0];
-      
+
       container.querySelectorAll('.choice-card').forEach((b) => {
         b.classList.remove('selected');
         const radio = b.querySelector('.choice-radio');
@@ -357,10 +357,10 @@ async function initDoctors(paramDoctorId) {
     try {
       const avail = await DoctorService.getDoctorAvailability();
       storedDoctors = avail?.doctors || [];
-    } catch {}
+    } catch { }
   }
 
-  const doctors = (Array.isArray(storedDoctors) ? storedDoctors : []).filter(d => 
+  const doctors = (Array.isArray(storedDoctors) ? storedDoctors : []).filter(d =>
     doctorMatchesService(d, selectedServiceObj)
   );
 
@@ -489,7 +489,7 @@ function updateSummary() {
 
   if (srvEl) srvEl.textContent = selectedServiceObj ? selectedServiceObj.name : 'General Consultation';
   if (docEl) docEl.textContent = isEarliestDoctor ? 'Earliest available doctor' : (selectedDoctorObj ? selectedDoctorObj.name : 'Earliest available');
-  
+
   if (dateEl && selectedDateStr) {
     const d = new Date(selectedDateStr + 'T12:00:00');
     dateEl.textContent = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });

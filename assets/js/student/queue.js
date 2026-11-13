@@ -84,10 +84,10 @@ async function loadQueueTracker() {
           <div class="card-body" style="padding: var(--space-4);">
             <div class="text-xs" style="color: var(--color-teal-hover); line-height: 1.5;">
               <strong>Check-in Requirement:</strong> 
-              ${approvedApt ? 
-                `You have an <strong>Approved</strong> appointment for <strong>${approvedApt.serviceName}</strong>. You can simulate on-site arrival check-in below to test queue tracking.` : 
-                `Book an appointment and await clinical approval. Once approved, present your matric card at reception for check-in.`
-              }
+              ${approvedApt ?
+        `You have an <strong>Approved</strong> appointment for <strong>${approvedApt.serviceName}</strong>. You can simulate on-site arrival check-in below to test queue tracking.` :
+        `Book an appointment and await clinical approval. Once approved, present your matric card at reception for check-in.`
+      }
             </div>
           </div>
         </div>
@@ -124,7 +124,7 @@ async function loadQueueTracker() {
   }
 
   container.innerHTML = `<section class="queue-simple" aria-live="polite">
-    <div class="live-update"><span class="live-dot"></span> Live queue  -  Updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
+    <div class="live-update"><span class="live-dot"></span> Live queue  -  Updated ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
     <h2>${activeTicket.status === 'Waiting' ? 'You are in the queue' : activeTicket.status}</h2>
     <div class="people-ahead"><strong>${activeTicket.status === 'Waiting' ? patientsAhead : 0}</strong><span>people ahead of you</span></div>
     <div class="queue-simple-details"><div><span>Your queue number</span><strong>${activeTicket.queueNumber}</strong></div><div><span>Estimated wait</span><strong>${activeTicket.status === 'Waiting' ? '~' + estimatedMins + ' mins' : 'Your turn'}</strong></div><div><span>Consulting room</span><strong>${activeTicket.room || 'Reception'}</strong></div></div>

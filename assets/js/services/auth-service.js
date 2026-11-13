@@ -75,6 +75,10 @@ export const AuthService = {
       });
 
       const rawUser = res.data?.user || res.data || {};
+      const token = res.data?.token || res.token;
+      if (token) {
+        Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_TOKEN, token);
+      }
       const user = normalizeUser(rawUser, { email: identifier.trim().toLowerCase() });
       Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_USER, user);
       return { success: true, user, message: res.message || 'Login successful.' };
@@ -192,6 +196,10 @@ export const AuthService = {
       });
 
       const rawUser = res.data?.user || res.data || pending || {};
+      const token = res.data?.token || res.token;
+      if (token) {
+        Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_TOKEN, token);
+      }
       const user = normalizeUser(rawUser, { email, ...pending });
       user.isVerified = true;
       Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_USER, user);
@@ -337,6 +345,10 @@ export const AuthService = {
       });
 
       const rawUser = res.data?.user || res.data || {};
+      const token = res.data?.token || res.token;
+      if (token) {
+        Storage.set(APP_CONFIG.STORAGE_KEYS.AUTH_TOKEN, token);
+      }
       const user = normalizeUser(rawUser, { email: cleanEmail });
 
       // Role check: verify that the authenticated account has role 'admin'
@@ -396,6 +408,7 @@ export const AuthService = {
     } catch (error) {
       if (error.status === 401 || error.status === 403 || error.status === 404) {
         Storage.remove(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
+        Storage.remove(APP_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
         return null;
       }
       // On network failure or other errors, do not treat failed request as granting session access
