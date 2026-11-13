@@ -69,6 +69,15 @@ body{
     border: none;
 }
 
+/* Preserve bottom table corners */
+#admin-appointments-tbody tr:last-child td:first-child {
+    border-bottom-left-radius: var(--clay-radius-card);
+}
+
+#admin-appointments-tbody tr:last-child td:last-child {
+    border-bottom-right-radius: var(--clay-radius-card);
+}
+
 /* =========================================
    CLINICAL ACTIONS - SIMPLE TWO COLUMN LAYOUT
 ========================================= */

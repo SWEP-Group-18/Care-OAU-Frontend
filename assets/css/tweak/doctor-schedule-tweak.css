@@ -129,5 +129,6 @@
 }
 
 .management-doctor > div:nth-child(5) small {
+    width: 100px;
     text-align: center;
 }
