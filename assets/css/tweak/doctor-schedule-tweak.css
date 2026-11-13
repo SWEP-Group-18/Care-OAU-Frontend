@@ -1,3 +1,36 @@
+/* Day filter container */
+#admin-day-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* All day filter buttons */
+#admin-day-tabs .tab-filter-btn {
+    transition: all 0.2s ease;
+}
+
+/* Active day filter */
+#admin-day-tabs .tab-filter-btn.active {
+    padding: 5px 16px;
+    color: white;
+    background-color: var(--navy);
+    border-radius: 22px;
+}
+
+#admin-day-tabs .tab-filter-btn {
+    transition: all 0.2s ease;
+}
+
+/* Hover effect */
+#admin-day-tabs .tab-filter-btn:hover:not(.active) {
+    padding: 5px 16px;
+    background-color: #F1F5F9;
+    color: var(--navy);
+    border-radius: 22px;
+    transform: translateY(-1px);
+}
+
 /* Doctor Management List Container */
 .management-list {
     padding: 15px;
