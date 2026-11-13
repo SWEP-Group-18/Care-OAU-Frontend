@@ -50,4 +50,16 @@ assert.equal((await appointments.getAllAppointments()).find(a => a.id === second
 await queue.completeVisit(checked.queueItem.id);
 assert.equal((await appointments.getAllAppointments()).find(a => a.id === second.appointment.id).status, 'Completed');
 assert.equal(await queue.getStudentActiveTicket('TEST/001'), null);
-console.log('PASS: schedule, closure, duty days, capacity, cancellation, student isolation, approval, date, duplicate check-in and queue lifecycle');
+
+// Doctor allocated hours verification (e.g. 10:00:00 to 14:00:00 within operating service)
+const fullDayService = { ...service, endTime: '18:00' };
+Storage.set(keys.SERVICES, [fullDayService]);
+const doc10to2 = { id: 'doc-10-2', name: 'Dr. Shift', serviceId: service.id, isAvailable: true, workingDays: [day], startTime: '10:00:00', endTime: '14:00:00', dailyCapacity: 10, room: 'Room 5' };
+Storage.set(keys.DOCTORS, [doc10to2]);
+const shiftSlots = availableSlots('service', 'doc-10-2', localDate(date)).map(s => s.time);
+assert.deepEqual(shiftSlots, ['10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM']);
+assert.ok(!shiftSlots.includes('08:30 AM'));
+assert.ok(!shiftSlots.includes('09:00 AM'));
+assert.ok(!shiftSlots.includes('02:00 PM'));
+
+console.log('PASS: schedule, closure, duty days, capacity, cancellation, student isolation, approval, date, duplicate check-in, doctor allocated hours, and queue lifecycle');

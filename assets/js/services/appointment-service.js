@@ -133,22 +133,30 @@ export const AppointmentService = {
     if (!APP_CONFIG.USE_MOCK_DATA && servicePublicId && date) {
       try {
         let query = `/appointments/slots?servicePublicId=${encodeURIComponent(servicePublicId)}&date=${encodeURIComponent(date)}`;
-        
-        let docParam = doctorPublicId;
-        if (!docParam) {
-          const storedDocs = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
-          const matchDoc = storedDocs.find(d =>
-            (d.serviceId === servicePublicId || d.service?.publicId === servicePublicId) && d.isAvailable !== false
-          );
-          if (matchDoc) {
-            docParam = matchDoc.publicId || matchDoc.id;
-          }
-        }
-        if (docParam) {
-          query += `&doctorPublicId=${encodeURIComponent(docParam)}`;
+        if (doctorPublicId) {
+          query += `&doctorPublicId=${encodeURIComponent(doctorPublicId)}`;
         }
 
-        const res = await Api.get(query);
+        let res = null;
+        try {
+          res = await Api.get(query);
+        } catch (apiErr) {
+          if (!doctorPublicId) {
+            const storedDocs = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
+            const matchDoc = storedDocs.find(d =>
+              (d.serviceId === servicePublicId || d.service?.publicId === servicePublicId) && d.isAvailable !== false
+            );
+            if (matchDoc) {
+              const fallbackDocId = matchDoc.publicId || matchDoc.id;
+              res = await Api.get(`${query}&doctorPublicId=${encodeURIComponent(fallbackDocId)}`);
+            } else {
+              throw apiErr;
+            }
+          } else {
+            throw apiErr;
+          }
+        }
+
         const slotData = res?.data?.slots || (Array.isArray(res?.data) ? res.data : []);
         if (Array.isArray(slotData) && slotData.length > 0) {
           return slotData.map(s => {
@@ -163,8 +171,8 @@ export const AppointmentService = {
               status: s.status || (isFull ? 'fully_booked' : 'available'),
               full: isFull,
               doctor: {
-                id: s.doctor?.publicId || s.doctor?.id || docParam,
-                publicId: s.doctor?.publicId || s.doctor?.id || docParam,
+                id: s.doctor?.publicId || s.doctor?.id || doctorPublicId,
+                publicId: s.doctor?.publicId || s.doctor?.id || doctorPublicId,
                 name: s.doctor?.name || 'Assigned Physician'
               }
             };
@@ -238,9 +246,10 @@ export const AppointmentService = {
         try {
           const earliestRes = await Api.get(`/services/${servicePublicId}/earliest-slot`);
           const earliest = earliestRes?.data || earliestRes;
-          if (earliest?.doctor?.publicId) {
-            doctorPublicId = earliest.doctor.publicId;
-            doctorName = earliest.doctor.name || doctorName;
+          const earliestDoc = earliest?.appointment?.doctor || earliest?.doctor;
+          if (earliestDoc?.publicId) {
+            doctorPublicId = earliestDoc.publicId;
+            doctorName = earliestDoc.name || doctorName;
           }
         } catch {}
       }
