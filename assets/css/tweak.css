@@ -272,11 +272,11 @@
     justify-self: start;
 }
 
-/* Details bottom-right */
-#admin-appointments-table tbody td:last-child > div:has(> button.btn-navy:first-child + a:nth-child(2) + button:last-child) > button:last-child {
+/* Details stays bottom-right */
+#admin-appointments-table tbody td:last-child > div:has(> button:nth-child(3):last-child) > button:last-child {
     grid-column: 2;
     grid-row: 2;
-    justify-self: end;
+    justify-self: stretch;
 }
 
 /* =========================================
