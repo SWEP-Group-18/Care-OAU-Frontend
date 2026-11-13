@@ -4,12 +4,17 @@ import { APP_CONFIG } from '../core/config.js';
 import { INITIAL_SERVICES, INITIAL_APPOINTMENTS } from '../data/mock-data.js';
 
 export const localDate = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-const minutes = time => {
-  const match = String(time).match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+export const minutes = time => {
+  if (!time) return NaN;
+  const clean = String(time).trim();
+  const match = clean.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
   if (!match) return NaN;
   let hour = Number(match[1]);
-  if (match[3]) hour = hour % 12 + (match[3].toUpperCase() === 'PM' ? 12 : 0);
-  return hour * 60 + Number(match[2]);
+  const min = Number(match[2]);
+  const meridiem = (match[4] || '').toUpperCase();
+  if (meridiem === 'PM' && hour < 12) hour += 12;
+  if (meridiem === 'AM' && hour === 12) hour = 0;
+  return hour * 60 + min;
 };
 const timeLabel = value => `${Math.floor(value / 60) % 12 || 12}:${String(value % 60).padStart(2, '0')} ${value >= 720 ? 'PM' : 'AM'}`;
 export function availableSlots(serviceId, doctorId, date, excludeId = null) {
@@ -62,26 +67,40 @@ export function availableSlots(serviceId, doctorId, date, excludeId = null) {
       const initialIds = new Set(INITIAL_APPOINTMENTS.map(a => a.id));
       const load = date === localDate() ? (doctor.currentLoad || 0) + booked.filter(a => !initialIds.has(a.id)).length : booked.length;
       if (load >= (doctor.dailyCapacity || 25)) continue;
-      const docStart = doctor.startTime || doctor.workingHours?.start?.slice(0, 5) || serviceStartTime;
-      const docEnd = doctor.endTime || doctor.workingHours?.end?.slice(0, 5) || serviceEndTime;
-      const start = Math.max(minutes(serviceStartTime), minutes(docStart));
-      const end = Math.min(minutes(serviceEndTime), minutes(docEnd));
+      const docStart = doctor.startTime || doctor.schedule?.startTime || doctor.rawStartTime || doctor.workingHours?.start || serviceStartTime;
+      const docEnd = doctor.endTime || doctor.schedule?.endTime || doctor.rawEndTime || doctor.workingHours?.end || serviceEndTime;
+      const sStartMin = Number.isFinite(minutes(serviceStartTime)) ? minutes(serviceStartTime) : 8 * 60;
+      const sEndMin = Number.isFinite(minutes(serviceEndTime)) ? minutes(serviceEndTime) : 18 * 60;
+      const dStartMin = Number.isFinite(minutes(docStart)) ? minutes(docStart) : sStartMin;
+      const dEndMin = Number.isFinite(minutes(docEnd)) ? minutes(docEnd) : sEndMin;
+      const start = Math.max(sStartMin, dStartMin);
+      const end = Math.min(sEndMin, dEndMin);
       for (let time = start; time + 30 <= end; time += 30) {
         if (date === localDate() && time <= new Date().getHours() * 60 + new Date().getMinutes()) continue;
         if (!attendanceAllowsTime(doctor, date, time)) continue;
-        if (booked.some(a => minutes(a.timeSlot || a.time) === time)) continue;
+        if (booked.some(a => {
+          const slotM = minutes(a.timeSlot || a.time || a.startTime);
+          return Number.isFinite(slotM) && slotM === time;
+        })) continue;
         if (!slots.has(time)) slots.set(time, { time: timeLabel(time), doctor });
       }
     }
   }
 
-  // Fallback: If no specific doctor was requested and no doctor matched on this day/weekend, generate consultation slots across service operating hours
-  if (slots.size === 0 && !doctorId) {
-    const start = minutes(serviceStartTime || '08:00');
-    const end = minutes(serviceEndTime || '16:00');
-    for (let time = start; time + 30 <= end; time += 30) {
+  // Fallback: If no specific doctor was requested and NO doctor records exist for this service, generate consultation slots across service operating hours
+  const allServiceDoctors = (Array.isArray(storedDoctors) ? storedDoctors : []).filter(d =>
+    d.serviceId === serviceId || d.serviceId === serviceCanonicalId ||
+    d.service?.publicId === serviceId || d.service?.publicId === serviceCanonicalId
+  );
+  if (slots.size === 0 && !doctorId && allServiceDoctors.length === 0) {
+    const sStartMin = Number.isFinite(minutes(serviceStartTime)) ? minutes(serviceStartTime) : 8 * 60;
+    const sEndMin = Number.isFinite(minutes(serviceEndTime)) ? minutes(serviceEndTime) : 16 * 60;
+    for (let time = sStartMin; time + 30 <= sEndMin; time += 30) {
       if (date === localDate() && time <= new Date().getHours() * 60 + new Date().getMinutes()) continue;
-      if (bookedForService.some(a => minutes(a.timeSlot || a.time) === time)) continue;
+      if (bookedForService.some(a => {
+        const slotM = minutes(a.timeSlot || a.time || a.startTime);
+        return Number.isFinite(slotM) && slotM === time;
+      })) continue;
       slots.set(time, { time: timeLabel(time), doctor: { name: 'On-duty Medical Officer' } });
     }
   }

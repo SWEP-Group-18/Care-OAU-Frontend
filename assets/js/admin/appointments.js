@@ -76,8 +76,14 @@ async function loadAppointments() {
 
   const filtered = appointments.filter(apt => {
     // Status filter
-    if (activeFilter !== 'all' && apt.status !== activeFilter) {
-      return false;
+    if (activeFilter !== 'all') {
+      const isPendingFilter = activeFilter === 'Pending' || activeFilter === 'Pending Approval';
+      const isPendingStatus = apt.status === 'Pending' || apt.status === 'Pending Approval';
+      if (isPendingFilter && isPendingStatus) {
+        // match
+      } else if (apt.status !== activeFilter) {
+        return false;
+      }
     }
 
     // Search query
@@ -106,9 +112,9 @@ async function loadAppointments() {
   }
 
   tbody.innerHTML = filtered.map(apt => {
-    const isPending = apt.status === APP_CONFIG.APPOINTMENT_STATUS.PENDING;
-    const isApproved = apt.status === APP_CONFIG.APPOINTMENT_STATUS.APPROVED;
-    const isCheckedIn = apt.status === APP_CONFIG.APPOINTMENT_STATUS.CHECKED_IN;
+    const isPending = apt.status === APP_CONFIG.APPOINTMENT_STATUS.PENDING || apt.status === 'Pending' || apt.status === 'Pending Approval';
+    const isApproved = apt.status === APP_CONFIG.APPOINTMENT_STATUS.APPROVED || apt.status === 'Approved';
+    const isCheckedIn = apt.status === APP_CONFIG.APPOINTMENT_STATUS.CHECKED_IN || apt.status === 'Checked In';
 
     return `
       <tr>
