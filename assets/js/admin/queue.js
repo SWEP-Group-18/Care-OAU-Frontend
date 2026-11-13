@@ -203,8 +203,6 @@ function renderQueueTable(queue) {
     const isCalled = item.status === APP_CONFIG.QUEUE_STATUS.CALLED;
     const isInConsult = item.status === APP_CONFIG.QUEUE_STATUS.IN_CONSULTATION;
 
-    console.log(item)
-
     return `
       <tr>
         <td>
