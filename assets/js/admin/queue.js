@@ -50,7 +50,7 @@ function initControls() {
     btnCallNext.addEventListener('click', async () => {
       const res = await QueueService.callNextPatient();
       if (res.success) {
-        Toast.success(`Now Calling Ticket ${res.patient.queueNumber}: ${res.patient.patientName}`);
+        Toast.success(`Now Calling Ticket ${res.patient.queueNumber}: ${res.patient?.studentName || "Student"}`);
         refreshQueue();
       } else {
         Toast.info(res.message);
@@ -62,7 +62,7 @@ function initControls() {
     btnStart.addEventListener('click', async () => {
       if (!currentActiveItem) return;
       await QueueService.startConsultation(currentActiveItem.id);
-      Toast.success(`Consultation started for ${currentActiveItem.patientName}`);
+      Toast.success(`Consultation started for ${currentActiveItem?.studentName || "Student"}`);
       refreshQueue();
     });
   }
@@ -71,7 +71,7 @@ function initControls() {
     btnComplete.addEventListener('click', async () => {
       if (!currentActiveItem) return;
       await QueueService.completeVisit(currentActiveItem.id);
-      Toast.success(`Consultation completed for ${currentActiveItem.patientName} (${currentActiveItem.queueNumber})`);
+      Toast.success(`Consultation completed for ${currentActiveItem?.studentName || "Student"} (${currentActiveItem.queueNumber})`);
       refreshQueue();
     });
   }
@@ -81,13 +81,13 @@ function initControls() {
       if (!currentActiveItem) return;
       Modal.confirm({
         title: 'Mark as No Show?',
-        message: `Mark patient ${currentActiveItem.patientName} (${currentActiveItem.queueNumber}) as absent after repeated calls?`,
+        message: `Mark patient ${currentActiveItem?.studentName || "Student"} (${currentActiveItem.queueNumber}) as absent after repeated calls?`,
         confirmText: 'Mark No Show',
         confirmClass: 'btn-danger',
         onConfirm: async () => {
           const result = await QueueService.markNoShow(currentActiveItem.id);
           if (!result.success) { Toast.warning(result.message); return false; }
-          Toast.warning(`${currentActiveItem.patientName} marked as No Show.`);
+          Toast.warning(`${currentActiveItem?.studentName || "Student"} marked as No Show.`);
           refreshQueue();
         }
       });
@@ -163,7 +163,7 @@ function updateCallerUI() {
     if (btnNoShow) btnNoShow.disabled = true;
   } else {
     if (elNum) elNum.textContent = currentActiveItem.queueNumber;
-    if (elName) elName.textContent = `${currentActiveItem.patientName} (${currentActiveItem.matricNo})`;
+    if (elName) elName.textContent = `${currentActiveItem?.studentName || 'Student'} (${currentActiveItem.matricNo})`;
     if (elRoom) elRoom.textContent = `${currentActiveItem.room || 'Room 2'}  -  ${currentActiveItem.serviceName}  -  Status: ${currentActiveItem.status}`;
 
     if (btnStart) {
@@ -203,6 +203,8 @@ function renderQueueTable(queue) {
     const isCalled = item.status === APP_CONFIG.QUEUE_STATUS.CALLED;
     const isInConsult = item.status === APP_CONFIG.QUEUE_STATUS.IN_CONSULTATION;
 
+    console.log(item)
+
     return `
       <tr>
         <td>
@@ -211,7 +213,7 @@ function renderQueueTable(queue) {
           </span>
         </td>
         <td>
-          <div class="text-sm text-bold text-navy">${Utils.escapeHtml(item.patientName)}</div>
+          <div class="text-sm text-bold text-navy">${Utils.escapeHtml(item?.studentName || 'Student')}</div>
           <div class="text-xs text-muted">${Utils.escapeHtml(item.matricNo)}</div>
         </td>
         <td>
@@ -279,7 +281,7 @@ window.qmCompleteDirect = async (id) => {
 window.qmMarkNoShowDirect = async (id) => {
   const result = await QueueService.markNoShow(id);
   if (!result.success) { Toast.warning(result.message); return; }
-  Toast.warning(result.patient.patientName + ' marked as No Show.');
+  Toast.warning((result.patient?.studentName || "Student") + ' marked as No Show.');
   refreshQueue();
 };
 
