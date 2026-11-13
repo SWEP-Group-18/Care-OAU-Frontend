@@ -127,3 +127,7 @@
     background-repeat: no-repeat;
     background-position: right 10px center;
 }
+
+.management-doctor > div:nth-child(5) small {
+    text-align: center;
+}
