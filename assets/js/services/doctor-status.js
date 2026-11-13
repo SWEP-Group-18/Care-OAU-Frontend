@@ -6,13 +6,30 @@ import { Api } from './api-client.js';
 export const DOCTOR_STATUSES = ['Available', 'In Consultation', 'On Break', 'Arriving Soon', 'Off Duty', 'On Leave'];
 export const statusTone = status => ({ Available: 'success', 'In Consultation': 'info', 'On Break': 'warning', 'Arriving Soon': 'info', 'Off Duty': 'neutral', 'On Leave': 'neutral' })[status] || 'neutral';
 export const dateKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
 export function attendanceStatus(doctor, date = dateKey()) {
   if (!doctor) return 'Available';
-  if (!DOCTOR_STATUSES.includes(doctor.status)) return doctor.isAvailable === false ? 'On Leave' : 'Available';
-  // Attendance is for a particular day, not a permanent change to the duty roster.
+
+  const statusMap = {
+    available: 'Available',
+    in_consultation: 'In Consultation',
+    on_break: 'On Break',
+    arriving_soon: 'Arriving Soon',
+    off_duty: 'Off Duty',
+    on_leave: 'On Leave'
+  };
+
+  const status = statusMap[doctor.status] || doctor.status;
+
+  if (!DOCTOR_STATUSES.includes(status)) {
+    return doctor.isAvailable === false ? 'On Leave' : 'Available';
+  }
+
   if (date !== (doctor.statusDate || dateKey())) return 'Available';
-  return doctor.status;
+
+  return status;
 }
+
 export function attendanceAllowsDate(doctor, date) {
   return !['Off Duty', 'On Leave'].includes(attendanceStatus(doctor, date));
 }

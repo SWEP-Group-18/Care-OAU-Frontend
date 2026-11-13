@@ -67,3 +67,15 @@
     line-height: 1.6;
     margin: 0;
 }
+
+/* Badge */
+.management-doctor .badge {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 100px;
+    padding: 6px 12px;
+    box-sizing: border-box;
+    border-radius: 5px;
+    border: none;
+}
