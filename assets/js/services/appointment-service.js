@@ -430,7 +430,7 @@ export const AppointmentService = {
     if (!cleanId) return { success: false, message: 'Appointment ID is required.' };
 
     const appointments = await this.getAllAppointments();
-    if (!appointments.some(a => (a.id === cleanId || a.publicId === cleanId) && ['Pending Approval', 'Approved'].includes(a.status))) {
+    if (!appointments.some(a => (a.id === cleanId || a.publicId === cleanId) && ['Pending', 'Pending Approval', 'Approved', APP_CONFIG.APPOINTMENT_STATUS.PENDING, APP_CONFIG.APPOINTMENT_STATUS.APPROVED].includes(a.status))) {
       return { success: false, message: 'This visit can no longer be cancelled online.' };
     }
 
@@ -464,7 +464,7 @@ export const AppointmentService = {
   async rescheduleAppointment(appointmentId, newDate, newTimeSlot) {
     const appointments = await this.getAllAppointments();
     const target = appointments.find(a => a.id === appointmentId);
-    if (!target || !['Pending Approval', 'Approved'].includes(target.status)) return { success: false, message: 'Only upcoming appointments can be rescheduled.' };
+    if (!target || !['Pending', 'Pending Approval', 'Approved', APP_CONFIG.APPOINTMENT_STATUS.PENDING, APP_CONFIG.APPOINTMENT_STATUS.APPROVED].includes(target.status)) return { success: false, message: 'Only upcoming appointments can be rescheduled.' };
     const slot = availableSlots(target.serviceId, target.doctorId, newDate, target.id).find(s => s.time === newTimeSlot);
     if (!slot) return { success: false, message: 'That time is unavailable. Choose a free slot within the doctor’s schedule.' };
     const updated = appointments.map(apt => {

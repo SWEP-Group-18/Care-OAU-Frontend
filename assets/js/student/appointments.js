@@ -68,7 +68,7 @@ async function loadAppointments() {
     const filtered = appointments.filter(a => {
       if (activeFilter === 'all') return true;
       if (activeFilter === 'upcoming') {
-        return ['Pending Approval', 'Approved', 'Checked In', 'In Consultation'].includes(a.status) ||
+        return ['Pending', 'Pending Approval', 'Approved', 'Checked In', 'In Consultation'].includes(a.status) ||
           !['Completed', 'Cancelled', 'Rejected', 'No Show'].includes(a.status);
       }
       if (activeFilter === 'history') {
@@ -113,13 +113,14 @@ async function loadAppointments() {
     tbody.innerHTML = filtered.map(apt => {
       const rawDate = apt.appointmentDate || apt.date;
       const date = rawDate ? new Date(rawDate.includes('T') ? rawDate : rawDate + 'T12:00:00') : new Date();
-      const canCancel = ['Pending Approval', 'Approved'].includes(apt.status);
+      const isPendingStatus = apt.status === 'Pending' || apt.status === 'Pending Approval';
+      const canCancel = isPendingStatus || apt.status === 'Approved';
       const displayId = apt.referenceNo || apt.publicId || apt.id;
       return `<article class="appointment-list-card">
         <div class="appointment-list-top"><div>${Utils.getStatusBadge(apt.status)}<h2>${Utils.escapeHtml(apt.serviceName || 'General Medical Consultation')}</h2><p>Booking reference  -  ${Utils.escapeHtml(displayId)}</p></div>
         <div class="large-date"><strong>${date.getDate()}</strong><span>${date.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}<br>${date.toLocaleDateString('en-GB',{weekday:'long'})}</span></div></div>
         <div class="appointment-info-grid"><div><span>Scheduled time</span><strong>${Utils.escapeHtml(apt.timeSlot || '08:00 AM')}</strong></div><div><span>Doctor</span><strong>${Utils.escapeHtml(apt.doctorName || 'Assigned Physician')}</strong></div><div><span>Location</span><strong>${Utils.escapeHtml(apt.location || 'Care-OAU Health Centre')}</strong></div></div>
-        ${apt.status === 'Pending Approval' ? '<p class="status-message">Your request is awaiting staff review. Your queue number will be issued at reception after approval.</p>' : ''}
+        ${isPendingStatus ? '<p class="status-message">Your request is awaiting staff review. Your queue number will be issued at reception after approval.</p>' : ''}
         ${apt.status === 'Approved' ? '<p class="status-message text-teal"><strong>Approved:</strong> Your visit is confirmed. Please arrive 10 minutes prior to scheduled time for reception check-in.</p>' : ''}
         ${apt.rejectionReason ? '<p class="status-message text-danger"><strong>Reason:</strong> ' + Utils.escapeHtml(apt.rejectionReason) + '</p>' : ''}
         ${apt.cancellationReason ? '<p class="status-message text-muted"><strong>Cancellation notice:</strong> ' + Utils.escapeHtml(apt.cancellationReason) + '</p>' : ''}

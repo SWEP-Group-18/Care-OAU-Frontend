@@ -10,7 +10,8 @@ globalThis.window = {
   }
 };
 const { Storage } = await import('../assets/js/core/storage.js');
-const { APP_CONFIG: { STORAGE_KEYS: keys } } = await import('../assets/js/core/config.js');
+const { APP_CONFIG } = await import('../assets/js/core/config.js');
+const keys = APP_CONFIG.STORAGE_KEYS;
 const { availableSlots, localDate } = await import('../assets/js/services/availability.js');
 const { AppointmentService: appointments } = await import('../assets/js/services/appointment-service.js');
 const { QueueService: queue } = await import('../assets/js/services/queue-service.js');
@@ -29,7 +30,7 @@ assert.equal(availableSlots('service', 'doctor', localDate(date)).length, 0, 'of
 Storage.set(keys.DOCTORS, [doctor]);
 const payload = { studentId: 'student-a', studentName: 'A', matricNo: 'TEST/001', serviceId: 'service', serviceName: 'Consultation', doctorId: 'doctor', appointmentDate: localDate(date), timeSlot: '10:00 AM' };
 const created = await appointments.createAppointment(payload);
-assert.ok(created.success); assert.equal(created.appointment.queueNumber, null); assert.equal(created.appointment.status, 'Pending Approval');
+assert.ok(created.success); assert.equal(created.appointment.queueNumber, null); assert.equal(created.appointment.status, APP_CONFIG.APPOINTMENT_STATUS.PENDING);
 assert.equal((await appointments.createAppointment({ ...payload, timeSlot: '10:30 AM' })).success, false, 'daily capacity must be enforced');
 assert.equal((await appointments.getStudentAppointments('student-b')).length, 0, 'student records must be scoped');
 await appointments.cancelAppointment(created.appointment.id);
