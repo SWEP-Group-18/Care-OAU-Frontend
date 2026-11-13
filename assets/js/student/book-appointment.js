@@ -237,7 +237,7 @@ async function renderTimeSlots() {
     return `
       <button type="button" class="${isSelected ? 'selected' : ''}" ${isFull ? 'disabled' : ''} data-time="${s.time}">
         ${s.time}
-        ${isFull ? '<small>Full</small>' : ''}
+        ${isFull ? '<small>Booked</small>' : ''}
       </button>
     `;
   }).join('');
