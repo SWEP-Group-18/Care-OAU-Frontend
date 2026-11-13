@@ -295,6 +295,18 @@
     box-sizing: border-box;
 }
 
+/* Reject buttone */
+.btn-outline-danger {
+    color: var(--color-error-text);
+    background-color: white;
+    border: 1.5px solid #B91C1C;
+}
+
+.btn-outline-danger:hover {
+    background-color: #B91C1C;
+    color: white;
+}
+
 /* Complete button */
 #admin-appointments-table tbody td:last-child .btn-navy {
     font-size: 11px;
@@ -383,5 +395,52 @@
         grid-column: 1 / -1;
         max-width: none;
         width: 100%;
+    }
+}
+
+/* Tablet */
+@media (min-width: 601px) and (max-width: 900px) {
+
+    #admin-appointments-table th:nth-child(6),
+    #admin-appointments-table td:nth-child(6) {
+        width: 130px;
+    }
+
+    #admin-appointments-table th:nth-child(7),
+    #admin-appointments-table td:nth-child(7) {
+        width: 160px;
+    }
+
+    /* Action buttons */
+    #admin-appointments-table tbody td:last-child > div > button,
+    #admin-appointments-table tbody td:last-child > div > a {
+        min-width: 0;
+        width: 100%;
+        padding: 5px 4px;
+        font-size: 10px;
+        gap: 3px;
+    }
+
+    /* Approve and Reject */
+    #admin-appointments-table tbody td:last-child > div:has(> .btn-approve) {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+    }
+
+    /* Check In Patient */
+    #admin-appointments-table tbody td:last-child .btn-teal {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    /* Complete */
+    #admin-appointments-table tbody td:last-child .btn-navy {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    #admin-appointments-table tbody td:last-child > div {
+        gap: 4px;
     }
 }
