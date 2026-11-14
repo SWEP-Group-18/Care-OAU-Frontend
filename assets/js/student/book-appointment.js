@@ -274,6 +274,8 @@ async function initServices() {
     selectedDoctorObj = null;
     isEarliestDoctor = true;
     earliestMatchedDoctor = null;
+    selectedDateStr = '';
+    selectedTimeStr = '';
 
     container.innerHTML = `
       <div style="padding: var(--space-8); text-align: center; border: 1px dashed var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface);">
@@ -294,6 +296,8 @@ async function initServices() {
   selectedDoctorObj = null;
   isEarliestDoctor = true;
   earliestMatchedDoctor = null;
+  selectedDateStr = '';
+  selectedTimeStr = '';
 
   container.innerHTML = openServices.map((srv) => {
     const srvId = srv.publicId || srv.id;
@@ -326,6 +330,8 @@ async function initServices() {
       selectedDoctorObj = null;
       isEarliestDoctor = true;
       earliestMatchedDoctor = null;
+      selectedDateStr = '';
+      selectedTimeStr = '';
       skippedStep3 = false;
 
       container.querySelectorAll('.choice-card').forEach((b) => {
@@ -355,6 +361,7 @@ async function initServices() {
       updateSummary();
 
       await initDoctors();
+      await autoSelectSlotForStep3({ prepareOnly: true });
     });
   });
 
@@ -364,7 +371,9 @@ async function initServices() {
   }
 
   updateSummary();
-  await initDoctors()
+
+  await initDoctors();
+  await autoSelectSlotForStep3({ prepareOnly: true });
 }
 
 export function doctorMatchesService(doc, service) {
@@ -401,126 +410,123 @@ export function doctorMatchesService(doc, service) {
 }
 
 async function initDoctors() {
-  const container = document.getElementById('doctor-choices-container');
-  if (!container) return;
+	const container = document.getElementById('doctor-choices-container');
+	if (!container) return;
 
-  const serviceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
+	const serviceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
 
-  if (!serviceId) {
-    container.innerHTML = `
-      <div class="capacity-guidance">
-        Select a clinical service first to view its doctors.
-      </div>
-    `;
-    return;
-  }
+	if (!serviceId) {
+		container.innerHTML = `
+			<div class="capacity-guidance">
+				Select a clinical service first to view its doctors.
+			</div>
+		`;
+		return;
+	}
 
-  container.innerHTML = `
-    <div style="padding: var(--space-8); text-align: center;">
-      <p class="text-secondary">Loading available doctors...</p>
-    </div>
-  `;
+	container.innerHTML = `
+		<div style="padding: var(--space-8); text-align: center;">
+			<p class="text-secondary">Loading available doctors...</p>
+		</div>
+	`;
 
-  let doctors = [];
+	let doctors = [];
 
-  try {
-    const rawDoctors = await MedicalService.getServiceDoctors(serviceId);
+	try {
+		const rawDoctors = await MedicalService.getServiceDoctors(serviceId);
 
-    doctors = (Array.isArray(rawDoctors) ? rawDoctors : [])
-      .map(fromBackendDoctor)
-      .filter(Boolean);
+		doctors = (Array.isArray(rawDoctors) ? rawDoctors : [])
+			.map(fromBackendDoctor)
+			.filter(Boolean);
 
-  } catch (err) {
-    console.error('[BookAppointment] Failed to load service doctors:', err);
+	} catch (err) {
+		console.error('[BookAppointment] Failed to load service doctors:', err);
 
-    container.innerHTML = `
-      <div class="capacity-guidance">
-        Unable to load doctors right now. Please try again.
-      </div>
-    `;
-    return;
-  }
+		container.innerHTML = `
+			<div class="capacity-guidance">
+				Unable to load doctors right now. Please try again.
+			</div>
+		`;
+		return;
+	}
 
-  // Ignore results if the student has changed the selected service
-  const currentServiceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
+	// Ignore results if the student has changed the selected service
+	const currentServiceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
 
-  if (String(currentServiceId) !== String(serviceId)) return;
+	if (String(currentServiceId) !== String(serviceId)) return;
 
-  // Earliest available doctor is the default selection
-  selectedDoctorObj = null;
-  isEarliestDoctor = true;
-  earliestMatchedDoctor = null;
+	if (doctors.length === 0) {
+		container.innerHTML = `
+			<div class="capacity-guidance">
+				No doctors are currently assigned to this clinical service.
+				Please choose another service or contact the clinic reception.
+			</div>
+		`;
+		updateSummary();
+		return;
+	}
 
-  if (doctors.length === 0) {
-    container.innerHTML = `
-      <div class="capacity-guidance">
-        No doctors are currently assigned to this clinical service.
-        Please choose another service or contact the clinic reception.
-      </div>
-    `;
-    updateSummary();
-    return;
-  }
+	const earliestCardHtml = `
+		<button type="button" class="choice-card feature-choice ${isEarliestDoctor ? 'selected' : ''}" id="choice-earliest-doc">
+			<span class="choice-radio">
+				${isEarliestDoctor ? '<span></span>' : ''}
+			</span>
+			<span class="choice-copy">
+				<strong>Earliest available doctor</strong>
+				<small>We'll assign the earliest available clinical officer.</small>
+			</span>
+		</button>
+	`;
 
-  const earliestCardHtml = `
-    <button type="button" class="choice-card feature-choice selected" id="choice-earliest-doc">
-      <span class="choice-radio">
-        <span></span>
-      </span>
-      <span class="choice-copy">
-        <strong>Earliest available doctor</strong>
-        <small>We'll assign the earliest available clinical officer.</small>
-      </span>
-    </button>
-  `;
+	const doctorsHtml = doctors.map((doc) => {
+		const docId = doc.publicId || doc.id;
+		const isSelected = !isEarliestDoctor && String(selectedDoctorObj?.publicId || selectedDoctorObj?.id) === String(docId);
 
-  const doctorsHtml = doctors.map((doc) => {
-    const docId = doc.publicId || doc.id;
+		const parts = (doc.name || 'Doctor').replace(/^Dr\.?\s+/i, '').split(' ');
+		const initials = parts.map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 
-    const parts = (doc.name || 'Doctor').replace(/^Dr\.?\s+/i, '').split(' ');
-    const initials = parts.map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+		return `
+			<button type="button" class="choice-card ${isSelected ? 'selected' : ''}" data-doctor-id="${Utils.escapeHtml(String(docId))}">
+				<span class="choice-radio">
+					${isSelected ? '<span></span>' : ''}
+				</span>
+				<span class="doctor-avatar small">${Utils.escapeHtml(initials)}</span>
+				<span class="choice-copy">
+					<strong>${Utils.escapeHtml(doc.name || 'Doctor')}</strong>
+					<small>${Utils.escapeHtml(doc.specialization || doc.specialty || 'General Practitioner')}</small>
+				</span>
+			</button>
+		`;
+	}).join('');
 
-    return `
-      <button type="button" class="choice-card" data-doctor-id="${Utils.escapeHtml(String(docId))}">
-        <span class="choice-radio"></span>
-        <span class="doctor-avatar small">${Utils.escapeHtml(initials)}</span>
-        <span class="choice-copy">
-          <strong>${Utils.escapeHtml(doc.name || 'Doctor')}</strong>
-          <small>${Utils.escapeHtml(doc.specialization || doc.specialty || 'General Practitioner')}</small>
-        </span>
-      </button>
-    `;
-  }).join('');
+	const guidanceHtml = `
+		<div class="capacity-guidance">
+			<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<circle cx="12" cy="12" r="10"></circle>
+				<line x1="12" y1="8" x2="12" y2="12"></line>
+				<line x1="12" y1="16" x2="12.01" y2="16"></line>
+			</svg>
+			<span>When preferred physicians reach capacity, choose the earliest available doctor or select their next available date.</span>
+		</div>
+	`;
 
-  const guidanceHtml = `
-    <div class="capacity-guidance">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="8" x2="12" y2="12"></line>
-        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-      </svg>
-      <span>When preferred physicians reach capacity, choose the earliest available doctor or select their next available date.</span>
-    </div>
-  `;
+	container.innerHTML = earliestCardHtml + doctorsHtml + guidanceHtml;
 
-  container.innerHTML = earliestCardHtml + doctorsHtml + guidanceHtml;
+	// Earliest doctor option listener
+	const earliestBtn = document.getElementById('choice-earliest-doc');
 
-  // Earliest doctor option listener
-  const earliestBtn = document.getElementById('choice-earliest-doc');
+	if (earliestBtn) {
+		earliestBtn.addEventListener('click', () => {
+			isEarliestDoctor = true;
+			selectedDoctorObj = null;
+			skippedStep3 = false;
 
-  if (earliestBtn) {
-    earliestBtn.addEventListener('click', () => {
-      isEarliestDoctor = true;
-      selectedDoctorObj = null;
-      earliestMatchedDoctor = null;
-      skippedStep3 = false;
+			refreshDoctorSelectionUI(container);
+			updateSummary();
+		});
+	}
 
-      refreshDoctorSelectionUI(container);
-      updateSummary();
-    });
-  }
-
-  // Specific doctor selection listeners
+	// Specific doctor selection listeners
   container.querySelectorAll('button[data-doctor-id]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const docId = btn.dataset.doctorId;
@@ -532,7 +538,6 @@ async function initDoctors() {
       if (!selectedDoctorObj) return;
 
       isEarliestDoctor = false;
-      earliestMatchedDoctor = null;
       skippedStep3 = false;
 
       refreshDoctorSelectionUI(container);
@@ -540,7 +545,7 @@ async function initDoctors() {
     });
   });
 
-  updateSummary();
+	updateSummary();
 }
 
 function refreshDoctorSelectionUI(container) {
@@ -575,20 +580,28 @@ function updateSummary() {
   const timeEl = document.getElementById('summary-time');
 
   const displayDocName = !selectedServiceObj || currentStep === 1
-  ? '—'
-  : (isEarliestDoctor
-    ? 'Earliest available doctor'
-    : (selectedDoctorObj ? selectedDoctorObj.name : '—'));
+    ? '—'
+    : (isEarliestDoctor
+      ? (earliestMatchedDoctor?.name || 'Earliest available doctor')
+      : (selectedDoctorObj ? selectedDoctorObj.name : '—'));
 
   if (srvEl) srvEl.textContent = selectedServiceObj ? selectedServiceObj.name : '—';
   if (docEl) docEl.textContent = displayDocName;
 
-  if (dateEl && selectedDateStr) {
-    const d = new Date(selectedDateStr + 'T12:00:00');
-    dateEl.textContent = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const showAppointmentDetails = currentStep >= 2 && isEarliestDoctor;
+
+  if (dateEl) {
+    if (showAppointmentDetails && selectedDateStr) {
+      const d = new Date(selectedDateStr + 'T12:00:00');
+      dateEl.textContent = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    } else {
+      dateEl.textContent = '—';
+    }
   }
 
-  if (timeEl) timeEl.textContent = selectedTimeStr || '—';
+  if (timeEl) {
+    timeEl.textContent = showAppointmentDetails ? (selectedTimeStr || '—') : '—';
+  }
 
   // Also update Step 4 review elements
   const reviewSrv = document.getElementById('review-service');
@@ -634,7 +647,7 @@ function updateSummary() {
   }
 }
 
-async function autoSelectSlotForStep3() {
+async function autoSelectSlotForStep3({prepareOnly = false} = {}) {
   const srvId = selectedServiceObj?.publicId || selectedServiceObj?.id;
   if (!srvId) return;
 
@@ -665,11 +678,13 @@ async function autoSelectSlotForStep3() {
                 name: docData.name || 'Assigned On-duty Physician',
                 specialization: selectedServiceObj?.name || 'General Practitioner'
               };
-              selectedDoctorObj = earliestMatchedDoctor;
             }
 
-            initDates(selectedDateStr);
-            await renderTimeSlots();
+            if (!prepareOnly) {
+              initDates(selectedDateStr);
+              await renderTimeSlots();
+            }
+
             updateSummary();
             return;
           }
@@ -713,17 +728,23 @@ async function autoSelectSlotForStep3() {
             name: docData.name || 'Assigned On-duty Physician',
             specialization: selectedServiceObj?.name || 'General Practitioner'
           };
-          selectedDoctorObj = earliestMatchedDoctor;
         }
-        initDates(selectedDateStr);
-        await renderTimeSlots();
+
+        if (!prepareOnly) {
+          initDates(selectedDateStr);
+          await renderTimeSlots();
+        }
+
         updateSummary();
         return;
       }
     }
 
     // Fallback: render current date slots
-    await renderTimeSlots();
+    if (!prepareOnly) {
+      await renderTimeSlots();
+    }
+
     return;
   }
 
@@ -819,6 +840,7 @@ function bindNavigationEvents() {
     btnNext.addEventListener('click', async () => {
       if (currentStep === 1 && !selectedServiceObj) { Toast.warning('No services are currently available.'); return; }
       if (currentStep === 3 && !selectedTimeStr) { Toast.warning('Choose an available date and time.'); return; }
+
       if (currentStep < 4) {
         // Validate referral if required
         if (currentStep === 1 && selectedServiceObj && selectedServiceObj.requiresReferral) {
@@ -831,25 +853,16 @@ function bindNavigationEvents() {
           referralCode = input.value.trim();
         }
 
-        // When leaving Step 2 (Choose doctor), automatically find and select the earliest free slot
-        if (currentStep === 2) {
-          const originalText = btnNext.innerHTML;
-          btnNext.disabled = true;
-          btnNext.textContent = 'Finding earliest slot...';
-          try {
-            await autoSelectSlotForStep3();
-          } catch (err) {
-            console.warn('[BookAppointment] autoSelectSlot error:', err);
-          } finally {
-            btnNext.disabled = false;
-            btnNext.innerHTML = originalText;
-          }
-
-          if (isEarliestDoctor) {
-            skippedStep3 = true;
-            goToStep(4);
+        // When leaving Step 2, use the earliest slot already fetched
+        if (currentStep === 2 && isEarliestDoctor) {
+          if (!earliestMatchedDoctor || !selectedDateStr || !selectedTimeStr) {
+            Toast.warning('No earliest appointment slot is currently available. Please choose a doctor.');
             return;
           }
+
+          skippedStep3 = true;
+          goToStep(4);
+          return;
         }
 
         goToStep(currentStep + 1);
