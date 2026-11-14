@@ -44,3 +44,15 @@ table:has(#queue-tbody) thead th:nth-child(5) {
     border-radius: 22px;
     transform: translateY(-1px);
 }
+
+/* Mark No Show button */
+#qm-btn-noshow {
+    transition: all 0.2s ease;
+}
+
+/* Hover effect */
+#qm-btn-noshow:hover:not(:disabled) {
+    color: white !important;
+    background: #DC2626;
+    transform: translateY(-1px);
+}
