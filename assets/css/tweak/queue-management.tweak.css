@@ -1,3 +1,12 @@
+body{
+    overflow-y: scroll;
+}
+
+#queue-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
 /* Queue status badges */
 #queue-tbody td:nth-child(5) .badge {
     display: inline-flex;
@@ -11,8 +20,8 @@
 }
 
 /* Center Queue Status column */
-table:has(#queue-tbody) thead th:nth-child(5) {
-    width: 100px;
+#queue-table thead th:nth-child(5),
+#queue-tbody td:nth-child(5) {
     text-align: center;
 }
 
