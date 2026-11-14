@@ -13,7 +13,7 @@ import { APP_CONFIG } from '../core/config.js';
 import { StudentSidebar } from '../components/student-sidebar.js';
 import { Header } from '../components/header.js';
 import { Toast } from '../components/toast.js';
-import { DoctorService } from '../services/doctor-service.js';
+import { DoctorService, fromBackendDoctor } from '../services/doctor-service.js';
 import { MedicalService, fromBackendService } from '../services/medical-service.js';
 import { INITIAL_SERVICES, INITIAL_APPOINTMENTS } from '../data/mock-data.js';
 
@@ -390,20 +390,35 @@ export function doctorMatchesService(doc, service) {
 }
 
 async function initDoctors(paramDoctorId) {
-  const container = document.getElementById('doctor-choices-container');
+   const container = document.getElementById('doctor-choices-container');
   if (!container) return;
 
-  let storedDoctors = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
-  if (!Array.isArray(storedDoctors) || storedDoctors.length === 0) {
-    try {
-      const avail = await DoctorService.getDoctorAvailability();
-      storedDoctors = avail?.doctors || [];
-    } catch { }
-  }
+  container.innerHTML = `
+    <div style="padding: var(--space-8); text-align: center;">
+      <p class="text-secondary">Loading available doctors...</p>
+    </div>
+  `;
 
-  const doctors = (Array.isArray(storedDoctors) ? storedDoctors : []).filter(d =>
-    doctorMatchesService(d, selectedServiceObj)
-  );
+  let doctors = [];
+
+  try {
+    const rawDoctors = await MedicalService.getServiceDoctors(
+      selectedServiceObj?.publicId || selectedServiceObj?.id
+    );
+
+    doctors = (Array.isArray(rawDoctors) ? rawDoctors : [])
+      .map(fromBackendDoctor)
+      .filter(Boolean);
+  } catch (err) {
+    console.error('[BookAppointment] Failed to load service doctors:', err);
+
+    container.innerHTML = `
+      <div class="capacity-guidance">
+        Unable to load doctors right now. Please try again.
+      </div>
+    `;
+    return;
+  }
 
   // Pre-selection if paramDoctorId provided
   if (paramDoctorId) {

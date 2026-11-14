@@ -348,18 +348,14 @@ export const MedicalService = {
     const cleanId = String(servicePublicId || '').trim();
     if (!cleanId) return [];
 
-    if (!APP_CONFIG.USE_MOCK_DATA) {
-      try {
-        const res = await Api.get(`/services/${cleanId}/doctors`);
-        const list = res?.data?.doctors || res?.data || res?.doctors;
-        if (Array.isArray(list)) {
-          return list;
-        }
-      } catch (err) {
-        console.warn(`[MedicalService] Failed to fetch doctors for service ${cleanId}:`, err.message);
-      }
+    if (APP_CONFIG.USE_MOCK_DATA) {
+      return [];
     }
-    return [];
+    
+    const res = await Api.get(`/services/${cleanId}/doctors`);
+    const list = res?.data?.doctors || res?.data || res?.doctors;
+
+    return Array.isArray(list) ? list : [];
   },
 
   /**
