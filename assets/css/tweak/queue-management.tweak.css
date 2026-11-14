@@ -15,3 +15,32 @@ table:has(#queue-tbody) thead th:nth-child(5) {
     width: 100px;
     text-align: center;
 }
+
+/* Queue filter container */
+#queue-status-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* All queue filter buttons */
+#queue-status-tabs .tab-filter-btn {
+    transition: all 0.2s ease;
+}
+
+/* Active queue filter */
+#queue-status-tabs .tab-filter-btn.active {
+    padding: 5px 16px;
+    color: white;
+    background-color: var(--navy);
+    border-radius: 22px;
+}
+
+/* Hover effect */
+#queue-status-tabs .tab-filter-btn:hover:not(.active) {
+    padding: 5px 16px;
+    background-color: #F1F5F9;
+    color: var(--navy);
+    border-radius: 22px;
+    transform: translateY(-1px);
+}
