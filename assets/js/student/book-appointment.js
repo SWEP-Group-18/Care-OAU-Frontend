@@ -588,7 +588,7 @@ function updateSummary() {
   if (srvEl) srvEl.textContent = selectedServiceObj ? selectedServiceObj.name : '—';
   if (docEl) docEl.textContent = displayDocName;
 
-  const showAppointmentDetails = currentStep >= 2 && isEarliestDoctor;
+  const showAppointmentDetails = currentStep >= 3 || (currentStep === 2 && isEarliestDoctor);
 
   if (dateEl) {
     if (showAppointmentDetails && selectedDateStr) {
