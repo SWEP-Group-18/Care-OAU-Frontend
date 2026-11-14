@@ -29,26 +29,11 @@ let earliestMatchedDoctor = null;
 
 async function initBookingWizard() {
   if (!Navigation.requireAuth('student')) return;
-  DoctorService.purgeLegacyDemoDoctors();
+
   Header.render('Book an Appointment');
   StudentSidebar.render();
 
-  // Seed data only in isolated mock/test mode
-  if (APP_CONFIG.USE_MOCK_DATA) {
-    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES)) {
-      Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, INITIAL_SERVICES);
-    }
-    if (!Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS)) {
-      Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, INITIAL_APPOINTMENTS);
-    }
-  }
-
-  // Pre-select doctor if passed in query param
-  const urlParams = new URLSearchParams(window.location.search);
-  const paramDoctorId = urlParams.get('doctorId');
-
-  initDates();
-  await initServices(paramDoctorId);
+  await initServices();
   bindNavigationEvents();
 }
 
@@ -256,7 +241,7 @@ async function renderTimeSlots() {
   updateSummary();
 }
 
-async function initServices(paramDoctorId) {
+async function initServices() {
   const container = document.getElementById('service-options-container');
   if (!container) return;
 
@@ -267,53 +252,61 @@ async function initServices(paramDoctorId) {
   `;
 
   let services = [];
+
   try {
     services = await MedicalService.getAvailableServices();
   } catch (err) {
-    console.warn('[BookAppointment] Failed to load services via MedicalService:', err);
-    services = Storage.get(APP_CONFIG.STORAGE_KEYS.SERVICES, []);
+    console.error('[BookAppointment] Failed to load clinical services:', err);
+
+    container.innerHTML = `
+      <div class="capacity-guidance">
+        Unable to load clinical services right now. Please try again.
+      </div>
+    `;
+    return;
   }
 
-  // Gracefully fallback to initial clinic services if neither API nor local cache has records
-  if (!Array.isArray(services) || services.length === 0) {
-    services = INITIAL_SERVICES.map(fromBackendService);
-    Storage.set(APP_CONFIG.STORAGE_KEYS.SERVICES, services);
-  }
-
-  const openServices = (Array.isArray(services) ? services : []).filter(s => s.status === 'open' || s.isActive === true);
+  const openServices = (Array.isArray(services) ? services : [])
+    .filter(s => s.status === 'open' || s.isActive === true);
 
   if (openServices.length === 0) {
     selectedServiceObj = null;
+    selectedDoctorObj = null;
+    isEarliestDoctor = true;
+    earliestMatchedDoctor = null;
+
     container.innerHTML = `
       <div style="padding: var(--space-8); text-align: center; border: 1px dashed var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface);">
         <p style="font-weight: 500; margin-bottom: var(--space-2);">No clinical services are currently open for booking.</p>
         <p class="text-secondary" style="font-size: var(--font-size-xs);">Please check back during operating hours or contact the clinic reception.</p>
       </div>
     `;
+
     const referralWrap = document.getElementById('referral-field-container');
     if (referralWrap) referralWrap.style.display = 'none';
+
     updateSummary();
     return;
   }
 
+  // Select the first service returned by the backend
   selectedServiceObj = openServices[0];
-  if (paramDoctorId) {
-    const doc = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []).find(d => d.id === paramDoctorId || d.publicId === paramDoctorId);
-    const match = openServices.find(s => (s.publicId === doc?.serviceId || s.id === doc?.serviceId));
-    if (match) selectedServiceObj = match;
-  }
+  selectedDoctorObj = null;
+  isEarliestDoctor = true;
+  earliestMatchedDoctor = null;
 
   container.innerHTML = openServices.map((srv) => {
     const srvId = srv.publicId || srv.id;
-    const isSelected = selectedServiceObj && (selectedServiceObj.publicId === srvId || selectedServiceObj.id === srvId);
+    const isSelected = selectedServiceObj === srv;
+
     return `
-      <button type="button" class="choice-card ${isSelected ? 'selected' : ''}" data-service-id="${srvId}">
+      <button type="button" class="choice-card ${isSelected ? 'selected' : ''}" data-service-id="${Utils.escapeHtml(String(srvId))}">
         <span class="choice-radio">
           ${isSelected ? '<span></span>' : ''}
         </span>
         <span class="choice-copy">
           <strong>${Utils.escapeHtml(srv.name)}</strong>
-          <small>${srv.description || 'Consultation and clinical support'}</small>
+          <small>${Utils.escapeHtml(srv.description || 'Consultation and clinical support')}</small>
           <span>${srv.requiresReferral ? 'Referral required' : 'No referral needed'}</span>
         </span>
       </button>
@@ -323,37 +316,55 @@ async function initServices(paramDoctorId) {
   container.querySelectorAll('.choice-card').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const clickedId = btn.dataset.serviceId;
-      selectedServiceObj = openServices.find((s) => s.publicId === clickedId || s.id === clickedId) || openServices[0];
+
+      selectedServiceObj = openServices.find(
+        (s) => String(s.publicId || s.id) === clickedId
+      );
+
+      if (!selectedServiceObj) return;
+
+      selectedDoctorObj = null;
+      isEarliestDoctor = true;
+      earliestMatchedDoctor = null;
+      skippedStep3 = false;
 
       container.querySelectorAll('.choice-card').forEach((b) => {
         b.classList.remove('selected');
+
         const radio = b.querySelector('.choice-radio');
         if (radio) radio.innerHTML = '';
       });
 
       btn.classList.add('selected');
+
       const radio = btn.querySelector('.choice-radio');
       if (radio) radio.innerHTML = '<span></span>';
 
-      // Toggle referral field if required
       const referralWrap = document.getElementById('referral-field-container');
       if (referralWrap) {
-        referralWrap.style.display = selectedServiceObj?.requiresReferral ? 'flex' : 'none';
+        referralWrap.style.display = selectedServiceObj.requiresReferral ? 'flex' : 'none';
+      }
+
+      if (!selectedServiceObj.requiresReferral) {
+        const referralInput = document.getElementById('referral-code');
+        if (referralInput) referralInput.value = '';
+
+        referralCode = '';
       }
 
       updateSummary();
-      selectedDoctorObj = null;
-      isEarliestDoctor = true;
+
       await initDoctors();
-      renderTimeSlots();
     });
   });
 
-  await initDoctors(paramDoctorId);
-  const refWrap = document.getElementById('referral-field-container');
-  if (refWrap) refWrap.style.display = selectedServiceObj?.requiresReferral ? 'flex' : 'none';
-  renderTimeSlots();
+  const referralWrap = document.getElementById('referral-field-container');
+  if (referralWrap) {
+    referralWrap.style.display = selectedServiceObj.requiresReferral ? 'flex' : 'none';
+  }
+
   updateSummary();
+  await initDoctors()
 }
 
 export function doctorMatchesService(doc, service) {
@@ -389,9 +400,20 @@ export function doctorMatchesService(doc, service) {
   return false;
 }
 
-async function initDoctors(paramDoctorId) {
-   const container = document.getElementById('doctor-choices-container');
+async function initDoctors() {
+  const container = document.getElementById('doctor-choices-container');
   if (!container) return;
+
+  const serviceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
+
+  if (!serviceId) {
+    container.innerHTML = `
+      <div class="capacity-guidance">
+        Select a clinical service first to view its doctors.
+      </div>
+    `;
+    return;
+  }
 
   container.innerHTML = `
     <div style="padding: var(--space-8); text-align: center;">
@@ -402,13 +424,12 @@ async function initDoctors(paramDoctorId) {
   let doctors = [];
 
   try {
-    const rawDoctors = await MedicalService.getServiceDoctors(
-      selectedServiceObj?.publicId || selectedServiceObj?.id
-    );
+    const rawDoctors = await MedicalService.getServiceDoctors(serviceId);
 
     doctors = (Array.isArray(rawDoctors) ? rawDoctors : [])
       .map(fromBackendDoctor)
       .filter(Boolean);
+
   } catch (err) {
     console.error('[BookAppointment] Failed to load service doctors:', err);
 
@@ -420,57 +441,53 @@ async function initDoctors(paramDoctorId) {
     return;
   }
 
-  // Pre-selection if paramDoctorId provided
-  if (paramDoctorId) {
-    const match = doctors.find((d) => (d.publicId === paramDoctorId || d.id === paramDoctorId));
-    if (match) {
-      selectedDoctorObj = match;
-      isEarliestDoctor = false;
-    }
+  // Ignore results if the student has changed the selected service
+  const currentServiceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
+
+  if (String(currentServiceId) !== String(serviceId)) return;
+
+  // Earliest available doctor is the default selection
+  selectedDoctorObj = null;
+  isEarliestDoctor = true;
+  earliestMatchedDoctor = null;
+
+  if (doctors.length === 0) {
+    container.innerHTML = `
+      <div class="capacity-guidance">
+        No doctors are currently assigned to this clinical service.
+        Please choose another service or contact the clinic reception.
+      </div>
+    `;
+    updateSummary();
+    return;
   }
 
   const earliestCardHtml = `
-    <button type="button" class="choice-card feature-choice ${isEarliestDoctor ? 'selected' : ''}" id="choice-earliest-doc">
+    <button type="button" class="choice-card feature-choice selected" id="choice-earliest-doc">
       <span class="choice-radio">
-        ${isEarliestDoctor ? '<span></span>' : ''}
+        <span></span>
       </span>
       <span class="choice-copy">
-        <span class="choice-label">Recommended</span>
         <strong>Earliest available doctor</strong>
-        <small>We'll assign the first available clinical officer on duty.</small>
+        <small>We'll assign the earliest available clinical officer.</small>
       </span>
-      <strong class="choice-time">
-        Next<br>
-        <span>available slot</span>
-      </strong>
     </button>
   `;
 
   const doctorsHtml = doctors.map((doc) => {
     const docId = doc.publicId || doc.id;
-    const isSelected = !isEarliestDoctor && selectedDoctorObj && (selectedDoctorObj.publicId === docId || selectedDoctorObj.id === docId);
-    const capacity = doc.dailyCapacity || 25;
-    const currentLoad = doc.currentLoad || 0;
-    const isFull = false;
-    const slotsRemaining = Math.max(0, capacity - currentLoad);
 
     const parts = (doc.name || 'Doctor').replace(/^Dr\.?\s+/i, '').split(' ');
     const initials = parts.map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 
     return `
-      <button type="button" class="choice-card ${isSelected ? 'selected' : ''}" data-doctor-id="${docId}" ${isFull ? 'disabled' : ''}>
-        <span class="choice-radio">
-          ${isSelected ? '<span></span>' : ''}
-        </span>
-        <span class="doctor-avatar small">${initials}</span>
+      <button type="button" class="choice-card" data-doctor-id="${Utils.escapeHtml(String(docId))}">
+        <span class="choice-radio"></span>
+        <span class="doctor-avatar small">${Utils.escapeHtml(initials)}</span>
         <span class="choice-copy">
-          <strong>${Utils.escapeHtml(doc.name)}</strong>
-          <small>${doc.specialization || doc.specialty || 'General Practitioner'}</small>
-          <span>
-            ${isFull ? 'Full for this shift · Next: tomorrow, 9:00 AM' : `${slotsRemaining} place${slotsRemaining === 1 ? '' : 's'} remaining`}
-          </span>
+          <strong>${Utils.escapeHtml(doc.name || 'Doctor')}</strong>
+          <small>${Utils.escapeHtml(doc.specialization || doc.specialty || 'General Practitioner')}</small>
         </span>
-        ${isFull ? '<span class="badge badge-danger">Full</span>' : ''}
       </button>
     `;
   }).join('');
@@ -488,33 +505,42 @@ async function initDoctors(paramDoctorId) {
 
   container.innerHTML = earliestCardHtml + doctorsHtml + guidanceHtml;
 
-  // Earliest option listener
+  // Earliest doctor option listener
   const earliestBtn = document.getElementById('choice-earliest-doc');
+
   if (earliestBtn) {
     earliestBtn.addEventListener('click', () => {
       isEarliestDoctor = true;
       selectedDoctorObj = null;
       earliestMatchedDoctor = null;
       skippedStep3 = false;
+
       refreshDoctorSelectionUI(container);
-      renderTimeSlots();
       updateSummary();
     });
   }
 
-  // Doctor buttons listeners
-  container.querySelectorAll('button[data-doctor-id]:not(:disabled)').forEach((btn) => {
+  // Specific doctor selection listeners
+  container.querySelectorAll('button[data-doctor-id]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const docId = btn.dataset.doctorId;
-      selectedDoctorObj = doctors.find((d) => (d.publicId === docId || d.id === docId));
+
+      selectedDoctorObj = doctors.find(
+        (d) => String(d.publicId || d.id) === docId
+      );
+
+      if (!selectedDoctorObj) return;
+
       isEarliestDoctor = false;
       earliestMatchedDoctor = null;
       skippedStep3 = false;
+
       refreshDoctorSelectionUI(container);
-      renderTimeSlots();
       updateSummary();
     });
   });
+
+  updateSummary();
 }
 
 function refreshDoctorSelectionUI(container) {
@@ -548,11 +574,13 @@ function updateSummary() {
   const dateEl = document.getElementById('summary-date');
   const timeEl = document.getElementById('summary-time');
 
-  const displayDocName = isEarliestDoctor
-    ? (earliestMatchedDoctor?.name ? `${earliestMatchedDoctor.name} (Assigned)` : 'Earliest available doctor')
-    : (selectedDoctorObj ? selectedDoctorObj.name : 'Earliest available doctor');
+  const displayDocName = !selectedServiceObj || currentStep === 1
+  ? '—'
+  : (isEarliestDoctor
+    ? 'Earliest available doctor'
+    : (selectedDoctorObj ? selectedDoctorObj.name : '—'));
 
-  if (srvEl) srvEl.textContent = selectedServiceObj ? selectedServiceObj.name : 'General Consultation';
+  if (srvEl) srvEl.textContent = selectedServiceObj ? selectedServiceObj.name : '—';
   if (docEl) docEl.textContent = displayDocName;
 
   if (dateEl && selectedDateStr) {
@@ -568,7 +596,7 @@ function updateSummary() {
   const reviewDt = document.getElementById('review-datetime');
   const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
 
-  if (reviewSrv) reviewSrv.textContent = selectedServiceObj ? selectedServiceObj.name : 'General Consultation';
+  if (reviewSrv) reviewSrv.textContent = selectedServiceObj ? selectedServiceObj.name : '—';
   if (reviewDoc) reviewDoc.textContent = displayDocName;
   if (reviewDt && selectedDateStr && selectedTimeStr) {
     const d = new Date(selectedDateStr + 'T12:00:00');
@@ -914,6 +942,8 @@ function goToStep(step) {
       btnNext.innerHTML = `Continue <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
     }
   }
+  
+  updateSummary();
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
