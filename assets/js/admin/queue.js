@@ -219,7 +219,7 @@ function renderQueueTable(queue) {
           <div class="text-xs text-teal">${item.room || 'Consulting Room 2'}</div>
         </td>
         <td>
-          <div class="text-xs text-secondary">${item.checkInTime || 'Today'}</div>
+          <div class="text-xs text-secondary">${Utils.formatTime(item.checkInTime) || 'Today'}</div>
         </td>
         <td>
           ${Utils.getStatusBadge(item.status)}
