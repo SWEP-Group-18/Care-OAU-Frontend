@@ -125,65 +125,41 @@ export const AppointmentService = {
     return normalized;
   },
 
-  /**
-   * Get available appointment slots via backend API GET /appointments/slots
-   * Falls back to local availability calculation when in mock mode or on network error.
+    /**
+   * Get available appointment slots from backend API or local mock data.
    */
   async getAvailableSlots({ servicePublicId, date, doctorPublicId = null }) {
-    if (!APP_CONFIG.USE_MOCK_DATA && servicePublicId && date) {
-      try {
-        let query = `/appointments/slots?servicePublicId=${encodeURIComponent(servicePublicId)}&date=${encodeURIComponent(date)}`;
-        if (doctorPublicId) {
-          query += `&doctorPublicId=${encodeURIComponent(doctorPublicId)}`;
-        }
+    let query = `/appointments/slots?servicePublicId=${encodeURIComponent(servicePublicId)}&date=${encodeURIComponent(date)}`;
 
-        let res = null;
-        try {
-          res = await Api.get(query);
-        } catch (apiErr) {
-          if (!doctorPublicId) {
-            const storedDocs = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
-            const matchDoc = storedDocs.find(d =>
-              (d.serviceId === servicePublicId || d.service?.publicId === servicePublicId) && d.isAvailable !== false
-            );
-            if (matchDoc) {
-              const fallbackDocId = matchDoc.publicId || matchDoc.id;
-              res = await Api.get(`${query}&doctorPublicId=${encodeURIComponent(fallbackDocId)}`);
-            } else {
-              throw apiErr;
-            }
-          } else {
-            throw apiErr;
-          }
-        }
-
-        const slotData = res?.data?.slots || (Array.isArray(res?.data) ? res.data : []);
-        if (Array.isArray(slotData) && slotData.length > 0) {
-          return slotData.map(s => {
-            const rawTime = s.startTime || s.time || '';
-            const formattedTime = Utils.formatTime(rawTime);
-            const isFull = s.status === 'fully_booked' || s.status === 'booked' || s.full === true;
-            return {
-              time: formattedTime,
-              startTime: rawTime,
-              endTime: s.endTime || '',
-              date: s.date || date,
-              status: s.status || (isFull ? 'fully_booked' : 'available'),
-              full: isFull,
-              doctor: {
-                id: s.doctor?.publicId || s.doctor?.id || doctorPublicId,
-                publicId: s.doctor?.publicId || s.doctor?.id || doctorPublicId,
-                name: s.doctor?.name || 'Assigned Physician'
-              }
-            };
-          });
-        }
-      } catch (err) {
-        console.warn('[Care-OAU] Slots API notice, falling back:', err.message);
-      }
+    if (doctorPublicId) {
+      query += `&doctorPublicId=${encodeURIComponent(doctorPublicId)}`;
     }
 
-    return availableSlots(servicePublicId, doctorPublicId, date);
+    const res = await Api.get(query);
+    const slotData = res?.data?.slots ?? (Array.isArray(res?.data) ? res.data : []);
+
+    if (!Array.isArray(slotData)) {
+      throw new Error('Invalid availability response from server.');
+    }
+
+    return slotData.map(s => {
+      const rawTime = s.startTime || s.time || '';
+      const isFull = s.status === 'fully_booked' || s.status === 'booked' || s.full === true;
+
+      return {
+        time: Utils.formatTime(rawTime),
+        startTime: rawTime,
+        endTime: s.endTime || '',
+        date: s.date || date,
+        status: s.status || (isFull ? 'fully_booked' : 'available'),
+        full: isFull,
+        doctor: {
+          id: s.doctor?.publicId || s.doctor?.id || doctorPublicId,
+          publicId: s.doctor?.publicId || s.doctor?.id || doctorPublicId,
+          name: s.doctor?.name || 'Assigned Physician'
+        }
+      };
+    });
   },
 
   /**

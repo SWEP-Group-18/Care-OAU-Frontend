@@ -168,26 +168,21 @@ async function renderTimeSlots() {
       doctorPublicId: docId
     });
   } catch (err) {
-    console.warn('[BookAppointment] Error fetching slots:', err);
-    slots = availableSlots(srvId, docId, selectedDateStr);
+    console.error('[BookAppointment] Error fetching slots:', err);
+
+    container.innerHTML = `
+      <p class="capacity-guidance" style="grid-column: 1 / -1; padding: var(--space-4); text-align: center;">
+        Unable to load available times. Please try again.
+      </p>
+    `;
+
+    selectedTimeStr = '';
+    updateSummary();
+    return;
   }
 
-  // Doctor allocated hours restriction:
-  // If a specific doctor is selected, strictly filter slots to that doctor's working schedule (e.g. 10am - 2pm)
-  if (selectedDoctorObj && !isEarliestDoctor) {
-    const docStart = selectedDoctorObj.startTime || selectedDoctorObj.schedule?.startTime || selectedDoctorObj.rawStartTime;
-    const docEnd = selectedDoctorObj.endTime || selectedDoctorObj.schedule?.endTime || selectedDoctorObj.rawEndTime;
-    const docStartMin = minutes(docStart);
-    const docEndMin = minutes(docEnd);
-
-    if (Number.isFinite(docStartMin) && Number.isFinite(docEndMin) && docEndMin > docStartMin) {
-      slots = (slots || []).filter(s => {
-        const slotMin = minutes(s.startTime || s.time);
-        return Number.isFinite(slotMin) && slotMin >= docStartMin && (slotMin + 30) <= docEndMin;
-      });
-    }
-
-    if (!Array.isArray(slots) || slots.length === 0) {
+  if (!Array.isArray(slots) || slots.length === 0) {
+    if (selectedDoctorObj && !isEarliestDoctor) {
       const docName = selectedDoctorObj.name || 'this physician';
       container.innerHTML = `
         <p class="capacity-guidance" style="grid-column: 1 / -1; padding: var(--space-4); text-align: center;">
@@ -195,19 +190,14 @@ async function renderTimeSlots() {
           Please choose another date or select <strong>Earliest available doctor</strong>.
         </p>
       `;
-      selectedTimeStr = '';
-      updateSummary();
-      return;
+    } else {
+      container.innerHTML = `
+        <p class="capacity-guidance" style="grid-column: 1 / -1; padding: var(--space-4); text-align: center;">
+          No available times on this date. Choose another date or doctor.
+        </p>
+      `;
     }
-  }
 
-  // If Earliest doctor is selected and slots is empty, calculate local availableSlots fallback
-  if (isEarliestDoctor && (!Array.isArray(slots) || slots.length === 0)) {
-    slots = availableSlots(srvId, null, selectedDateStr);
-  }
-
-  if (!Array.isArray(slots) || slots.length === 0) {
-    container.innerHTML = '<p class="capacity-guidance" style="grid-column: 1 / -1; padding: var(--space-4); text-align: center;">No available times on this date. Choose another date or doctor.</p>';
     selectedTimeStr = '';
     updateSummary();
     return;
@@ -674,12 +664,12 @@ function updateSummary() {
   }
 }
 
-async function autoSelectSlotForStep3({prepareOnly = false} = {}) {
+async function autoSelectSlotForStep3({ prepareOnly = false } = {}) {
   const srvId = selectedServiceObj?.publicId || selectedServiceObj?.id;
   if (!srvId || !hasServiceDoctors) return;
 
   if (isEarliestDoctor) {
-    // 1. Try backend earliest-slot API if not in mock mode
+    // 1. Try the backend earliest-slot API
     if (!APP_CONFIG.USE_MOCK_DATA) {
       try {
         const res = await MedicalService.getEarliestSlot(srvId);
@@ -688,27 +678,15 @@ async function autoSelectSlotForStep3({prepareOnly = false} = {}) {
 
         const data = res?.data || res;
         const appointment = data?.appointment;
+
         if (appointment && appointment.date && appointment.startTime) {
           const rawDate = String(appointment.date).slice(0, 10);
           const formattedTime = Utils.formatTime(appointment.startTime);
+
           if (rawDate >= localDate()) {
             selectedDateStr = rawDate;
             selectedTimeStr = formattedTime;
-
-            const docData = appointment.doctor;
-            if (docData) {
-              const storedDocs = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
-              const match = (storedDocs || []).find(d =>
-                (docData.publicId && (d.publicId === docData.publicId || d.id === docData.publicId)) ||
-                (docData.name && d.name === docData.name)
-              );
-              earliestMatchedDoctor = match || {
-                id: docData.publicId || 'doc_assigned',
-                publicId: docData.publicId || 'doc_assigned',
-                name: docData.name || 'Assigned On-duty Physician',
-                specialization: selectedServiceObj?.name || 'General Practitioner'
-              };
-            }
+            earliestMatchedDoctor = appointment.doctor || null;
 
             if (!prepareOnly) {
               initDates(selectedDateStr);
@@ -720,49 +698,48 @@ async function autoSelectSlotForStep3({prepareOnly = false} = {}) {
           }
         }
       } catch (err) {
-        console.warn('[BookAppointment] Earliest slot API notice:', err.message);
+        console.warn(
+          '[BookAppointment] Earliest slot API notice:',
+          err?.message || String(err)
+        );
       }
     }
 
-    // 2. Scan forward from today for up to 30 days to locate the first free slot
+    // 2. Scan forward using backend availability
     const today = new Date();
+
     for (let offset = 0; offset < 30; offset++) {
       const d = new Date(today);
       d.setDate(d.getDate() + offset);
       const dateStr = localDate(d);
+
       let daySlots = [];
+
       try {
         daySlots = await AppointmentService.getAvailableSlots({
           servicePublicId: srvId,
           date: dateStr,
           doctorPublicId: null
         });
-      } catch {
-        daySlots = availableSlots(srvId, null, dateStr);
+      } catch (err) {
+        console.warn(
+          '[BookAppointment] Unable to check earliest slots:',
+          err?.message || String(err)
+        );
+        break;
       }
 
       const currentServiceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
       if (String(currentServiceId) !== String(srvId)) return;
 
-      const freeSlot = (daySlots || []).find(s => !s.full && s.status !== 'fully_booked');
+      const freeSlot = Array.isArray(daySlots)
+        ? daySlots.find(s => !s.full && s.status !== 'fully_booked')
+        : null;
+
       if (freeSlot) {
         selectedDateStr = dateStr;
         selectedTimeStr = freeSlot.time;
-        const docData = freeSlot.doctor;
-        if (docData) {
-          const storedDocs = Storage.get(APP_CONFIG.STORAGE_KEYS.DOCTORS, []);
-          const match = (storedDocs || []).find(d =>
-            (docData.publicId && (d.publicId === docData.publicId || d.id === docData.publicId)) ||
-            (docData.id && (d.id === docData.id || d.publicId === docData.id)) ||
-            (docData.name && d.name === docData.name)
-          );
-          earliestMatchedDoctor = match || {
-            id: docData.publicId || docData.id || 'doc_assigned',
-            publicId: docData.publicId || docData.id || 'doc_assigned',
-            name: docData.name || 'Assigned On-duty Physician',
-            specialization: selectedServiceObj?.name || 'General Practitioner'
-          };
-        }
+        earliestMatchedDoctor = freeSlot.doctor || null;
 
         if (!prepareOnly) {
           initDates(selectedDateStr);
@@ -774,7 +751,6 @@ async function autoSelectSlotForStep3({prepareOnly = false} = {}) {
       }
     }
 
-    // Fallback: render current date slots
     if (!prepareOnly) {
       await renderTimeSlots();
     }
@@ -785,37 +761,45 @@ async function autoSelectSlotForStep3({prepareOnly = false} = {}) {
   // A specific doctor is selected:
   if (selectedDoctorObj) {
     const docId = selectedDoctorObj.publicId || selectedDoctorObj.id;
-    const docStart = selectedDoctorObj.startTime || selectedDoctorObj.schedule?.startTime || selectedDoctorObj.rawStartTime;
-    const docEnd = selectedDoctorObj.endTime || selectedDoctorObj.schedule?.endTime || selectedDoctorObj.rawEndTime;
-    const docStartMin = minutes(docStart);
-    const docEndMin = minutes(docEnd);
 
-    // Check if the current selected date has free slots for this doctor
+    // Check the current selected date first
     let currentSlots = [];
+
     try {
       currentSlots = await AppointmentService.getAvailableSlots({
         servicePublicId: srvId,
         date: selectedDateStr,
         doctorPublicId: docId
       });
-    } catch {
-      currentSlots = availableSlots(srvId, docId, selectedDateStr);
+    } catch (err) {
+      console.warn(
+        '[BookAppointment] Unable to check doctor slots:',
+        err?.message || String(err)
+      );
+
+      if (!prepareOnly) await renderTimeSlots();
+      return;
     }
-    if (Number.isFinite(docStartMin) && Number.isFinite(docEndMin) && docEndMin > docStartMin) {
-      currentSlots = (currentSlots || []).filter(s => {
-        const m = minutes(s.startTime || s.time);
-        return Number.isFinite(m) && m >= docStartMin && (m + 30) <= docEndMin;
-      });
-    }
-    const currentFree = (currentSlots || []).find(s => !s.full && s.status !== 'fully_booked');
+
+    const currentServiceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
+    if (String(currentServiceId) !== String(srvId)) return;
+
+    const currentFree = Array.isArray(currentSlots)
+      ? currentSlots.find(s => !s.full && s.status !== 'fully_booked')
+      : null;
+
     if (currentFree) {
       selectedTimeStr = currentFree.time;
-      await renderTimeSlots();
+
+      if (!prepareOnly) {
+        await renderTimeSlots();
+      }
+
       updateSummary();
       return;
     }
 
-    // Otherwise scan ahead up to 14 days for doctor's next free date
+    // Otherwise scan ahead up to 14 days for the doctor's next free date
     const today = new Date();
     for (let offset = 0; offset < 14; offset++) {
       const d = new Date(today);
@@ -830,26 +814,37 @@ async function autoSelectSlotForStep3({prepareOnly = false} = {}) {
           date: dateStr,
           doctorPublicId: docId
         });
-      } catch {
-        daySlots = availableSlots(srvId, docId, dateStr);
+      } catch (err) {
+        console.warn(
+          '[BookAppointment] Unable to check doctor next available date:',
+          err?.message || String(err)
+        );
+        break;
       }
-      if (Number.isFinite(docStartMin) && Number.isFinite(docEndMin) && docEndMin > docStartMin) {
-        daySlots = (daySlots || []).filter(s => {
-          const m = minutes(s.startTime || s.time);
-          return Number.isFinite(m) && m >= docStartMin && (m + 30) <= docEndMin;
-        });
-      }
-      const free = (daySlots || []).find(s => !s.full && s.status !== 'fully_booked');
+
+      const currentServiceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
+      if (String(currentServiceId) !== String(srvId)) return;
+
+      const free = Array.isArray(daySlots)
+        ? daySlots.find(s => !s.full && s.status !== 'fully_booked')
+        : null;
+
       if (free) {
         initDates(dateStr);
         selectedTimeStr = free.time;
-        await renderTimeSlots();
+
+        if (!prepareOnly) {
+          await renderTimeSlots();
+        }
+
         updateSummary();
         return;
       }
     }
 
-    await renderTimeSlots();
+    if (!prepareOnly) {
+      await renderTimeSlots();
+    }
   }
 }
 
