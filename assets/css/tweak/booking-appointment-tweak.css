@@ -82,3 +82,25 @@
 .slot-legend {
     margin: 16px 0;
 }
+
+/* Doctor Avatar */
+.doctor-avatar.small {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    flex: 0 0 42px;
+
+    display: grid;
+    place-items: center;
+
+    box-sizing: border-box;
+    border-radius: 12px;
+
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.3px;
+
+    color: #102A44;
+    background: #E8F0F7;
+}
