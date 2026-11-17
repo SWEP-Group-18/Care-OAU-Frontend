@@ -104,3 +104,13 @@
     color: #102A44;
     background: #E8F0F7;
 }
+
+/* No slots message */
+.time-grid .capacity-guidance {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    display: block;
+    text-align: center;
+}
