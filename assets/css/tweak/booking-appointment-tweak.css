@@ -1,0 +1,84 @@
+/* Prevent hover effects on selected time slots */
+#time-grid-container button.selected:hover {
+    background: var(--color-info-text) !important;
+    color: #FFFFFF !important;
+    cursor: pointer;
+}
+
+/* Doctor Capacity Guidance */
+.capacity-guidance {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    padding: 13px 15px;
+
+    background: #F8FAFD;
+    /* border: 1px solid #E2E8F0; */
+    border-radius: 10px;
+
+    color: #475569;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.capacity-guidance svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 0;
+    padding: 3px;
+
+    color: #102A44;
+    border-radius: 50%;
+    box-sizing: content-box;
+}
+
+/* Selected Doctor / Service */
+.choice-card.selected,
+.choice-card.selected:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-primary-subtle);
+    box-shadow: 0 4px 14px rgba(11, 36, 89, 0.12), var(--clay-inset-light);
+}
+
+/* Hover - Unselected Options */
+.choice-card:hover:not(:disabled):not(.selected) {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-muted);
+    box-shadow: var(--clay-shadow-soft), var(--clay-inset-light);
+}
+
+/* Choice Radio */
+.choice-radio {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    border: 1.5px solid var(--color-border-strong);
+    border-radius: 50%;
+    box-sizing: border-box;
+}
+
+.choice-card.selected .choice-radio {
+    border-color: var(--color-primary);
+}
+
+.choice-radio span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 9px;
+    height: 9px;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--color-primary);
+    transform: translate(-50%, -50%);
+}
+
+/* Add spaces Time Slot Legend */
+.slot-legend {
+    margin: 16px 0;
+}

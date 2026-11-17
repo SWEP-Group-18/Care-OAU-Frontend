@@ -521,7 +521,7 @@ async function initDoctors() {
 				<line x1="12" y1="8" x2="12" y2="12"></line>
 				<line x1="12" y1="16" x2="12.01" y2="16"></line>
 			</svg>
-			<span>When preferred physicians reach capacity, choose the earliest available doctor or select their next available date.</span>
+			<span>No slots with your preferred doctor? Try the earliest available doctor or another date.</span>
 		</div>
 	`;
 
