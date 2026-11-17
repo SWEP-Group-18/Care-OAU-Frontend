@@ -114,3 +114,206 @@
     display: block;
     text-align: center;
 }
+
+/* Review Student Identity */
+.review-person {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 13px;
+    padding: 18px 20px;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+.review-person .avatar {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: #E8F0F7;
+    color: #102A44;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+.review-person > .review-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 5px;
+}
+
+.review-person strong {
+    color: #102A44;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.review-person small {
+    color: #64748B;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.student-label {
+    justify-self: end;
+    align-self: center;
+    transform: translateY(0);
+
+    padding: 4px 9px;
+    background: #E8EEF5;
+    color: #254568;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+/* Review Appointment Details */
+.review-row {
+    display: grid;
+    grid-template-columns: 115px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 18px;
+    padding: 16px 20px;
+}
+
+/* Vertically Align Review Row Content */
+.review-row > * {
+    align-self: center;
+    line-height: 1.4;
+}
+
+.review-row > strong {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.review-row > button {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.review-row > strong {
+    min-width: 0;
+    text-align: left;
+    margin-left: 12px;
+    font-weight: 500;
+}
+
+.review-row > button {
+    justify-self: end;
+    margin-left: 12px;
+    white-space: nowrap;
+}
+
+/* Review Doctor Icon Alignment */
+.review-row > svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    align-self: center;
+    margin: 0;
+    vertical-align: middle;
+}
+
+/* Booking Agreement Spacing */
+.agreement {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* Submit Appointment Button */
+#btn-submit-appointment {
+    margin-top: 16px;
+}
+
+/* Booking Reason */
+#booking-reason {
+    width: 100%;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 12px 14px;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    border-radius: 10px;
+    background: #F8FAFC;
+    color: #102A44;
+    resize: vertical;
+}
+
+#booking-reason::placeholder {
+    font-size: 12px;
+    color: #94A3B8;
+    opacity: 1;
+}
+
+#booking-reason:focus {
+    border: none;
+    outline: none;
+    box-shadow: none;
+}
+
+/* Earliest Available Recommendation */
+/* Earliest Available Recommendation */
+.earliest-match-banner {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+
+    background: #F1F5F9;
+    border: 1px solid #DCE5EF;
+    border-radius: 9px;
+}
+
+.earliest-match-banner > svg {
+    display: block;
+    flex: 0 0 17px;
+    width: 17px;
+    height: 17px;
+    margin: 0;
+    color: #254568;
+}
+
+.earliest-match-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.earliest-match-content strong {
+    display: block;
+    margin-bottom: 3px;
+    color: #102A44;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.earliest-match-content p {
+    margin: 0;
+    color: #64748B;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+/* Completed Booking Steps — Green Theme */
+.stepper > div.done > span {
+    background: #C8F5D8 !important;
+    border: none !important;
+    color: #05482F !important;
+    box-shadow: none !important;
+}
+
+.stepper > div.done > span svg {
+    stroke: #05482F !important;
+}
+
+.stepper > div.done > strong {
+    color: #065F3C !important;
+}

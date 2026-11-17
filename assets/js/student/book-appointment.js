@@ -630,7 +630,12 @@ function updateSummary() {
   if (reviewDoc) reviewDoc.textContent = displayDocName;
   if (reviewDt && hasServiceDoctors && selectedDateStr && selectedTimeStr) {
     const d = new Date(selectedDateStr + 'T12:00:00');
-    const shortDay = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+    const shortDay = d.toLocaleDateString('en-GB', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
     reviewDt.textContent = `${shortDay} · ${selectedTimeStr}`;
   } else if (reviewDt) {
     reviewDt.textContent = '—';
@@ -638,18 +643,16 @@ function updateSummary() {
 
   // Update recommended earliest match callout banner in Step 4
   const banner = document.getElementById('earliest-match-banner');
-  const bannerText = document.getElementById('earliest-match-text');
+
   if (banner) {
-    if (hasServiceDoctors && isEarliestDoctor && earliestMatchedDoctor && selectedDateStr && selectedTimeStr) {
-      banner.style.display = 'flex';
-      const d = new Date(selectedDateStr + 'T12:00:00');
-      const dateText = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-      if (bannerText) {
-        bannerText.innerHTML = `We matched you with <strong>${Utils.escapeHtml(earliestMatchedDoctor.name)}</strong> for the earliest available consultation on <strong>${dateText}</strong> at <strong>${selectedTimeStr}</strong>. If this time works for you, submit your request below. If you prefer another date or time, click <em>Edit</em> next to Date &amp; time or click <em>Back</em> to change.`;
-      }
-    } else {
-      banner.style.display = 'none';
-    }
+    const shouldShowBanner =
+      hasServiceDoctors &&
+      isEarliestDoctor &&
+      earliestMatchedDoctor &&
+      selectedDateStr &&
+      selectedTimeStr;
+
+    banner.style.display = shouldShowBanner ? 'flex' : 'none';
   }
 
   if (user) {
