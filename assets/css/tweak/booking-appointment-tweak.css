@@ -326,3 +326,35 @@
 .review-row button[hidden] {
     display: none !important;
 }
+
+/* Pending Approval badge - confirmation ticket */
+.confirmation-ticket .badge-warning {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 80px;
+    padding: 8px 50px;
+    color: var(--color-warning-text);
+    box-sizing: border-box;
+    border-radius: 5px;
+    border: none;
+    white-space: nowrap;
+    gap: 6px;
+    font-size: 14px;
+}
+
+.confirmation-ticket .badge-warning .badge-dot {
+    background-color: var(--color-warning-text);
+}
+
+/* Success Checkmark — Match Completed Booking Steps */
+.success-check {
+    background: #C8F5D8 !important;
+    color: #05482F !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.success-check svg {
+    stroke: #05482F !important;
+}
