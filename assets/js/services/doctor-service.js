@@ -62,7 +62,7 @@ export function fromBackendDoctor(raw) {
   const startTime = schedule.startTime || item.startTime || item.workingHours?.start || '08:00:00';
   const endTime = schedule.endTime || item.endTime || item.workingHours?.end || '16:00:00';
   const dailyCapacity = Number(schedule.dailyPatientLimit || item.dailyCapacity || item.appointmentSlots?.total || 25);
-  const room = schedule.consultingRoom || item.consultingRoom || item.room || 'Consulting Room 1';
+  const room = schedule.consultingRoom || item.consultingRoom || item.location || item.room || '';
 
   return {
     id: publicId,
@@ -81,6 +81,7 @@ export function fromBackendDoctor(raw) {
     dailyCapacity,
     room,
     consultingRoom: room,
+    location: room,
     status: rawStatus,
     isAvailable,
     currentLoad: item.currentLoad || 0,

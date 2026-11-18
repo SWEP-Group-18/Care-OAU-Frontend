@@ -647,14 +647,25 @@ function updateSummary() {
 
 	const displayTime = selectedTimeStr || 'Not selected';
 
+	const assignedDoctor = isEarliestDoctor
+		? earliestMatchedDoctor
+		: selectedDoctorObj;
+
+	const displayLocation = assignedDoctor?.location ||
+		assignedDoctor?.consultingRoom ||
+		assignedDoctor?.room ||
+		'Location not assigned';
+
 	const serviceEl = document.getElementById('review-service');
 	const doctorEl = document.getElementById('review-doctor');
 	const dateTimeEl = document.getElementById('review-datetime');
+	const locationEl = document.getElementById('review-location');
 
 	const summaryServiceEl = document.getElementById('summary-service');
 	const summaryDoctorEl = document.getElementById('summary-doctor');
 	const summaryDateEl = document.getElementById('summary-date');
 	const summaryTimeEl = document.getElementById('summary-time');
+	const summaryLocationEl = document.getElementById('summary-location');
 
 	// Update Step 4 review details
 	if (serviceEl) {
@@ -669,6 +680,10 @@ function updateSummary() {
 		dateTimeEl.textContent = selectedDateStr && selectedTimeStr
 			? `${displayDate} · ${displayTime}`
 			: 'Not selected';
+	}
+
+	if (locationEl) {
+		locationEl.textContent = displayLocation;
 	}
 
 	// Update right-side booking summary
@@ -690,6 +705,12 @@ function updateSummary() {
 
 	if (summaryTimeEl) {
 		summaryTimeEl.textContent = selectedTimeStr || '—';
+	}
+
+	if (summaryLocationEl) {
+		summaryLocationEl.textContent = currentStep === 1
+			? '—'
+			: displayLocation;
 	}
 
 	// Hide doctor and date/time editing when using automatic doctor assignment
@@ -1166,63 +1187,117 @@ function goToStep(step) {
 }
 
 async function submitAppointmentRequest() {
-  const agreement = document.getElementById('booking-agreement');
-  if (agreement && !agreement.checked) {
-    Toast.warning('Please confirm the appointment scheduling acknowledgment.');
-    return;
-  }
+	const agreement = document.getElementById('booking-agreement');
 
-  const btnNext = document.getElementById('btn-booking-next');
-  if (btnNext) {
-    btnNext.disabled = true;
-    btnNext.textContent = 'Submitting request…';
-  }
+	if (agreement && !agreement.checked) {
+		Toast.warning('Please confirm the appointment scheduling acknowledgment.');
+		return;
+	}
 
-  try {
-    const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
-    const srvId = selectedServiceObj.publicId || selectedServiceObj.id;
-    const assignedDoc = isEarliestDoctor ? (earliestMatchedDoctor || selectedDoctorObj) : selectedDoctorObj;
-    const docId = assignedDoc?.publicId || assignedDoc?.id || null;
-    const docName = assignedDoc?.name || (isEarliestDoctor ? 'Earliest Available' : 'Doctor');
-    const result = await AppointmentService.createAppointment({
-      studentId: user?.id,
-      studentName: user?.name,
-      matricNo: user?.matricNo,
-      phone: user?.phone,
-      serviceId: srvId,
-      serviceName: selectedServiceObj.name,
-      doctorId: docId,
-      doctorName: docName,
-      appointmentDate: selectedDateStr,
-      timeSlot: selectedTimeStr,
-      reason: document.getElementById('booking-reason')?.value.trim() || 'General consultation',
-      referralCode: document.getElementById('referral-code')?.value.trim()
-    });
-    if (!result.success) { Toast.warning(result.message); renderTimeSlots(); return; }
-    const { referenceNo: refCode, serviceName, doctorName } = result.appointment;
-    const formattedDate = new Date(selectedDateStr + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    // Populate Confirmation Ticket
-    const ticketRef = document.getElementById('ticket-reference');
-    const ticketSrv = document.getElementById('ticket-service');
-    const ticketDoc = document.getElementById('ticket-doctor');
-    const ticketDate = document.getElementById('ticket-date');
-    const ticketTime = document.getElementById('ticket-time');
+	if (!selectedServiceObj || !selectedDateStr || !selectedTimeStr) {
+		Toast.warning('Please complete all required appointment details.');
+		return;
+	}
 
-    if (ticketRef) ticketRef.textContent = refCode;
-    if (ticketSrv) ticketSrv.textContent = serviceName;
-    if (ticketDoc) ticketDoc.textContent = doctorName || docName;
-    if (ticketDate) ticketDate.textContent = formattedDate;
-    if (ticketTime) ticketTime.textContent = selectedTimeStr;
+	const assignedDoc = isEarliestDoctor
+		? (earliestMatchedDoctor || selectedDoctorObj)
+		: selectedDoctorObj;
 
-    // Transition view
-    const flowView = document.getElementById('booking-flow-view');
-    const successView = document.getElementById('booking-success-view');
+	if (!assignedDoc || !(assignedDoc.publicId || assignedDoc.id)) {
+		Toast.warning('No doctor has been assigned to this appointment.');
+		return;
+	}
 
-    if (flowView) flowView.classList.add('hidden');
-    if (successView) successView.classList.remove('hidden');
+	const btnNext = document.getElementById('btn-booking-next');
 
-    Toast.success('Appointment request submitted! Awaiting staff review.');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } catch (error) { Toast.error('Unable to save your appointment. Please try again.'); console.error(error); }
-  finally { btnNext.disabled = false; btnNext.textContent = 'Submit Appointment Request'; }
+	if (btnNext?.disabled) return;
+
+	if (btnNext) {
+		btnNext.disabled = true;
+		btnNext.textContent = 'Submitting request…';
+	}
+
+	try {
+		const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
+		const srvId = selectedServiceObj.publicId || selectedServiceObj.id;
+		const docId = assignedDoc.publicId || assignedDoc.id;
+		const docName = assignedDoc.name || 'Doctor';
+
+		const doctorLocation =
+			assignedDoc.location ||
+			assignedDoc.consultingRoom ||
+			assignedDoc.room ||
+			assignedDoc.schedule?.consultingRoom ||
+			'Location not assigned';
+
+		const result = await AppointmentService.createAppointment({
+			studentId: user?.id,
+			studentName: user?.name,
+			matricNo: user?.matricNo,
+			phone: user?.phone,
+			serviceId: srvId,
+			serviceName: selectedServiceObj.name,
+			doctorId: docId,
+			doctorName: docName,
+			appointmentDate: selectedDateStr,
+			timeSlot: selectedTimeStr,
+			reason: document.getElementById('booking-reason')?.value.trim() || 'General consultation',
+			referralCode: document.getElementById('referral-code')?.value.trim()
+		});
+
+		if (!result.success) {
+			Toast.warning(result.message || 'Unable to submit your appointment request.');
+			await renderTimeSlots();
+			return;
+		}
+
+		const {
+			referenceNo: refCode,
+			serviceName,
+			doctorName: confirmedDoctorName
+		} = result.appointment;
+
+		const formattedDate = new Date(selectedDateStr + 'T12:00:00')
+			.toLocaleDateString('en-GB', {
+				weekday: 'long',
+				day: 'numeric',
+				month: 'long',
+				year: 'numeric'
+			});
+
+		// Populate Confirmation Ticket
+		const ticketRef = document.getElementById('ticket-reference');
+		const ticketSrv = document.getElementById('ticket-service');
+		const ticketDoc = document.getElementById('ticket-doctor');
+		const ticketDate = document.getElementById('ticket-date');
+		const ticketTime = document.getElementById('ticket-time');
+		const ticketLocation = document.getElementById('ticket-location');
+
+		if (ticketRef) ticketRef.textContent = refCode || '—';
+		if (ticketSrv) ticketSrv.textContent = serviceName || selectedServiceObj.name;
+		if (ticketDoc) ticketDoc.textContent = confirmedDoctorName || docName;
+		if (ticketDate) ticketDate.textContent = formattedDate;
+		if (ticketTime) ticketTime.textContent = selectedTimeStr;
+		if (ticketLocation) ticketLocation.textContent = doctorLocation;
+
+		// Transition view
+		const flowView = document.getElementById('booking-flow-view');
+		const successView = document.getElementById('booking-success-view');
+
+		if (flowView) flowView.classList.add('hidden');
+		if (successView) successView.classList.remove('hidden');
+
+		Toast.success('Appointment request submitted! Awaiting staff review.');
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+
+	} catch (error) {
+		console.error('[BookAppointment] Appointment submission failed:', error);
+		Toast.error(error?.message || 'Unable to save your appointment. Please try again.');
+	} finally {
+		if (btnNext) {
+			btnNext.disabled = false;
+			btnNext.textContent = 'Submit Appointment Request';
+		}
+	}
 }
+
