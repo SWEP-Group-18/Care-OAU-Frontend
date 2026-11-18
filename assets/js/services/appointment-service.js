@@ -135,8 +135,14 @@ export const AppointmentService = {
       query += `&doctorPublicId=${encodeURIComponent(doctorPublicId)}`;
     }
 
+    if (!doctorPublicId) {
+      throw new Error('Doctor public ID is required to fetch appointment slots.');
+    }
+
     const res = await Api.get(query);
-    const slotData = res?.data?.slots ?? (Array.isArray(res?.data) ? res.data : []);
+
+    const payload = res?.data?.data ?? res?.data ?? res;
+    const slotData = payload?.slots ?? (Array.isArray(payload) ? payload : null);
 
     if (!Array.isArray(slotData)) {
       throw new Error('Invalid availability response from server.');
@@ -144,7 +150,14 @@ export const AppointmentService = {
 
     return slotData.map(s => {
       const rawTime = s.startTime || s.time || '';
-      const isFull = s.status === 'fully_booked' || s.status === 'booked' || s.full === true;
+      const isFull = ['fully_booked', 'booked'].includes(s.status) || s.full === true;
+
+      const doctorId =
+        s.doctor?.publicId ||
+        s.doctorPublicId ||
+        s.doctor?.id ||
+        doctorPublicId ||
+        null;
 
       return {
         time: Utils.formatTime(rawTime),
@@ -154,9 +167,9 @@ export const AppointmentService = {
         status: s.status || (isFull ? 'fully_booked' : 'available'),
         full: isFull,
         doctor: {
-          id: s.doctor?.publicId || s.doctor?.id || doctorPublicId,
-          publicId: s.doctor?.publicId || s.doctor?.id || doctorPublicId,
-          name: s.doctor?.name || 'Assigned Physician'
+          id: doctorId,
+          publicId: doctorId,
+          name: s.doctor?.name || s.doctorName || 'Assigned Physician'
         }
       };
     });
@@ -248,9 +261,6 @@ export const AppointmentService = {
           (d.serviceId === servicePublicId || d.serviceId === serviceId || d.service?.publicId === servicePublicId) &&
           (d.isAvailable !== false && d.isActive !== false)
         );
-        if (!docMatch && docs.length > 0) {
-          docMatch = docs.find(d => d.isAvailable !== false && d.isActive !== false) || docs[0];
-        }
         if (docMatch) {
           doctorPublicId = docMatch.publicId || docMatch.id;
           doctorName = docMatch.name;

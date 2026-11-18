@@ -152,7 +152,21 @@ async function renderTimeSlots() {
   if (!container) return;
 
   const srvId = selectedServiceObj?.publicId || selectedServiceObj?.id;
-  const docId = isEarliestDoctor ? null : (selectedDoctorObj?.publicId || selectedDoctorObj?.id);
+  const docId = isEarliestDoctor
+    ? (earliestMatchedDoctor?.publicId || earliestMatchedDoctor?.id)
+    : (selectedDoctorObj?.publicId || selectedDoctorObj?.id);
+
+  if (!docId) {
+    container.innerHTML = `
+      <p class="capacity-guidance" style="grid-column: 1 / -1; padding: var(--space-4); text-align: center;">
+        No available doctor has been assigned yet. Please try again or choose a preferred doctor.
+      </p>
+    `;
+
+    selectedTimeStr = '';
+    updateSummary();
+    return;
+  }
 
   container.innerHTML = `
     <div style="grid-column: 1 / -1; padding: 18px; text-align: center;">
@@ -352,7 +366,6 @@ async function initServices() {
       updateSummary();
 
       await initDoctors();
-      await autoSelectSlotForStep3({ prepareOnly: true });
     });
   });
 
@@ -364,7 +377,6 @@ async function initServices() {
   updateSummary();
 
   await initDoctors();
-  await autoSelectSlotForStep3({ prepareOnly: true });
 }
 
 export function doctorMatchesService(doc, service) {
@@ -533,17 +545,48 @@ async function initDoctors() {
 	const earliestBtn = document.getElementById('choice-earliest-doc');
 
 	if (earliestBtn) {
-		earliestBtn.addEventListener('click', () => {
+		earliestBtn.addEventListener('click', async () => {
+			// Reset the previous appointment selection
 			isEarliestDoctor = true;
 			selectedDoctorObj = null;
+			earliestMatchedDoctor = null;
+			selectedDateStr = '';
+			selectedTimeStr = '';
 			skippedStep3 = false;
+
+			// Prevent duplicate requests while checking availability
+			container.querySelectorAll('button').forEach((button) => {
+				button.disabled = true;
+			});
+
+			if (btnNext) btnNext.disabled = true;
 
 			refreshDoctorSelectionUI(container);
 			updateSummary();
+
+			try {
+				// Fetch a fresh earliest available appointment
+				await autoSelectSlotForStep3({ prepareOnly: true });
+
+				if (!earliestMatchedDoctor || !selectedDateStr || !selectedTimeStr) {
+					Toast.warning('No available appointment was found. Please try again or choose a preferred doctor.');
+				}
+			} catch (err) {
+				console.error('[BookAppointment] Earliest availability search failed:', err);
+				Toast.error('Unable to find the earliest appointment. Please try again.');
+			} finally {
+				container.querySelectorAll('button').forEach((button) => {
+					button.disabled = false;
+				});
+
+				if (btnNext) btnNext.disabled = !hasServiceDoctors;
+
+				updateSummary();
+			}
 		});
 	}
 
-	// Specific doctor selection listeners
+		// Specific doctor selection listeners
 	container.querySelectorAll('button[data-doctor-id]').forEach((btn) => {
 		btn.addEventListener('click', () => {
 			const docId = btn.dataset.doctorId;
@@ -555,6 +598,9 @@ async function initDoctors() {
 			if (!selectedDoctorObj) return;
 
 			isEarliestDoctor = false;
+			earliestMatchedDoctor = null;
+			selectedDateStr = '';
+			selectedTimeStr = '';
 			skippedStep3 = false;
 
 			refreshDoctorSelectionUI(container);
@@ -591,80 +637,87 @@ function refreshDoctorSelectionUI(container) {
 }
 
 function updateSummary() {
-  const srvEl = document.getElementById('summary-service');
-  const docEl = document.getElementById('summary-doctor');
-  const dateEl = document.getElementById('summary-date');
-  const timeEl = document.getElementById('summary-time');
+	const displayDocName = isEarliestDoctor
+		? (earliestMatchedDoctor?.name || 'Earliest available doctor')
+		: (selectedDoctorObj?.name || 'Not selected');
 
-  const displayDocName = !selectedServiceObj || currentStep === 1 || !hasServiceDoctors
-    ? '—'
-    : (isEarliestDoctor
-      ? (earliestMatchedDoctor?.name || 'Earliest available doctor')
-      : (selectedDoctorObj ? selectedDoctorObj.name : '—'));
+	const displayDate = selectedDateStr
+		? Utils.formatDate(selectedDateStr)
+		: 'Not selected';
 
-  if (srvEl) srvEl.textContent = selectedServiceObj ? selectedServiceObj.name : '—';
-  if (docEl) docEl.textContent = displayDocName;
+	const displayTime = selectedTimeStr || 'Not selected';
 
-  const showAppointmentDetails = hasServiceDoctors && (currentStep >= 3 || (currentStep === 2 && isEarliestDoctor));
+	const serviceEl = document.getElementById('review-service');
+	const doctorEl = document.getElementById('review-doctor');
+	const dateTimeEl = document.getElementById('review-datetime');
 
-  if (dateEl) {
-    if (showAppointmentDetails && selectedDateStr) {
-      const d = new Date(selectedDateStr + 'T12:00:00');
-      dateEl.textContent = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    } else {
-      dateEl.textContent = '—';
-    }
-  }
+	const summaryServiceEl = document.getElementById('summary-service');
+	const summaryDoctorEl = document.getElementById('summary-doctor');
+	const summaryDateEl = document.getElementById('summary-date');
+	const summaryTimeEl = document.getElementById('summary-time');
 
-  if (timeEl) {
-    timeEl.textContent = showAppointmentDetails ? (selectedTimeStr || '—') : '—';
-  }
+	// Update Step 4 review details
+	if (serviceEl) {
+		serviceEl.textContent = selectedServiceObj?.name || 'Not selected';
+	}
 
-  // Also update Step 4 review elements
-  const reviewSrv = document.getElementById('review-service');
-  const reviewDoc = document.getElementById('review-doctor');
-  const reviewDt = document.getElementById('review-datetime');
-  const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
+	if (doctorEl) {
+		doctorEl.textContent = displayDocName;
+	}
 
-  if (reviewSrv) reviewSrv.textContent = selectedServiceObj ? selectedServiceObj.name : '—';
-  if (reviewDoc) reviewDoc.textContent = displayDocName;
-  if (reviewDt && hasServiceDoctors && selectedDateStr && selectedTimeStr) {
-    const d = new Date(selectedDateStr + 'T12:00:00');
-    const shortDay = d.toLocaleDateString('en-GB', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-    reviewDt.textContent = `${shortDay} · ${selectedTimeStr}`;
-  } else if (reviewDt) {
-    reviewDt.textContent = '—';
-  }
+	if (dateTimeEl) {
+		dateTimeEl.textContent = selectedDateStr && selectedTimeStr
+			? `${displayDate} · ${displayTime}`
+			: 'Not selected';
+	}
 
-  // Update recommended earliest match callout banner in Step 4
-  const banner = document.getElementById('earliest-match-banner');
+	// Update right-side booking summary
+	if (summaryServiceEl) {
+		summaryServiceEl.textContent = selectedServiceObj?.name || '—';
+	}
 
-  if (banner) {
-    const shouldShowBanner =
-      hasServiceDoctors &&
-      isEarliestDoctor &&
-      earliestMatchedDoctor &&
-      selectedDateStr &&
-      selectedTimeStr;
+	if (summaryDoctorEl) {
+		summaryDoctorEl.textContent = currentStep === 1
+			? '—'
+			: displayDocName;
+	}
 
-    banner.style.display = shouldShowBanner ? 'flex' : 'none';
-  }
+	if (summaryDateEl) {
+		summaryDateEl.textContent = selectedDateStr
+			? displayDate
+			: '—';
+	}
 
-  if (user) {
-    const patName = document.getElementById('review-patient-name');
-    const patMatric = document.getElementById('review-patient-matric');
-    const patAvatar = document.getElementById('review-avatar');
-    if (patName) patName.textContent = user.name;
-    if (patMatric) patMatric.textContent = user.matricNo || 'Student';
-    if (patAvatar) {
-      patAvatar.textContent = (user.name || 'AY').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
-    }
-  }
+	if (summaryTimeEl) {
+		summaryTimeEl.textContent = selectedTimeStr || '—';
+	}
+
+	// Hide doctor and date/time editing when using automatic doctor assignment
+	const doctorEditButton = document.querySelector('[data-goto-step="2"]');
+	const datetimeEditButton = document.querySelector('[data-goto-step="3"]');
+
+	if (doctorEditButton) {
+		doctorEditButton.hidden = isEarliestDoctor;
+	}
+
+	if (datetimeEditButton) {
+		datetimeEditButton.hidden = isEarliestDoctor;
+	}
+
+	// Keep the earliest availability guidance in sync
+	const earliestBanner = document.getElementById('earliest-match-banner');
+
+	if (earliestBanner) {
+		const shouldShowBanner = (
+			currentStep === 4 &&
+			isEarliestDoctor &&
+			!!earliestMatchedDoctor &&
+			!!selectedDateStr &&
+			!!selectedTimeStr
+		);
+
+		earliestBanner.style.display = shouldShowBanner ? 'flex' : 'none';
+	}
 }
 
 async function autoSelectSlotForStep3({ prepareOnly = false } = {}) {
@@ -672,24 +725,29 @@ async function autoSelectSlotForStep3({ prepareOnly = false } = {}) {
   if (!srvId || !hasServiceDoctors) return;
 
   if (isEarliestDoctor) {
-    // 1. Try the backend earliest-slot API
+    // 1. Try the backend earliest-slot API first
     if (!APP_CONFIG.USE_MOCK_DATA) {
       try {
         const res = await MedicalService.getEarliestSlot(srvId);
         const currentServiceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
+
         if (String(currentServiceId) !== String(srvId)) return;
 
         const data = res?.data || res;
         const appointment = data?.appointment;
 
-        if (appointment && appointment.date && appointment.startTime) {
+        if (
+          appointment?.date &&
+          appointment?.startTime &&
+          appointment?.doctor?.publicId
+        ) {
           const rawDate = String(appointment.date).slice(0, 10);
           const formattedTime = Utils.formatTime(appointment.startTime);
 
           if (rawDate >= localDate()) {
             selectedDateStr = rawDate;
             selectedTimeStr = formattedTime;
-            earliestMatchedDoctor = appointment.doctor || null;
+            earliestMatchedDoctor = appointment.doctor;
 
             if (!prepareOnly) {
               initDates(selectedDateStr);
@@ -708,41 +766,98 @@ async function autoSelectSlotForStep3({ prepareOnly = false } = {}) {
       }
     }
 
-    // 2. Scan forward using backend availability
+    // 2. Load doctors assigned to the selected service
+    let doctors = [];
+
+    try {
+      const rawDoctors = await MedicalService.getServiceDoctors(srvId);
+
+      doctors = (Array.isArray(rawDoctors) ? rawDoctors : [])
+        .map(fromBackendDoctor)
+        .filter((doctor) => doctor && (doctor.publicId || doctor.id));
+
+    } catch (err) {
+      console.warn(
+        '[BookAppointment] Unable to load doctors for earliest availability:',
+        err?.message || String(err)
+      );
+      return;
+    }
+
+    const currentServiceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
+    if (String(currentServiceId) !== String(srvId)) return;
+
+    if (doctors.length === 0) {
+      earliestMatchedDoctor = null;
+      selectedDateStr = '';
+      selectedTimeStr = '';
+      updateSummary();
+      return;
+    }
+
+    // 3. Scan forward and check each doctor's availability
     const today = new Date();
 
     for (let offset = 0; offset < 30; offset++) {
       const d = new Date(today);
       d.setDate(d.getDate() + offset);
+
       const dateStr = localDate(d);
+      const availableMatches = [];
 
-      let daySlots = [];
+      for (const doctor of doctors) {
+        const docId = doctor.publicId || doctor.id;
+        if (!docId) continue;
 
-      try {
-        daySlots = await AppointmentService.getAvailableSlots({
-          servicePublicId: srvId,
-          date: dateStr,
-          doctorPublicId: null
-        });
-      } catch (err) {
-        console.warn(
-          '[BookAppointment] Unable to check earliest slots:',
-          err?.message || String(err)
-        );
-        break;
+        let daySlots = [];
+
+        try {
+          daySlots = await AppointmentService.getAvailableSlots({
+            servicePublicId: srvId,
+            date: dateStr,
+            doctorPublicId: docId
+          });
+
+        } catch (err) {
+          console.warn(
+            `[BookAppointment] Unable to check slots for ${doctor.name || docId} on ${dateStr}:`,
+            err?.message || String(err)
+          );
+          continue;
+        }
+
+        const currentServiceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
+        if (String(currentServiceId) !== String(srvId)) return;
+
+        const freeSlot = Array.isArray(daySlots)
+          ? daySlots.find(
+              (slot) =>
+                !slot.full &&
+                slot.status === 'available' &&
+                slot.time
+            )
+          : null;
+
+        if (freeSlot) {
+          availableMatches.push({
+            slot: freeSlot,
+            doctor
+          });
+        }
       }
 
-      const currentServiceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
-      if (String(currentServiceId) !== String(srvId)) return;
+      // Find the earliest time across all doctors for this date
+      if (availableMatches.length > 0) {
+        availableMatches.sort((a, b) =>
+          String(a.slot.startTime || a.slot.time)
+            .localeCompare(String(b.slot.startTime || b.slot.time))
+        );
 
-      const freeSlot = Array.isArray(daySlots)
-        ? daySlots.find(s => !s.full && s.status !== 'fully_booked')
-        : null;
+        const earliestMatch = availableMatches[0];
 
-      if (freeSlot) {
         selectedDateStr = dateStr;
-        selectedTimeStr = freeSlot.time;
-        earliestMatchedDoctor = freeSlot.doctor || null;
+        selectedTimeStr = earliestMatch.slot.time;
+        earliestMatchedDoctor = earliestMatch.doctor;
 
         if (!prepareOnly) {
           initDates(selectedDateStr);
@@ -754,16 +869,23 @@ async function autoSelectSlotForStep3({ prepareOnly = false } = {}) {
       }
     }
 
+    // No available slot was found within the search window
+    earliestMatchedDoctor = null;
+    selectedDateStr = '';
+    selectedTimeStr = '';
+
     if (!prepareOnly) {
       await renderTimeSlots();
     }
 
+    updateSummary();
     return;
   }
 
-  // A specific doctor is selected:
+  // 4. A specific doctor is selected
   if (selectedDoctorObj) {
     const docId = selectedDoctorObj.publicId || selectedDoctorObj.id;
+    if (!docId) return;
 
     // Check the current selected date first
     let currentSlots = [];
@@ -774,6 +896,7 @@ async function autoSelectSlotForStep3({ prepareOnly = false } = {}) {
         date: selectedDateStr,
         doctorPublicId: docId
       });
+
     } catch (err) {
       console.warn(
         '[BookAppointment] Unable to check doctor slots:',
@@ -788,7 +911,9 @@ async function autoSelectSlotForStep3({ prepareOnly = false } = {}) {
     if (String(currentServiceId) !== String(srvId)) return;
 
     const currentFree = Array.isArray(currentSlots)
-      ? currentSlots.find(s => !s.full && s.status !== 'fully_booked')
+      ? currentSlots.find(
+          (slot) => !slot.full && slot.status === 'available'
+        )
       : null;
 
     if (currentFree) {
@@ -802,34 +927,40 @@ async function autoSelectSlotForStep3({ prepareOnly = false } = {}) {
       return;
     }
 
-    // Otherwise scan ahead up to 14 days for the doctor's next free date
+    // Otherwise scan ahead up to 14 days for this doctor's next available date
     const today = new Date();
+
     for (let offset = 0; offset < 14; offset++) {
       const d = new Date(today);
       d.setDate(d.getDate() + offset);
+
       const dateStr = localDate(d);
       if (dateStr === selectedDateStr) continue;
 
       let daySlots = [];
+
       try {
         daySlots = await AppointmentService.getAvailableSlots({
           servicePublicId: srvId,
           date: dateStr,
           doctorPublicId: docId
         });
+
       } catch (err) {
         console.warn(
           '[BookAppointment] Unable to check doctor next available date:',
           err?.message || String(err)
         );
-        break;
+        continue;
       }
 
       const currentServiceId = selectedServiceObj?.publicId || selectedServiceObj?.id;
       if (String(currentServiceId) !== String(srvId)) return;
 
       const free = Array.isArray(daySlots)
-        ? daySlots.find(s => !s.full && s.status !== 'fully_booked')
+        ? daySlots.find(
+            (slot) => !slot.full && slot.status === 'available'
+          )
         : null;
 
       if (free) {
@@ -908,6 +1039,9 @@ function bindNavigationEvents() {
   document.querySelectorAll('[data-goto-step]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const step = parseInt(btn.dataset.gotoStep, 10);
+
+      if (isEarliestDoctor && (step === 2 || step === 3)) return;
+
       if (step >= 1 && step <= 4) {
         if (step !== 4) skippedStep3 = false;
         goToStep(step);
@@ -921,7 +1055,9 @@ function bindNavigationEvents() {
     stepper.querySelectorAll('div[data-step]').forEach((item) => {
       item.addEventListener('click', () => {
         const targetStep = parseInt(item.dataset.step, 10);
+
         if (targetStep < currentStep) {
+          if (isEarliestDoctor && targetStep === 3) return;
           if (targetStep !== 4) skippedStep3 = false;
           goToStep(targetStep);
         }
@@ -931,6 +1067,8 @@ function bindNavigationEvents() {
 }
 
 function goToStep(step) {
+	if (step === 3 && isEarliestDoctor) return;
+
 	currentStep = step;
 
 	if (step === 3) {
@@ -992,6 +1130,37 @@ function goToStep(step) {
 	}
 
 	updateSummary();
+
+	// Automatically find the earliest available doctor when entering Step 2
+	if (
+		currentStep === 2 &&
+		isEarliestDoctor &&
+		hasServiceDoctors &&
+		!earliestMatchedDoctor
+	) {
+		const doctorButtons = document.querySelectorAll('#doctor-choices-container button');
+
+		doctorButtons.forEach((button) => {
+			button.disabled = true;
+		});
+
+		if (btnNext) btnNext.disabled = true;
+
+		autoSelectSlotForStep3({ prepareOnly: true })
+			.catch((error) => {
+				console.error('Failed to find earliest available doctor:', error);
+				Toast.error('Unable to find the earliest available appointment. Please try again.');
+			})
+			.finally(() => {
+				doctorButtons.forEach((button) => {
+					button.disabled = false;
+				});
+
+				if (btnNext) btnNext.disabled = !hasServiceDoctors;
+
+				updateSummary();
+			});
+	}
 
 	window.scrollTo({ top: 0, behavior: 'smooth' });
 }

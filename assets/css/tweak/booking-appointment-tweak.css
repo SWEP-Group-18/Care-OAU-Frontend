@@ -317,3 +317,12 @@
 .stepper > div.done > strong {
     color: #065F3C !important;
 }
+
+#review-doctor-edit[hidden],
+#review-datetime-edit[hidden] {
+    display: none !important;
+}
+
+.review-row button[hidden] {
+    display: none !important;
+}
