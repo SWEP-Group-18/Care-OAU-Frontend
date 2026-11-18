@@ -520,7 +520,7 @@ async function initDoctors() {
 				<span class="doctor-avatar small">${Utils.escapeHtml(initials)}</span>
 				<span class="choice-copy">
 					<strong>${Utils.escapeHtml(doc.name || 'Doctor')}</strong>
-					<small>${Utils.escapeHtml(doc.specialization || doc.specialty || 'General Practitioner')}</small>
+					<small>${Utils.escapeHtml(selectedServiceObj?.name || 'Clinical Service')}</small>
 				</span>
 			</button>
 		`;
