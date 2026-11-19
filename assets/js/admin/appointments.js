@@ -313,10 +313,7 @@ function renderAppointmentActions(apt, status) {
       ${primaryAction}
 
       <details class="appointment-actions-menu">
-        <summary aria-label="More appointment actions" title="More actions">
-          &hellip;
-        </summary>
-
+        <summary aria-label="More appointment actions" title="More actions"></summary>
         <div class="appointment-actions-dropdown">
           ${menuActions}
         </div>
@@ -367,12 +364,6 @@ function renderAppointmentCard(apt) {
           <div class="appointment-info-item">
             <span>Time</span>
             <strong>${escape(apt.timeSlot || '--')}</strong>
-
-            ${apt.queueNumber ? `
-              <span class="appointment-queue-ticket">
-                Q-${String(apt.queueNumber).padStart(3, '0')}
-              </span>
-            ` : ''}
           </div>
 
         </div>
@@ -380,9 +371,17 @@ function renderAppointmentCard(apt) {
         <!-- STATUS AND ACTIONS -->
         <div class="appointment-card-right">
 
-          <span class="appointment-status ${statusClass}">
-            ${Utils.getStatusBadge(apt.status)}
-          </span>
+          <div class="appointment-card-status">
+            ${apt.queueNumber ? `
+              <span class="appointment-queue-ticket">
+                Q-${String(apt.queueNumber).padStart(3, '0')}
+              </span>
+            ` : ''}
+
+            <span class="appointment-status ${statusClass}">
+              ${Utils.getStatusBadge(apt.status)}
+            </span>
+          </div>
 
           ${renderAppointmentActions(apt, status)}
 
