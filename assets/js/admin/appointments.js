@@ -111,6 +111,24 @@ function initControls() {
     });
   }
 
+  // Close appointment action menus when clicking outside.
+  document.addEventListener('click', (event) => {
+    document.querySelectorAll('.appointment-actions-menu[open]').forEach(menu => {
+      if (!menu.contains(event.target)) {
+        menu.removeAttribute('open');
+      }
+    });
+  });
+
+  // Close appointment action menus when pressing Escape.
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      document.querySelectorAll('.appointment-actions-menu[open]').forEach(menu => {
+        menu.removeAttribute('open');
+      });
+    }
+  });
+
   // Appointment details modal controls.
   const detailsModal = document.getElementById('appointment-details-modal');
   const closeButton = document.getElementById('appointment-modal-close');
@@ -701,91 +719,60 @@ window.adminIssueReferral = async (id) => {
 
 window.adminViewDetails = async (id) => {
   const appointments = await AppointmentService.getAllAppointments();
-  const apt = appointments.find(item => String(item.id) === String(id));
+  const apt = appointments.find(a => String(a.id) === String(id));
 
   if (!apt) return;
 
-  window.currentAdminAppointment = apt;
+  Modal.confirm({
+    title: `Medical Record - ${Utils.escapeHtml(apt.matricNo || 'N/A')}`,
+    message: `
+      <div style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+        <div style="display: flex; justify-content: space-between;">
+          <span class="text-xs text-muted">Status:</span>
+          <div>${Utils.getStatusBadge(apt.status)}</div>
+        </div>
 
-  const status = getAppointmentStatus(apt.status);
-  const statusClass = getStatusClass(status);
+        <div>
+          <span class="text-xs text-muted">Patient:</span>
+          <div class="text-sm text-bold text-navy">
+            ${Utils.escapeHtml(apt.studentName)} (${Utils.escapeHtml(apt.matricNo)})
+          </div>
+        </div>
 
-  const setText = (elementId, value) => {
-    const element = document.getElementById(elementId);
-    if (element) element.textContent = value || '--';
-  };
+        <div>
+          <span class="text-xs text-muted">Phone:</span>
+          <div class="text-xs">${Utils.escapeHtml(apt.phone || 'N/A')}</div>
+        </div>
 
-  setText('appointment-modal-avatar', getInitials(apt.studentName));
-  setText('appointment-modal-name', apt.studentName);
-  setText('appointment-modal-matric', apt.matricNo);
-  setText('appointment-modal-service', apt.serviceName);
-  setText('appointment-modal-doctor', apt.doctorName || 'Medical Officer');
-  setText('appointment-modal-date', Utils.formatDate(apt.appointmentDate));
-  setText('appointment-modal-time', apt.timeSlot);
-  setText('appointment-modal-location', apt.location || 'Consulting Room');
-  setText(
-    'appointment-modal-queue',
-    apt.queueNumber ? `Q-${String(apt.queueNumber).padStart(3, '0')}` : 'Not checked in'
-  );
-  setText('appointment-modal-symptoms', apt.reason || 'No symptoms or notes provided.');
-  setText('appointment-modal-phone', apt.phone || 'Not provided');
-  setText('appointment-modal-email', apt.email || 'Not provided');
+        <div>
+          <span class="text-xs text-muted">Service & Assigned Doctor:</span>
+          <div class="text-xs text-secondary">
+            ${Utils.escapeHtml(apt.serviceName || 'General Consultation')}
+            &bull;
+            ${Utils.escapeHtml(apt.doctorName || 'Any')}
+          </div>
+        </div>
 
-  // Update the status badge.
-  const statusBadge = document.getElementById('appointment-modal-status');
+        <div>
+          <span class="text-xs text-muted">Symptoms / Triage Notes:</span>
+          <div class="text-xs text-navy" style="background: #F8FAFC; padding: 8px; border-radius: 6px; margin-top: 4px;">
+            ${Utils.escapeHtml(apt.reason || 'None provided')}
+          </div>
+        </div>
 
-  if (statusBadge) {
-    statusBadge.className = `appointment-status ${statusClass}`;
-    statusBadge.textContent = status;
-  }
-
-  // Update the progress tracker.
-  const progressSteps = document.querySelectorAll(
-    '#appointment-progress .progress-step'
-  );
-
-  const progressOrder = ['Pending', 'Approved', 'Checked In', 'Completed'];
-  const currentIndex = progressOrder.indexOf(status);
-
-  progressSteps.forEach((step, index) => {
-    step.classList.remove('completed', 'current');
-
-    if (currentIndex >= 0 && index < currentIndex) {
-      step.classList.add('completed');
-    }
-
-    if (index === currentIndex) {
-      step.classList.add('current');
-    }
+        ${apt.queueNumber ? `
+          <div style="background: var(--color-mint); padding: 8px; border-radius: 6px; text-align: center;">
+            <span class="text-xs text-teal">Queue Ticket:</span>
+            <div style="font-size: 20px; font-weight: 800; color: var(--color-teal);">
+              Q-${String(apt.queueNumber).padStart(3, '0')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `,
+    confirmText: 'Done',
+    confirmClass: 'btn-teal',
+    cancelText: 'Close'
   });
-
-  // Show only actions that apply to the current status.
-  const primaryButton = document.getElementById('appointment-modal-primary-action');
-  const rescheduleButton = document.getElementById('appointment-modal-reschedule');
-  const rejectButton = document.getElementById('appointment-modal-reject');
-
-  if (primaryButton) {
-    const actions = {
-      'Pending': 'Approve Appointment',
-      'Approved': 'Check In Patient',
-      'Checked In': 'Complete Appointment'
-    };
-
-    primaryButton.textContent = actions[status] || '';
-    primaryButton.hidden = !actions[status];
-  }
-
-  if (rescheduleButton) {
-    rescheduleButton.hidden = !['Pending', 'Approved'].includes(status);
-  }
-
-  if (rejectButton) {
-    rejectButton.hidden = status !== 'Pending';
-  }
-
-  const modal = document.getElementById('appointment-details-modal');
-
-  if (modal) {
-    modal.hidden = false;
-  }
 };
+
