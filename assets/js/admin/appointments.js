@@ -208,26 +208,15 @@ function getAppointmentDateLabel(date) {
   const today = Utils.getTodayDateString();
   const dateKey = getAppointmentDateKey(date);
 
-  const tomorrowDate = new Date(`${today}T00:00:00`);
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-
-  const tomorrow = [
-    tomorrowDate.getFullYear(),
-    String(tomorrowDate.getMonth() + 1).padStart(2, '0'),
-    String(tomorrowDate.getDate()).padStart(2, '0')
-  ].join('-');
-
-  const parsedDate = new Date(`${dateKey}T00:00:00`);
-
   if (dateKey === today) {
     return `Today · ${Utils.formatDate(date)}`;
   }
 
-  if (dateKey === tomorrow) {
-    return `Tomorrow · ${Utils.formatDate(date)}`;
-  }
-
-  return Utils.formatDate(date);
+  return new Date(`${dateKey}T00:00:00`).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  });
 }
 
 function getAppointmentTimeValue(time) {
@@ -486,48 +475,94 @@ async function loadAppointments() {
     return;
   }
 
-  // Sort by appointment date first, then appointment time.
-  filtered.sort((a, b) => {
-    const dateA = getAppointmentDateKey(a.appointmentDate);
-    const dateB = getAppointmentDateKey(b.appointmentDate);
+  const today = Utils.getTodayDateString();
 
-    if (dateA !== dateB) {
-      return dateA.localeCompare(dateB);
-    }
-
-    return getAppointmentTimeValue(a.timeSlot) -
-      getAppointmentTimeValue(b.timeSlot);
-  });
-
-  // Group appointments by their actual appointment date.
-  const groups = new Map();
+  // Group appointments by today, upcoming, and past dates.
+  const groups = {
+    today: [],
+    upcoming: new Map(),
+    past: new Map()
+  };
 
   filtered.forEach(apt => {
     const dateKey = getAppointmentDateKey(apt.appointmentDate);
 
-    if (!groups.has(dateKey)) {
-      groups.set(dateKey, []);
+    if (dateKey === today) {
+      groups.today.push(apt);
+      return;
     }
 
-    groups.get(dateKey).push(apt);
+    const targetGroup = dateKey > today
+      ? groups.upcoming
+      : groups.past;
+
+    if (!targetGroup.has(dateKey)) {
+      targetGroup.set(dateKey, []);
+    }
+
+    targetGroup.get(dateKey).push(apt);
   });
 
-  container.innerHTML = Array.from(groups.entries()).map(([date, items]) => `
-    <section class="appointment-date-group">
+  // Sort appointments within each date by appointment time.
+  const sortByTime = (items) => {
+    items.sort((a, b) =>
+      getAppointmentTimeValue(a.timeSlot) -
+      getAppointmentTimeValue(b.timeSlot)
+    );
+  };
+
+  sortByTime(groups.today);
+
+  groups.upcoming.forEach(sortByTime);
+  groups.past.forEach(sortByTime);
+
+  // Render each date as its own section with the appropriate label.
+  const renderDateGroups = (dateGroups, period) => {
+    return Array.from(dateGroups.entries())
+      .sort(([dateA], [dateB]) => {
+        return period === 'upcoming'
+          ? dateA.localeCompare(dateB)
+          : dateB.localeCompare(dateA);
+      })
+      .map(([date, dateItems]) => `
+        <section class="appointment-period-group">
+
+          <div class="appointment-date-heading">
+            <h3>${period === 'upcoming' ? 'Upcoming' : 'Past'} · ${escape(getAppointmentDateLabel(date))}</h3>
+            <span>${dateItems.length} ${dateItems.length === 1 ? 'appointment' : 'appointments'}</span>
+          </div>
+
+          <div class="appointment-date-cards">
+            ${dateItems.map(renderAppointmentCard).join('')}
+          </div>
+
+        </section>
+      `).join('');
+  };
+
+  // Render today's appointments separately.
+  const todaySection = groups.today.length ? `
+    <section class="appointment-period-group">
 
       <div class="appointment-date-heading">
-        <h3>${escape(getAppointmentDateLabel(date))}</h3>
-        <span>${items.length} ${items.length === 1 ? 'appointment' : 'appointments'}</span>
+        <h3>Today · ${escape(Utils.formatDate(today))}</h3>
+        <span>${groups.today.length} ${groups.today.length === 1 ? 'appointment' : 'appointments'}</span>
       </div>
 
       <div class="appointment-date-cards">
-        ${items.map(renderAppointmentCard).join('')}
+        ${groups.today.map(renderAppointmentCard).join('')}
       </div>
 
     </section>
-  `).join('');
-}
+  ` : '';
 
+  // Render all date sections in the required order.
+  container.innerHTML = `
+    ${todaySection}
+    ${renderDateGroups(groups.upcoming, 'upcoming')}
+    ${renderDateGroups(groups.past, 'past')}
+  `;
+}
 
 // ---------------------------------------------------------------------------
 // Clinical Action Handlers
