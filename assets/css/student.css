@@ -1131,9 +1131,12 @@
   .booking-layout {
     grid-template-columns: 1fr;
   }
+  .booking-workspace {
+    order: 1;
+  }
   .booking-summary {
     position: static;
-    order: -1;
+    order: 2;
   }
 }
 
