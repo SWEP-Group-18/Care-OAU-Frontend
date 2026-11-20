@@ -1,3 +1,4 @@
+
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
@@ -5,6 +6,10 @@
     {
       "source": "/api/v1/:path*",
       "destination": "https://care-oau-api.onrender.com/api/v1/:path*"
+    },
+    {
+      "source": "/socket.io/",
+      "destination": "https://care-oau-api.onrender.com/socket.io/"
     },
     {
       "source": "/socket.io/:path*",
