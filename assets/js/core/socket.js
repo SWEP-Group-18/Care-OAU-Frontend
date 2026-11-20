@@ -8,8 +8,13 @@ export const socket = window.io(socketOrigin, {
     withCredentials: true,
 });
 
-socket.on("connect", ()=> {
-    console.log(`[Socket] Connnected:`, socket.id)
+socket.on("connect", () => {
+    console.log("[Socket] Connected:", socket.id);
+    console.log("[Socket] Transport:", socket.io.engine.transport.name);
+
+    socket.io.engine.on("upgrade", (transport) => {
+        console.log("[Socket] Upgraded to:", transport.name);
+    });
 });
 
 socket.on("connect_error", (error) => {
