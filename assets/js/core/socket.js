@@ -6,15 +6,11 @@ const socketOrigin = APP_CONFIG.API_BASE_URL.startsWith("/")
 
 export const socket = window.io(socketOrigin, {
     withCredentials: true,
+    transports: ["polling"],
 });
 
-socket.on("connect", () => {
-    console.log("[Socket] Connected:", socket.id);
-    console.log("[Socket] Transport:", socket.io.engine.transport.name);
-
-    socket.io.engine.on("upgrade", (transport) => {
-        console.log("[Socket] Upgraded to:", transport.name);
-    });
+socket.on("connect", ()=> {
+    console.log(`[Socket] Connnected:`, socket.id)
 });
 
 socket.on("connect_error", (error) => {
