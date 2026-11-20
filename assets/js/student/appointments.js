@@ -13,25 +13,32 @@ import { Toast } from '../components/toast.js';
 import { Utils } from '../core/utils.js';
 import { APP_CONFIG } from '../core/config.js';
 import { SyncManager } from '../core/sync-manager.js';
+import { socket } from '../core/socket.js';
 
 let activeFilter = 'upcoming';
-let appointmentsPoller = null;
+
+function handleAppointmentUpdated(data) {
+    const appointment = data?.appointment;
+
+    if (!appointment) return;
+
+    if (appointment.status === 'approved') {
+        loadAppointments();
+        Toast.success('Your appointment has been approved!');
+    }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('student')) return;
+
   Header.render('My Appointments');
   StudentSidebar.render();
 
   initStatusTabs();
   loadAppointments();
 
-  appointmentsPoller = SyncManager.createPoller({
-    name: 'student-appointments-sync',
-    interval: 8000,
-    fetchFn: () => loadAppointments(),
-    immediate: false
-  });
-  appointmentsPoller.start();
+  socket.on('appointment:updated', handleAppointmentUpdated);
+
 });
 
 function initStatusTabs() {
