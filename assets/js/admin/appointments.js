@@ -15,10 +15,12 @@ import { Modal } from '../components/modal.js';
 import { Utils } from '../core/utils.js';
 import { APP_CONFIG } from '../core/config.js';
 import { SyncManager } from '../core/sync-manager.js';
+import { socket } from '../core/socket.js';
 
 let activeFilter = 'all';
 let searchQuery = '';
 let adminAppointmentsPoller = null;
+let adminAppointments = [];
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('admin')) return;
@@ -428,6 +430,16 @@ async function loadAppointments() {
     `;
     return;
   }
+
+  adminAppointments = appointments;
+  renderAppointments();
+}
+
+function renderAppointments() {
+  const container = document.getElementById('admin-appointments-list');
+  if (!container) return;
+
+  const appointments = adminAppointments;
 
   // Update status counts using all appointments.
   const counts = {
