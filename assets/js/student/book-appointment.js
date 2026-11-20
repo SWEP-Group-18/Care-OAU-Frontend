@@ -654,7 +654,40 @@ function updateSummary() {
 	const displayLocation = assignedDoctor?.location ||
 		assignedDoctor?.consultingRoom ||
 		assignedDoctor?.room ||
+		assignedDoctor?.schedule?.consultingRoom ||
 		'Location not assigned';
+
+	// Get the authenticated student's stored profile
+	const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
+
+	const studentName = user?.name?.trim() || 'Student';
+	const studentMatric = user?.matricNo ||
+		user?.matricNumber ||
+		'Matric number unavailable';
+
+	const studentInitials = studentName
+		.split(/\s+/)
+		.filter(Boolean)
+		.slice(0, 2)
+		.map((part) => part.charAt(0).toUpperCase())
+		.join('') || 'ST';
+
+	// Student identity in Step 4 review card
+	const patientNameEl = document.getElementById('review-patient-name');
+	const patientMatricEl = document.getElementById('review-patient-matric');
+	const patientAvatarEl = document.getElementById('review-avatar');
+
+	if (patientNameEl) {
+		patientNameEl.textContent = studentName;
+	}
+
+	if (patientMatricEl) {
+		patientMatricEl.textContent = studentMatric;
+	}
+
+	if (patientAvatarEl) {
+		patientAvatarEl.textContent = studentInitials;
+	}
 
 	const serviceEl = document.getElementById('review-service');
 	const doctorEl = document.getElementById('review-doctor');
