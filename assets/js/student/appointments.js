@@ -22,11 +22,18 @@ function handleAppointmentUpdated(data) {
 
     if (!appointment) return;
 
-    if (appointment.status === 'approved') {
-        loadAppointments();
-        Toast.success('Your appointment has been approved!');
+    switch (appointment.status) {
+        case 'approved':
+            loadAppointments();
+            Toast.success('Your appointment has been approved!');
+            break;
+
+        case 'rejected':
+            loadAppointments();
+            Toast.error('Unfortunately, your appointment has been rejected.');
+            break;
     }
-};
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('student')) return;
