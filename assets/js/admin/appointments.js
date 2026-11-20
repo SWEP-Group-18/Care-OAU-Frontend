@@ -482,7 +482,7 @@ function initializeSocketListeners() {
 
     renderAppointments();
 
-    Toast.success('A new appointment has been booked.');
+    Toast.info('A new appointment has been booked.');
   });
 
   socket.on('connect', () => {

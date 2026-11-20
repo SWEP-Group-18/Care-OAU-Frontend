@@ -72,20 +72,40 @@ class ToastService {
     }, 300);
   }
 
-  success(message, title = 'Success') {
-    return this.show({ title, message, type: 'success' });
+    success(message, title = 'Success') {
+    return this.show({
+      title,
+      message,
+      type: 'success',
+      duration: 4000
+    });
   }
 
   error(message, title = 'Error') {
-    return this.show({ title, message, type: 'error' });
+    return this.show({
+      title,
+      message,
+      type: 'error',
+      duration: 6000
+    });
   }
 
   warning(message, title = 'Attention') {
-    return this.show({ title, message, type: 'warning' });
+    return this.show({
+      title,
+      message,
+      type: 'warning',
+      duration: 5000
+    });
   }
 
   info(message, title = 'Information') {
-    return this.show({ title, message, type: 'info' });
+    return this.show({
+      title,
+      message,
+      type: 'info',
+      duration: 5000
+    });
   }
 }
 
