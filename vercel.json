@@ -5,6 +5,10 @@
     {
       "source": "/api/v1/:path*",
       "destination": "https://care-oau-api.onrender.com/api/v1/:path*"
+    },
+    {
+      "source": "/socket.io/:path*",
+      "destination": "https://care-oau-api.onrender.com/socket.io/:path*"
     }
   ]
 }
