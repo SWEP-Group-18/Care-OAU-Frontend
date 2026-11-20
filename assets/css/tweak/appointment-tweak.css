@@ -839,3 +839,27 @@ body {
         font-size: 9px;
     }
 }
+
+
+/* =========================================
+   NEW APPOINTMENT HIGHLIGHT
+========================================= */
+
+/* =========================================
+   NEW APPOINTMENT BADGE
+========================================= */
+
+.appointment-new-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    height: 26px;
+    padding: 0 9px;
+    border-radius: 5px;
+    background: #CCFBF1;
+    color: #0F766E;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+}

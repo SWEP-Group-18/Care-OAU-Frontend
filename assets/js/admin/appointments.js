@@ -14,29 +14,22 @@ import { Toast } from '../components/toast.js';
 import { Modal } from '../components/modal.js';
 import { Utils } from '../core/utils.js';
 import { APP_CONFIG } from '../core/config.js';
-import { SyncManager } from '../core/sync-manager.js';
 import { socket } from '../core/socket.js';
 
 let activeFilter = 'all';
 let searchQuery = '';
-let adminAppointmentsPoller = null;
+
 let adminAppointments = [];
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('admin')) return;
+
   Header.render('Appointment Management & Check-in');
   AdminSidebar.render();
 
   initControls();
+  initializeSocketListeners();
   loadAppointments();
-
-  adminAppointmentsPoller = SyncManager.createPoller({
-    name: 'admin-appointments-sync',
-    interval: 8000,
-    fetchFn: () => loadAppointments(),
-    immediate: false
-  });
-  adminAppointmentsPoller.start();
 });
 
 function initControls() {
@@ -45,7 +38,7 @@ function initControls() {
   if (searchInput) {
     searchInput.addEventListener('input', Utils.debounce((e) => {
       searchQuery = e.target.value.toLowerCase().trim();
-      loadAppointments();
+      renderAppointments();
     }, 250));
   }
 
@@ -58,7 +51,7 @@ function initControls() {
         btn.classList.add('active');
 
         activeFilter = btn.dataset.filter;
-        loadAppointments();
+        renderAppointments();
       });
     });
   }
@@ -93,8 +86,7 @@ function initControls() {
           break;
 
         case 'reschedule': {
-          const apt = (await AppointmentService.getAllAppointments())
-            .find(item => String(item.id) === id);
+          const apt = getAppointmentById(id);
 
           if (apt) {
             window.adminReschedule(id, apt.appointmentDate, apt.timeSlot);
@@ -254,6 +246,32 @@ function getAppointmentTimeValue(time) {
   return (hours * 60) + minutes;
 }
 
+function clearNewAppointmentFlag(id) {
+  const appointment = adminAppointments.find(
+    apt => String(apt.id) === String(id)
+  );
+
+  if (!appointment) return;
+
+  appointment.isNew = false;
+}
+
+function getAppointmentById(id) {
+  return adminAppointments.find(
+    apt => String(apt.id) === String(id)
+  );
+}
+
+function updateAppointmentInState(id, updates) {
+  adminAppointments = adminAppointments.map(apt =>
+    String(apt.id) === String(id)
+      ? { ...apt, ...updates }
+      : apt
+  );
+
+  renderAppointments();
+}
+
 function renderAppointmentActions(apt, status) {
   const id = escape(apt.id);
 
@@ -387,6 +405,10 @@ function renderAppointmentCard(apt) {
               </span>
             ` : ''}
 
+            ${apt.isNew ? `
+              <span class="appointment-new-badge">New</span>
+            ` : ''}
+
             <span class="appointment-status ${statusClass}">
               ${Utils.getStatusBadge(apt.status)}
             </span>
@@ -408,6 +430,71 @@ function renderAppointmentCard(apt) {
   `;
 }
 
+// Socket Listners
+function initializeSocketListeners() {
+  let hasConnectedBefore = socket.connected;
+
+  socket.on('appointment:created', ({ appointment, user } = {}) => {
+    if (!appointment?.publicId) return;
+
+    const existingAppointment = adminAppointments.some(
+      apt => String(apt.id) === String(appointment.publicId)
+    );
+
+    if (existingAppointment) return;
+
+    const [hours, minutes] = String(appointment.startTime || '')
+      .split(':')
+      .map(Number);
+
+    const timeSlot = Number.isFinite(hours) && Number.isFinite(minutes)
+      ? `${hours % 12 || 12}:${String(minutes).padStart(2, '0')} ${hours >= 12 ? 'PM' : 'AM'}`
+      : '--';
+
+    const newAppointment = {
+      id: appointment.publicId,
+      publicId: appointment.publicId,
+
+      studentName: user?.name || 'Unknown Student',
+      matricNo: user?.matricNumber || '',
+      phone: user?.phone || '',
+
+      serviceName: appointment.service,
+      doctorName: appointment.doctor,
+
+      appointmentDate: appointment.date,
+      timeSlot,
+
+      queueNumber: null,
+      reason: appointment.reason || '',
+
+      status: 'Pending',
+
+      isNew: true,
+
+      serviceId: null,
+      doctorId: null,
+
+      location: appointment.location
+    };
+
+    adminAppointments.unshift(newAppointment);
+
+    renderAppointments();
+
+    Toast.success('A new appointment has been booked.');
+  });
+
+  socket.on('connect', () => {
+    if (hasConnectedBefore) {
+      console.log('[Socket] Reconnected. Refreshing appointments...');
+      loadAppointments();
+    }
+
+    hasConnectedBefore = true;
+  });
+}
+
 async function loadAppointments() {
   const container = document.getElementById('admin-appointments-list');
   if (!container) return;
@@ -419,20 +506,44 @@ async function loadAppointments() {
     </div>
   `;
 
-  const appointments = await AppointmentService.getAllAppointments();
+  try {
+    const appointments = await AppointmentService.getAllAppointments();
 
-  if (!Array.isArray(appointments)) {
+    if (!Array.isArray(appointments)) {
+      container.innerHTML = `
+        <div class="empty-state" style="padding: var(--space-8);">
+          <h4 class="empty-state-title">Unable to Load Appointments</h4>
+          <p class="empty-state-desc">Please try again shortly.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Preserve NEW markers for untouched pending appointments.
+    const newAppointmentIds = new Set(
+      adminAppointments
+        .filter(apt => apt.isNew)
+        .map(apt => String(apt.id))
+    );
+
+    adminAppointments = appointments.map(apt => ({
+      ...apt,
+      isNew:
+        newAppointmentIds.has(String(apt.id)) &&
+        getAppointmentStatus(apt.status) === 'Pending'
+    }));
+
+    renderAppointments();
+  } catch (error) {
+    console.error('[Appointments] Failed to load appointments:', error);
+
     container.innerHTML = `
       <div class="empty-state" style="padding: var(--space-8);">
         <h4 class="empty-state-title">Unable to Load Appointments</h4>
         <p class="empty-state-desc">Please try again shortly.</p>
       </div>
     `;
-    return;
   }
-
-  adminAppointments = appointments;
-  renderAppointments();
 }
 
 function renderAppointments() {
@@ -505,16 +616,38 @@ function renderAppointments() {
     return;
   }
 
+  // Separate new pending bookings from regular appointments.
+  const newAppointments = filtered.filter(apt =>
+    apt.isNew && getAppointmentStatus(apt.status) === 'Pending'
+  );
+
+  const regularAppointments = filtered.filter(apt =>
+    !newAppointments.includes(apt)
+  );
+
   const today = Utils.getTodayDateString();
 
-  // Group appointments by today, upcoming, and past dates.
+  // Group new bookings by their appointment date.
+  const newAppointmentsByDate = new Map();
+
+  newAppointments.forEach(apt => {
+    const dateKey = getAppointmentDateKey(apt.appointmentDate);
+
+    if (!newAppointmentsByDate.has(dateKey)) {
+      newAppointmentsByDate.set(dateKey, []);
+    }
+
+    newAppointmentsByDate.get(dateKey).push(apt);
+  });
+
+  // Group regular appointments by today, upcoming, and past dates.
   const groups = {
     today: [],
     upcoming: new Map(),
     past: new Map()
   };
 
-  filtered.forEach(apt => {
+  regularAppointments.forEach(apt => {
     const dateKey = getAppointmentDateKey(apt.appointmentDate);
 
     if (dateKey === today) {
@@ -533,7 +666,7 @@ function renderAppointments() {
     targetGroup.get(dateKey).push(apt);
   });
 
-  // Sort appointments within each date by appointment time.
+  // Sort regular appointments within each date by appointment time.
   const sortByTime = (items) => {
     items.sort((a, b) =>
       getAppointmentTimeValue(a.timeSlot) -
@@ -546,7 +679,25 @@ function renderAppointments() {
   groups.upcoming.forEach(sortByTime);
   groups.past.forEach(sortByTime);
 
-  // Render each date as its own section with the appropriate label.
+  // Render new bookings, with a separate heading for each date.
+  const newAppointmentsSection = Array.from(newAppointmentsByDate.entries())
+    .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+    .map(([date, dateItems]) => `
+      <section class="appointment-period-group">
+
+        <div class="appointment-date-heading">
+          <h3>New Bookings · ${escape(getAppointmentDateLabel(date))}</h3>
+          <span>${dateItems.length} ${dateItems.length === 1 ? 'new appointment' : 'new appointments'}</span>
+        </div>
+
+        <div class="appointment-date-cards">
+          ${dateItems.map(renderAppointmentCard).join('')}
+        </div>
+
+      </section>
+    `).join('');
+
+  // Render each regular date group.
   const renderDateGroups = (dateGroups, period) => {
     return Array.from(dateGroups.entries())
       .sort(([dateA], [dateB]) => {
@@ -586,8 +737,9 @@ function renderAppointments() {
     </section>
   ` : '';
 
-  // Render all date sections in the required order.
+  // Render all sections in order.
   container.innerHTML = `
+    ${newAppointmentsSection}
     ${todaySection}
     ${renderDateGroups(groups.upcoming, 'upcoming')}
     ${renderDateGroups(groups.past, 'past')}
@@ -599,12 +751,22 @@ function renderAppointments() {
 // ---------------------------------------------------------------------------
 window.adminApprove = async (id) => {
   const res = await AppointmentService.approveAppointment(id);
-  if (res && res.success === false) {
+
+  if (!res.success) {
     Toast.error(res.message || 'Unable to approve appointment.');
     return;
   }
+
+  clearNewAppointmentFlag(id);
+
+  updateAppointmentInState(id, {
+    status: 'Approved',
+    approvedAt: new Date().toISOString(),
+    isNew: false
+  });
+
   Toast.success('Appointment approved. Patient is now eligible for on-site check-in.');
-  await loadAppointments();
+
   AdminSidebar.render();
 };
 
@@ -616,12 +778,22 @@ window.adminComplete = async (id) => {
     confirmClass: 'btn-teal',
     onConfirm: async () => {
       const res = await AppointmentService.completeAppointment(id);
-      if (res && res.success === false) {
+
+      if (!res.success) {
         Toast.error(res.message || 'Unable to complete appointment.');
         return false;
       }
+
+      clearNewAppointmentFlag(id);
+
+      updateAppointmentInState(id, {
+        status: 'Completed',
+        completedAt: new Date().toISOString(),
+        isNew: false
+      });
+
       Toast.success('Appointment marked as completed.');
-      await loadAppointments();
+
       AdminSidebar.render();
     }
   });
@@ -635,11 +807,30 @@ window.adminReject = (id) => {
     confirmClass: 'btn-danger',
     onConfirm: async () => {
       const reason = document.getElementById('rejection-reason').value.trim();
-      if (!reason) { Toast.warning('Please enter a reason.'); return false; }
+
+      if (!reason) {
+        Toast.warning('Please enter a reason.');
+        return false;
+      }
+
       const result = await AppointmentService.rejectAppointment(id, reason);
-      if (!result.success) { Toast.warning(result.message); return false; }
+
+      if (!result.success) {
+        Toast.warning(result.message);
+        return false;
+      }
+
+      clearNewAppointmentFlag(id);
+
+      updateAppointmentInState(id, {
+        status: 'Rejected',
+        rejectionReason: reason,
+        rejectedAt: new Date().toISOString(),
+        isNew: false
+      });
+
       Toast.warning('Appointment rejected.');
-      await loadAppointments();
+
       AdminSidebar.render();
     }
   });
@@ -647,18 +838,31 @@ window.adminReject = (id) => {
 
 window.adminCheckIn = async (id) => {
   const res = await AppointmentService.checkInPatient(id);
-  if (res.success) {
-    Toast.success(`Patient ${res.queueItem.patientName} checked in! Queue Ticket ${res.queueNumber} issued.`);
-    await loadAppointments();
-    AdminSidebar.render();
-  } else {
-    Toast.error(res.message);
+
+  if (!res.success) {
+    Toast.error(res.message || 'Unable to check in patient.');
+    return;
   }
+
+  clearNewAppointmentFlag(id);
+
+  updateAppointmentInState(id, {
+    status: 'Checked In',
+    queueNumber: res.queueNumber,
+    checkedInAt: new Date().toISOString(),
+    isNew: false
+  });
+
+  Toast.success(`Patient ${res.queueItem.patientName} checked in! Queue Ticket ${res.queueNumber} issued.`);
+
+  AdminSidebar.render();
 };
 
 window.adminReschedule = async (id, currentDate, currentTime) => {
-  const apt = (await AppointmentService.getAllAppointments()).find(a => a.id === id);
+  const apt = getAppointmentById(id);
+
   if (!apt) return;
+
   Modal.confirm({
     title: 'Reschedule Appointment Slot',
     message: `
@@ -681,20 +885,57 @@ window.adminReschedule = async (id, currentDate, currentTime) => {
     onConfirm: async () => {
       const newDate = document.getElementById('reschedule-date-input').value;
       const newTime = document.getElementById('reschedule-time-input').value;
+
+      if (!newDate || !newTime) {
+        Toast.warning('Please select a valid date and time slot.');
+        return false;
+      }
+
       const result = await AppointmentService.rescheduleAppointment(id, newDate, newTime);
-      if (!result.success) { Toast.warning(result.message); return false; }
+
+      if (!result.success) {
+        Toast.warning(result.message);
+        return false;
+      }
+
+      clearNewAppointmentFlag(id);
+
+      updateAppointmentInState(id, {
+        appointmentDate: newDate,
+        timeSlot: newTime,
+        status: 'Pending',
+        isNew: false,
+        rescheduledAt: new Date().toISOString()
+      });
+
       Toast.success(`Appointment successfully rescheduled to ${Utils.formatDate(newDate)} at ${newTime}`);
-      loadAppointments();
     }
   });
+
   const dateInput = document.getElementById('reschedule-date-input');
   const select = document.getElementById('reschedule-time-input');
-  const refresh = () => { const slots = availableSlots(apt.serviceId, apt.doctorId, dateInput.value, id); select.replaceChildren(...(slots.length ? slots.map(s => new Option(s.time, s.time)) : [new Option('No available times', '')])); };
-  dateInput.onchange = refresh; refresh();
+
+  const refresh = () => {
+    const slots = availableSlots(apt.serviceId, apt.doctorId, dateInput.value, id);
+
+    select.replaceChildren(
+      ...(slots.length
+        ? slots.map(s => new Option(s.time, s.time))
+        : [new Option('No available times', '')]
+      )
+    );
+  };
+
+  dateInput.onchange = refresh;
+  refresh();
 };
 
-window.adminIssueReferral = async (id) => {
-  const studentName = (await AppointmentService.getAllAppointments()).find(a => a.id === id)?.studentName || 'Patient';
+window.adminIssueReferral = (id) => {
+  const apt = getAppointmentById(id);
+  const studentName = apt?.studentName || 'Patient';
+
+  if (!apt) return;
+
   Modal.confirm({
     title: `Issue Clinical Referral - ${studentName}`,
     message: `
@@ -720,18 +961,39 @@ window.adminIssueReferral = async (id) => {
     confirmClass: 'btn-navy',
     onConfirm: () => {
       const dept = document.getElementById('referral-dept-select').value;
-      const appointments = Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, []);
       const notes = document.getElementById('referral-notes').value.trim();
-      if (!notes) { Toast.warning('Enter the referral notes.'); return false; }
-      Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, appointments.map(a => a.id === id ? { ...a, referral: { department: dept, notes, issuedAt: new Date().toISOString() } } : a));
+
+      if (!notes) {
+        Toast.warning('Enter the referral notes.');
+        return false;
+      }
+
+      const referral = {
+        department: dept,
+        notes,
+        issuedAt: new Date().toISOString()
+      };
+
+      const appointments = Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, []);
+
+      Storage.set(
+        APP_CONFIG.STORAGE_KEYS.APPOINTMENTS,
+        appointments.map(a =>
+          String(a.id) === String(id)
+            ? { ...a, referral }
+            : a
+        )
+      );
+
+      updateAppointmentInState(id, { referral });
+
       Toast.success(`Referral to ${dept} issued for ${studentName}.`);
     }
   });
 };
 
-window.adminViewDetails = async (id) => {
-  const appointments = await AppointmentService.getAllAppointments();
-  const apt = appointments.find(a => String(a.id) === String(id));
+window.adminViewDetails = (id) => {
+  const apt = getAppointmentById(id);
 
   if (!apt) return;
 
