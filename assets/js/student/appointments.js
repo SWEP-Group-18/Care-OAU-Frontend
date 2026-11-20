@@ -30,7 +30,7 @@ function handleAppointmentUpdated(data) {
 
         case 'rejected':
             loadAppointments();
-            Toast.error('Unfortunately, your appointment has been rejected.');
+            Toast.info('Unfortunately, your appointment has been rejected. Please contact the Health Centre for assistance.');
             break;
     }
 }
