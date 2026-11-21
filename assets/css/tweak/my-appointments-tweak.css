@@ -144,6 +144,149 @@
     -webkit-backdrop-filter: none;
 }
 
+/* Appointment Information - Three Equal Horizontal Columns */
+.appointment-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+    width: 100%;
+}
+
+.appointment-info-grid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.appointment-info-grid > div span {
+    display: block;
+}
+
+.appointment-info-grid > div strong {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    .appointment-info-grid {
+        gap: 10px;
+    }
+}
+
+
+/* Appointment Symptoms / Notes */
+.appointment-notes {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #f5f7fb;
+    border-radius: 5px;
+}
+
+.appointment-notes p {
+    margin: 0;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+.appointment-notes strong {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.appointment-list-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+/* =========================================
+   APPOINTMENT REJECTION NOTICE
+========================================= */
+
+.appointment-rejection-notice {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #FEF2F2;
+    border-radius: 5px;
+}
+
+.appointment-rejection-notice p {
+    margin: 0;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+.appointment-rejection-notice strong {
+    color: #962224;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Align notice labels and messages */
+.appointment-notes p,
+.appointment-rejection-notice p {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0;
+}
+
+.appointment-notes strong,
+.appointment-rejection-notice strong {
+    flex: 0 0 115px;
+    white-space: nowrap;
+}
+
+.appointment-notes span,
+.appointment-rejection-notice span {
+    flex: 1;
+    min-width: 0;
+}
+
+/* =========================================
+   APPOINTMENT CANCELLATION NOTICE
+========================================= */
+
+.appointment-cancellation-notice {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #FFFBEB;
+    border-radius: 5px;
+}
+
+.appointment-cancellation-notice p {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+.appointment-cancellation-notice strong {
+    flex: 0 0 125px;
+    color: #B45309;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.appointment-cancellation-notice span {
+    flex: 1;
+    min-width: 0;
+}
 
 /* =========================================
    SMALL MOBILE SCREENS
@@ -166,3 +309,4 @@
         padding: 12px;
     }
 }
+

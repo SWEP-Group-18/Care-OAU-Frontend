@@ -143,25 +143,53 @@ async function loadAppointments() {
         <div class="appointment-list-top"><div>${Utils.getStatusBadge(apt.status)}<h2>${Utils.escapeHtml(apt.serviceName || 'General Medical Consultation')}</h2><p>Booking reference  -  ${Utils.escapeHtml(displayId)}</p></div>
         <div class="large-date"><strong>${date.getDate()}</strong><span>${date.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}<br>${date.toLocaleDateString('en-GB',{weekday:'long'})}</span></div></div>
         <div class="appointment-info-grid"><div><span>Scheduled time</span><strong>${Utils.escapeHtml(apt.timeSlot || '08:00 AM')}</strong></div><div><span>Doctor</span><strong>${Utils.escapeHtml(apt.doctorName || 'Assigned Physician')}</strong></div><div><span>Location</span><strong>${Utils.escapeHtml(apt.location || 'Care-OAU Health Centre')}</strong></div></div>
-        ${isPendingStatus ? '<p class="status-message">Your request is awaiting staff review. Your queue number will be issued at reception after approval.</p>' : ''}
-        ${apt.status === 'Approved' ? '<p class="status-message text-teal"><strong>Approved:</strong> Your visit is confirmed. Please arrive 10 minutes prior to scheduled time for reception check-in.</p>' : ''}
-        ${apt.rejectionReason ? '<p class="status-message text-danger"><strong>Reason:</strong> ' + Utils.escapeHtml(apt.rejectionReason) + '</p>' : ''}
-        ${apt.cancellationReason ? '<p class="status-message text-muted"><strong>Cancellation notice:</strong> ' + Utils.escapeHtml(apt.cancellationReason) + '</p>' : ''}
+        ${apt.reason ? `
+          <div class="appointment-notes">
+              <p>
+                  <strong>Symptoms / Notes:</strong>
+                  <span>${Utils.escapeHtml(apt.reason)}</span>
+              </p>
+          </div>
+        ` : ''}
+
+        ${apt.status === 'Rejected' && apt.reason ? `
+          <div class="appointment-rejection-notice">
+              <p>
+                  <strong>Rejection Notice:</strong>
+                  <span>${Utils.escapeHtml(apt.reason)}</span>
+              </p>
+          </div>
+        ` : ''}
+
+        ${apt.status === 'Cancelled' && apt.cancellationReason ? `
+          <div class="appointment-cancellation-notice">
+              <p>
+                  <strong>Cancellation Notice:</strong>
+                  <span>${Utils.escapeHtml(apt.cancellationReason)}</span>
+              </p>
+          </div>
+      ` : ''}
+        
         <div class="appointment-list-actions">
-          <button class="btn btn-outline-navy" onclick="viewAppointmentDetails('${apt.id}')">View details</button>
-          ${apt.status === 'Approved' ? `
-            <button type="button" class="btn btn-teal" onclick="window.studentCheckIn('${apt.id}')">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <polyline points="16 11 18 13 22 9"/>
-              </svg>
-              Confirm Arrival & Check In
-            </button>
-          ` : ''}
-          ${apt.queueNumber ? '<a href="queue-tracking.html" class="btn btn-teal">Track Queue</a>' : ''}
-          ${canCancel ? '<button class="btn btn-ghost text-danger" onclick="cancelAppointmentRequest(\'' + apt.id + '\')">Cancel appointment</button>' : ''}
-        </div></article>`;
+            <button class="btn btn-outline-navy" onclick="viewAppointmentDetails('${apt.id}')">View details</button>
+
+            ${apt.status === 'Approved' ? `
+                <button type="button" class="btn btn-teal" onclick="window.studentCheckIn('${apt.id}')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <polyline points="16 11 18 13 22 9"/>
+                    </svg>
+                    Confirm Arrival & Check In
+                </button>
+            ` : ''}
+
+            ${apt.queueNumber ? '<a href="queue-tracking.html" class="btn btn-teal">Track Queue</a>' : ''}
+
+            ${canCancel ? '<button class="btn btn-ghost text-danger" onclick="cancelAppointmentRequest(\'' + apt.id + '\')">Cancel appointment</button>' : ''}
+        </div>
+        </article>`;
+
     }).join('');
   } catch (err) {
     console.error('[Appointments] Error loading appointments:', err);
