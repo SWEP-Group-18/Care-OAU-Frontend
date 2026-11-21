@@ -15,7 +15,7 @@ import { APP_CONFIG } from '../core/config.js';
 import { SyncManager } from '../core/sync-manager.js';
 import { socket } from '../core/socket.js';
 
-let activeFilter = 'upcoming';
+let activeFilter = 'all';
 
 function handleAppointmentUpdated(data) {
     const appointment = data?.appointment;
@@ -79,16 +79,25 @@ async function loadAppointments() {
   try {
     const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
     const appointments = await AppointmentService.getStudentAppointments(user?.id);
-    const filtered = appointments.filter(a => {
-      if (activeFilter === 'all') return true;
-      if (activeFilter === 'upcoming') {
-        return ['Pending', 'Pending Approval', 'Approved', 'Checked In', 'In Consultation'].includes(a.status) ||
-          !['Completed', 'Cancelled', 'Rejected', 'No Show'].includes(a.status);
+
+    const filtered = appointments.filter(apt => {
+      switch (activeFilter) {
+        case 'pending':
+            return ['Pending', 'Pending Approval'].includes(apt.status);
+
+        case 'approved':
+            return apt.status === 'Approved';
+
+        case 'in_progress':
+            return ['Checked In', 'In Consultation'].includes(apt.status);
+
+        case 'history':
+            return ['Completed', 'Rejected', 'Cancelled', 'No Show'].includes(apt.status);
+
+        case 'all':
+        default:
+            return true;
       }
-      if (activeFilter === 'history') {
-        return ['Completed', 'Cancelled', 'Rejected', 'No Show'].includes(a.status);
-      }
-      return a.status === activeFilter;
     });
 
     if (!filtered.length) {

@@ -1,0 +1,168 @@
+
+/* =========================================
+   STUDENT APPOINTMENT STATUS FILTER
+========================================= */
+
+#appointment-status-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 10px;
+}
+
+/* All appointment filter buttons */
+#appointment-status-tabs .tab-filter-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+/* Active appointment filter */
+#appointment-status-tabs .tab-filter-btn.active {
+    padding: 5px 16px;
+    color: white;
+    background-color: var(--navy);
+    border-radius: 22px;
+}
+
+/* Hover effect */
+#appointment-status-tabs .tab-filter-btn:hover:not(.active) {
+    padding: 5px 16px;
+    background-color: #F1F5F9;
+    color: var(--navy);
+    border-radius: 22px;
+    transform: translateY(-1px);
+}
+
+
+/* =========================================
+   STUDENT APPOINTMENT CARDS
+========================================= */
+
+#appointments-tbody {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* Make appointment cards fill the container */
+#appointments-tbody > * {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* Prevent card content from overflowing */
+#appointments-tbody > * * {
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+
+/* =========================================
+   TABLET RESPONSIVENESS
+========================================= */
+
+@media (max-width: 768px) {
+
+    /* Filters */
+    #appointment-status-tabs {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* Cards */
+    #appointments-tbody {
+        gap: 14px;
+    }
+}
+
+
+/* =========================================
+   MOBILE RESPONSIVENESS
+========================================= */
+
+@media (max-width: 600px) {
+
+    /* Filters */
+    #appointment-status-tabs {
+        gap: 8px;
+    }
+
+    #appointment-status-tabs .tab-filter-btn.active,
+    #appointment-status-tabs .tab-filter-btn:hover:not(.active) {
+        padding: 5px 12px;
+    }
+
+    /* Cards */
+    #appointments-tbody {
+        gap: 12px;
+    }
+
+    #appointments-tbody > * {
+        padding: 16px;
+    }
+}
+
+/* =========================================
+   STUDENT APPOINTMENT STATUS BADGES
+========================================= */
+
+#appointments-tbody .badge,
+#appointments-tbody [class*="badge-"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 80px;
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+    height: 26px;
+    margin: 0;
+    padding: 0 10px !important;
+    border: none;
+    border-radius: 5px;
+    box-shadow: none;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+/* Remove unwanted badge effects */
+#appointments-tbody .badge,
+#appointments-tbody [class*="badge-"] {
+    outline: none;
+    filter: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+
+/* =========================================
+   SMALL MOBILE SCREENS
+========================================= */
+
+@media (max-width: 380px) {
+
+    /* Filters */
+    #appointment-status-tabs {
+        gap: 6px;
+    }
+
+    #appointment-status-tabs .tab-filter-btn.active,
+    #appointment-status-tabs .tab-filter-btn:hover:not(.active) {
+        padding: 5px 10px;
+    }
+
+    /* Cards */
+    #appointments-tbody > * {
+        padding: 12px;
+    }
+}

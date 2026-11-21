@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="../assets/css/student.css">
   <link rel="stylesheet" href="../assets/css/responsive.css">
   <link rel="stylesheet" href="../assets/css/finishing.css">
+  <link rel="stylesheet" href="../assets/css/tweak/my-appointments-tweak.css">
 </head>
 <body class="app-layout">
 
@@ -46,10 +47,14 @@
       </div>
 
       <!-- STATUS FILTER TABS -->
-      <div class="tab-filters" id="appointment-status-tabs">
-        <button type="button" class="tab-filter-btn active" data-filter="upcoming">Upcoming</button>
-        <button type="button" class="tab-filter-btn" data-filter="history">View History</button>
-        <button type="button" class="tab-filter-btn" data-filter="all">All Visits</button>
+      <div class="filter-bar appointment-filter-bar">
+          <div class="tab-filters" id="appointment-status-tabs" style="margin-bottom: 0; padding-bottom: 0; border-bottom: none;">
+              <button type="button" class="tab-filter-btn active" data-filter="all">All</button>
+              <button type="button" class="tab-filter-btn" data-filter="pending">Pending</button>
+              <button type="button" class="tab-filter-btn" data-filter="approved">Approved</button>
+              <button type="button" class="tab-filter-btn" data-filter="in_progress">In Progress</button>
+              <button type="button" class="tab-filter-btn" data-filter="history">History</button>
+          </div>
       </div>
 
       <div id="appointments-tbody" aria-live="polite"></div>
