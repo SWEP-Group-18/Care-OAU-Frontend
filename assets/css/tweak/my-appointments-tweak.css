@@ -288,6 +288,35 @@
     min-width: 0;
 }
 
+/* Appointment update indicators */
+#appointments-tbody .appointment-status-pending {
+    border: 1px solid #D97706;
+}
+
+#appointments-tbody .appointment-status-approved{
+    border: 1px solid var(--color-info-text);
+}
+
+#appointments-tbody .appointment-status-completed {
+    border: 1px solid #16A34A;
+}
+
+#appointments-tbody .appointment-status-rejected {
+    border: 1px solid #DC2626;
+}
+
+#appointments-tbody .appointment-status-cancelled {
+    border: 1px solid #B45309;   
+}
+
+#appointments-tbody .appointment-status-no_show {
+    border: 1px solid #94A3B8;
+}
+
+#appointments-tbody .appointment-status-checked_in {
+    border: 1px solid #0F766E;
+}
+
 /* =========================================
    SMALL MOBILE SCREENS
 ========================================= */

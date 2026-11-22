@@ -16,23 +16,71 @@ import { SyncManager } from '../core/sync-manager.js';
 import { socket } from '../core/socket.js';
 
 let activeFilter = 'all';
+const recentlyUpdatedAppointments = new Set();
+
+function getAppointmentStatusKey(status = '') {
+    return status
+        .toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace('pending_approval', 'pending');
+}
+
+function getAppointmentStatusTimestamp(appointment) {
+    const timestamp = appointment.updatedAt || appointment.createdAt;
+    return timestamp ? new Date(timestamp).getTime() || 0 : 0;
+}
+
+function getAppointmentStatusClass(status) {
+    const statusKey = getAppointmentStatusKey(status);
+
+    const allowedStatuses = [
+        'pending',
+        'approved',
+        'rejected',
+        'cancelled',
+        'checked_in',
+        'in_consultation',
+        'completed',
+        'no_show'
+    ];
+
+    return allowedStatuses.includes(statusKey)
+        ? `appointment-status-${statusKey}`
+        : 'appointment-status-default';
+}
 
 function handleAppointmentUpdated(data) {
     const appointment = data?.appointment;
 
     if (!appointment) return;
 
-    switch (appointment.status) {
+    recentlyUpdatedAppointments.add(appointment.publicId);
+
+    const status = getAppointmentStatusKey(appointment.status);
+
+    switch (status) {
         case 'approved':
-            loadAppointments();
             Toast.success('Your appointment has been approved!');
             break;
 
         case 'rejected':
-            loadAppointments();
-            Toast.info('Unfortunately, your appointment has been rejected. Please contact the Health Centre for assistance.');
+            Toast.info('Unfortunately, your appointment has been rejected. Please review the rejection reason.');
+            break;
+
+        case 'cancelled':
+            Toast.info('Your appointment has been cancelled.');
+            break;
+
+        case 'checked_in':
+            Toast.success('Your appointment has been checked in!');
+            break;
+
+        case 'completed':
+            Toast.success('Your appointment has been completed!');
             break;
     }
+
+    loadAppointments();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -79,6 +127,9 @@ async function loadAppointments() {
   try {
     const user = Storage.get(APP_CONFIG.STORAGE_KEYS.AUTH_USER);
     const appointments = await AppointmentService.getStudentAppointments(user?.id);
+    appointments.sort((a, b) =>
+        getAppointmentStatusTimestamp(b) - getAppointmentStatusTimestamp(a)
+    );
 
     const filtered = appointments.filter(apt => {
       switch (activeFilter) {
@@ -139,7 +190,13 @@ async function loadAppointments() {
       const isPendingStatus = apt.status === 'Pending' || apt.status === 'Pending Approval';
       const canCancel = isPendingStatus || apt.status === 'Approved';
       const displayId = apt.referenceNo || apt.publicId || apt.id;
-      return `<article class="appointment-list-card">
+      const hasBeenUpdated = recentlyUpdatedAppointments.has(apt.publicId);
+      
+      const statusClass = hasBeenUpdated
+          ? getAppointmentStatusClass(apt.status)
+          : '';
+
+      return `<article class="appointment-list-card ${statusClass}">
         <div class="appointment-list-top"><div>${Utils.getStatusBadge(apt.status)}<h2>${Utils.escapeHtml(apt.serviceName || 'General Medical Consultation')}</h2><p>Booking reference  -  ${Utils.escapeHtml(displayId)}</p></div>
         <div class="large-date"><strong>${date.getDate()}</strong><span>${date.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}<br>${date.toLocaleDateString('en-GB',{weekday:'long'})}</span></div></div>
         <div class="appointment-info-grid"><div><span>Scheduled time</span><strong>${Utils.escapeHtml(apt.timeSlot || '08:00 AM')}</strong></div><div><span>Doctor</span><strong>${Utils.escapeHtml(apt.doctorName || 'Assigned Physician')}</strong></div><div><span>Location</span><strong>${Utils.escapeHtml(apt.location || 'Care-OAU Health Centre')}</strong></div></div>
@@ -152,11 +209,11 @@ async function loadAppointments() {
           </div>
         ` : ''}
 
-        ${apt.status === 'Rejected' && apt.reason ? `
+        ${apt.status === 'Rejected' && apt.rejectionReason ? `
           <div class="appointment-rejection-notice">
               <p>
                   <strong>Rejection Notice:</strong>
-                  <span>${Utils.escapeHtml(apt.reason)}</span>
+                  <span>${Utils.escapeHtml(apt.rejectionReason)}</span>
               </p>
           </div>
         ` : ''}

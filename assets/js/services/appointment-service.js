@@ -91,6 +91,8 @@ export const AppointmentService = {
               location: a.consultingRoom || a.location || localMatch?.location || 'Care-OAU Health Centre',
               consultingRoom: a.consultingRoom || a.location || localMatch?.consultingRoom || 'Care-OAU Health Centre',
               status: resolvedStatus,
+              createdAt: a.createdAt || localMatch?.createdAt,
+              updatedAt: a.updatedAt || localMatch?.updatedAt,
               queueNumber: a.queueNumber || localMatch?.queueNumber || null,
               approvedAt: localMatch?.approvedAt || (resolvedStatus === APP_CONFIG.APPOINTMENT_STATUS.APPROVED ? new Date().toISOString() : undefined),
               cancellationReason: a.cancellationReason || a.reason || localMatch?.cancellationReason
