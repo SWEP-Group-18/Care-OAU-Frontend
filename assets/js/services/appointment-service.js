@@ -49,16 +49,16 @@ export const AppointmentService = {
             const serviceId = typeof a.service === 'object' ? (a.service.publicId || a.service.id) : (a.servicePublicId || a.serviceId || localMatch?.serviceId);
 
             let resolvedStatus = a.status === 'pending' ? APP_CONFIG.APPOINTMENT_STATUS.PENDING :
-                    (a.status === 'confirmed' || a.status === 'approved') ? APP_CONFIG.APPOINTMENT_STATUS.APPROVED :
-                    a.status === 'checked_in' ? APP_CONFIG.APPOINTMENT_STATUS.CHECKED_IN :
-                    a.status === 'cancelled' ? APP_CONFIG.APPOINTMENT_STATUS.CANCELLED :
-                    a.status === 'completed' ? APP_CONFIG.APPOINTMENT_STATUS.COMPLETED :
-                    a.status === 'in_consultation' ? APP_CONFIG.APPOINTMENT_STATUS.IN_CONSULTATION :
-                    a.status === 'rejected' ? APP_CONFIG.APPOINTMENT_STATUS.REJECTED :
-                    a.status === 'no_show' ? APP_CONFIG.APPOINTMENT_STATUS.NO_SHOW :
-                    (a.status || APP_CONFIG.APPOINTMENT_STATUS.PENDING);
+              (a.status === 'confirmed' || a.status === 'approved') ? APP_CONFIG.APPOINTMENT_STATUS.APPROVED :
+              a.status === 'checked_in' ? APP_CONFIG.APPOINTMENT_STATUS.CHECKED_IN :
+              a.status === 'cancelled' ? APP_CONFIG.APPOINTMENT_STATUS.CANCELLED :
+              a.status === 'completed' ? APP_CONFIG.APPOINTMENT_STATUS.COMPLETED :
+              a.status === 'in_consultation' ? APP_CONFIG.APPOINTMENT_STATUS.IN_CONSULTATION :
+              a.status === 'rejected' ? APP_CONFIG.APPOINTMENT_STATUS.REJECTED :
+              a.status === 'no_show' ? APP_CONFIG.APPOINTMENT_STATUS.NO_SHOW :
+              (a.status || APP_CONFIG.APPOINTMENT_STATUS.PENDING);
 
-            // Preserve local state transitions (approved, rejected, checked-in, completed) if remote status is still pending
+            // Preserve local state transitions if remote status is still pending.
             if (resolvedStatus === APP_CONFIG.APPOINTMENT_STATUS.PENDING && localMatch) {
               if (localMatch.status === APP_CONFIG.APPOINTMENT_STATUS.APPROVED || localMatch.approvedAt) {
                 resolvedStatus = APP_CONFIG.APPOINTMENT_STATUS.APPROVED;
@@ -95,7 +95,11 @@ export const AppointmentService = {
               updatedAt: a.updatedAt || localMatch?.updatedAt,
               queueNumber: a.queueNumber || localMatch?.queueNumber || null,
               approvedAt: localMatch?.approvedAt || (resolvedStatus === APP_CONFIG.APPOINTMENT_STATUS.APPROVED ? new Date().toISOString() : undefined),
-              cancellationReason: a.cancellationReason || a.reason || localMatch?.cancellationReason
+              cancellationReason: a.cancellationReason || a.reason || localMatch?.cancellationReason,
+
+              // Rejection details from backend.
+              rejectionReason: a.rejectionReason || localMatch?.rejectionReason || '',
+              rejectedAt: a.rejectedAt || localMatch?.rejectedAt || null
             };
           });
 
@@ -103,11 +107,12 @@ export const AppointmentService = {
           return mapped;
         }
       } catch (err) {
-        // Fallback to local storage
+        // Fallback to local storage.
       }
     }
 
     let appointments = Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS);
+
     if (!appointments) {
       if (APP_CONFIG.USE_MOCK_DATA) {
         appointments = INITIAL_APPOINTMENTS;
@@ -116,14 +121,20 @@ export const AppointmentService = {
         appointments = [];
       }
     }
-    const normalized = appointments.map(a => ({ ...a,
+
+    const normalized = appointments.map(a => ({
+      ...a,
       appointmentDate: a.appointmentDate || a.date,
       timeSlot: a.timeSlot || a.time,
       studentName: a.studentName || a.patientName,
       matricNo: a.matricNo || a.patientMatric,
       studentId: a.studentId || (a.patientMatric === '21/SCI/1048' ? 'usr_student_amina' : a.patientMatric === 'CSC/2021/045' ? 'usr_student_01' : undefined)
     }));
-    if (JSON.stringify(normalized) !== JSON.stringify(appointments)) Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, normalized);
+
+    if (JSON.stringify(normalized) !== JSON.stringify(appointments)) {
+      Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, normalized);
+    }
+
     return normalized;
   },
 
@@ -375,12 +386,25 @@ export const AppointmentService = {
    * Admin Action: Reject an appointment with reason.
    * Calls documented PATCH /admin/appointments/{publicId}/reject.
    */
-  async rejectAppointment(appointmentId, rejectionReason = 'Doctor unavailable') {
+  
+  async rejectAppointment(appointmentId, rejectionReason) {
     const cleanId = String(appointmentId || '').trim();
-    if (!cleanId) return { success: false, message: 'Appointment ID is required.' };
+    const cleanReason = String(rejectionReason || '').trim();
+
+    if (!cleanId) {
+      return { success: false, message: 'Appointment ID is required.' };
+    }
+
+    if (!cleanReason) {
+      return { success: false, message: 'Rejection reason is required.' };
+    }
 
     const appointments = await this.getAllAppointments();
-    const targetApt = appointments.find(a => a.id === cleanId || a.publicId === cleanId);
+
+    const targetApt = appointments.find(
+      a => a.id === cleanId || a.publicId === cleanId
+    );
+
     if (!targetApt) {
       return { success: false, message: 'Appointment not found in roster.' };
     }
@@ -388,16 +412,27 @@ export const AppointmentService = {
       return { success: false, message: 'Only pending requests can be rejected.' };
     }
 
-    const isLocalDemo = cleanId.startsWith('apt_00') || cleanId.startsWith('apt_demo_') || cleanId.startsWith('apt_mock_');
+    const isLocalDemo =
+      cleanId.startsWith('apt_00') ||
+      cleanId.startsWith('apt_demo_') ||
+      cleanId.startsWith('apt_mock_');
 
     if (!APP_CONFIG.USE_MOCK_DATA && !isLocalDemo) {
       try {
-        await Api.patch(`/admin/appointments/${cleanId}/reject`);
+        await Api.patch(
+          `/admin/appointments/${cleanId}/reject`,
+          { reason: cleanReason }
+        );
       } catch (err) {
         if (err.status === 404 || err.code === 'APPOINTMENT_NOT_FOUND') {
-          console.warn(`[AppointmentService] Appointment ${cleanId} not found on server; rejecting in local storage.`);
+          console.warn(
+            `[AppointmentService] Appointment ${cleanId} not found on server; rejecting in local storage.`
+          );
         } else {
-          return { success: false, message: err.message || 'Unable to reject appointment on backend.' };
+          return {
+            success: false,
+            message: err.message || 'Unable to reject appointment on backend.'
+          };
         }
       }
     }
@@ -407,10 +442,11 @@ export const AppointmentService = {
         return {
           ...apt,
           status: APP_CONFIG.APPOINTMENT_STATUS.REJECTED,
-          rejectionReason,
-          rejectedAt: new Date().toISOString()
-        };
-      }
+        rejectionReason: cleanReason,
+        rejectedAt: new Date().toISOString()
+      };
+    }
+
       return apt;
     });
 

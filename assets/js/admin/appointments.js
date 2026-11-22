@@ -1009,13 +1009,16 @@ window.adminViewDetails = (id) => {
         <div>
           <span class="text-xs text-muted">Patient:</span>
           <div class="text-sm text-bold text-navy">
-            ${Utils.escapeHtml(apt.studentName)} (${Utils.escapeHtml(apt.matricNo)})
+            ${Utils.escapeHtml(apt.studentName || 'Unknown Student')}
+            (${Utils.escapeHtml(apt.matricNo || 'N/A')})
           </div>
         </div>
 
         <div>
           <span class="text-xs text-muted">Phone:</span>
-          <div class="text-xs">${Utils.escapeHtml(apt.phone || 'N/A')}</div>
+          <div class="text-xs">
+            ${Utils.escapeHtml(apt.phone || 'N/A')}
+          </div>
         </div>
 
         <div>
@@ -1034,6 +1037,15 @@ window.adminViewDetails = (id) => {
           </div>
         </div>
 
+        ${getAppointmentStatus(apt.status) === 'Rejected' && apt.rejectionReason ? `
+          <div>
+            <span class="text-xs text-muted">Rejection Reason:</span>
+            <div class="text-xs text-danger" style="background: #FEF2F2; padding: 8px; border-radius: 6px; margin-top: 4px;">
+              ${Utils.escapeHtml(apt.rejectionReason)}
+            </div>
+          </div>
+        ` : ''}
+
         ${apt.queueNumber ? `
           <div style="background: var(--color-mint); padding: 8px; border-radius: 6px; text-align: center;">
             <span class="text-xs text-teal">Queue Ticket:</span>
@@ -1042,6 +1054,7 @@ window.adminViewDetails = (id) => {
             </div>
           </div>
         ` : ''}
+
       </div>
     `,
     confirmText: 'Done',
