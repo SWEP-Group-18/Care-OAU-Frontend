@@ -258,17 +258,49 @@ async function loadAppointments() {
 window.cancelAppointmentRequest = (appointmentId) => {
   Modal.confirm({
     title: 'Cancel Appointment Request?',
-    message: 'Are you sure you want to cancel this appointment request? This action cannot be reversed.',
-    confirmText: 'Yes, Cancel Appointment',
+    message: `
+      <div style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+        <p class="text-xs text-secondary">
+          Are you sure you want to cancel this appointment? This action cannot be reversed.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="cancellation-reason">
+              Reason for cancellation
+          </label>
+          <textarea
+              id="cancellation-reason"
+              class="form-control"
+              rows="3"
+              placeholder="Please explain why you want to cancel this appointment..."
+          ></textarea>
+        </div>
+      </div>
+    `,
+    confirmText: 'Confirm Cancellation',
     confirmClass: 'btn-danger',
     onConfirm: async () => {
-      const res = await AppointmentService.cancelAppointment(appointmentId, 'Cancelled by student request.');
+      const reasonInput = document.getElementById('cancellation-reason');
+      const reason = reasonInput?.value.trim();
+
+      if (!reason) {
+        Toast.warning('Please enter a cancellation reason.');
+        return false;
+      }
+
+      const res = await AppointmentService.cancelAppointment(
+        appointmentId,
+        reason
+      );
+
       if (res && res.success === false) {
         Toast.error(res.message || 'Unable to cancel appointment.');
-        return;
+        return false;
       }
+
       Toast.success('Appointment cancelled successfully.');
-      loadAppointments();
+
+      await loadAppointments();
       StudentSidebar.render();
     }
   });

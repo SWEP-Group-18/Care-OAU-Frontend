@@ -144,6 +144,13 @@
     -webkit-backdrop-filter: none;
 }
 
+/* Style cancellation badge */
+#appointments-tbody .appointment-list-card:has(.appointment-cancellation-notice)
+.appointment-list-top .badge {
+    background-color: #FFFBEB !important;
+    color: #B45309 !important;
+}
+
 /* Appointment Information - Three Equal Horizontal Columns */
 .appointment-info-grid {
     display: grid;

@@ -422,38 +422,66 @@ export const AppointmentService = {
    * Cancel an appointment (by student or admin).
    * Calls documented PATCH /appointments/{publicId}/cancel.
    */
-  async cancelAppointment(appointmentId, cancellationReason = 'Cancelled by student') {
+  async cancelAppointment(appointmentId, cancellationReason) {
     const cleanId = String(appointmentId || '').trim();
-    if (!cleanId) return { success: false, message: 'Appointment ID is required.' };
+    const reason = String(cancellationReason || '').trim();
+
+    if (!cleanId) {
+        return { success: false, message: 'Appointment ID is required.' };
+    }
+
+    if (!reason) {
+        return { success: false, message: 'Cancellation reason is required.' };
+    }
 
     const appointments = await this.getAllAppointments();
-    if (!appointments.some(a => (a.id === cleanId || a.publicId === cleanId) && ['Pending', 'Pending Approval', 'Approved', APP_CONFIG.APPOINTMENT_STATUS.PENDING, APP_CONFIG.APPOINTMENT_STATUS.APPROVED].includes(a.status))) {
-      return { success: false, message: 'This visit can no longer be cancelled online.' };
+
+    if (!appointments.some(a =>
+        (a.id === cleanId || a.publicId === cleanId) &&
+        [
+            'Pending',
+            'Pending Approval',
+            'Approved',
+            APP_CONFIG.APPOINTMENT_STATUS.PENDING,
+            APP_CONFIG.APPOINTMENT_STATUS.APPROVED
+        ].includes(a.status)
+    )) {
+        return {
+            success: false,
+            message: 'This visit can no longer be cancelled online.'
+        };
     }
 
     if (!APP_CONFIG.USE_MOCK_DATA) {
-      try {
-        await Api.patch(`/appointments/${cleanId}/cancel`);
-      } catch (err) {
-        return { success: false, message: err.message || 'Unable to cancel appointment.' };
-      }
+        try {
+            await Api.patch(`/appointments/${cleanId}/cancel`, {
+                reason
+            });
+        } catch (err) {
+            return {
+                success: false,
+                message: err.message || 'Unable to cancel appointment.'
+            };
+        }
     }
 
     const updated = appointments.map(apt => {
-      if (apt.id === cleanId || apt.publicId === cleanId) {
-        return {
-          ...apt,
-          status: APP_CONFIG.APPOINTMENT_STATUS.CANCELLED,
-          cancellationReason,
-          cancelledAt: new Date().toISOString()
-        };
-      }
-      return apt;
+        if (apt.id === cleanId || apt.publicId === cleanId) {
+            return {
+                ...apt,
+                status: APP_CONFIG.APPOINTMENT_STATUS.CANCELLED,
+                cancellationReason: reason,
+                cancelledAt: new Date().toISOString()
+            };
+        }
+
+        return apt;
     });
 
     Storage.set(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, updated);
+
     return { success: true };
-  },
+},
 
   /**
    * Reschedule appointment date and time
