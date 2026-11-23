@@ -1,12 +1,8 @@
-import { APP_CONFIG } from "./config.js";
-
-const socketOrigin = "https://care-oau-api.onrender.com";
-
-export const socket = window.io(socketOrigin, {
+export const socket = window.io(window.location.origin, {
     withCredentials: true,
 
     transports: ["polling"],
-    upgrade: true,
+    upgrade: false,
 
     reconnection: true,
     reconnectionAttempts: Infinity,
