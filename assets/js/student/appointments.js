@@ -253,7 +253,7 @@ async function loadAppointments() {
         <div class="appointment-list-actions">
             <button class="btn btn-outline-navy" onclick="viewAppointmentDetails('${apt.id}')">View details</button>
 
-            ${apt.queueNumber ? '<a href="queue-tracking.html" class="btn btn-teal">Track Queue</a>' : ''}
+            ${apt.queueNumber && apt.status !== 'Completed' ? '<a href="queue-tracking.html" class="btn btn-teal">Track Queue</a>' : ''}
 
             ${canCancel ? '<button class="btn btn-ghost text-danger" onclick="cancelAppointmentRequest(\'' + apt.id + '\')">Cancel appointment</button>' : ''}
         </div>
