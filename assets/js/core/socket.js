@@ -1,13 +1,11 @@
 import { APP_CONFIG } from "./config.js";
 
-const socketOrigin = APP_CONFIG.API_BASE_URL.startsWith("/")
-    ? window.location.origin
-    : new URL(APP_CONFIG.API_BASE_URL).origin;
+const socketOrigin = "https://care-oau-api.onrender.com";
 
 export const socket = window.io(socketOrigin, {
     withCredentials: true,
 
-    transports: ["websocket", "polling"],
+    transports: ["polling", "websocket"],
     upgrade: true,
 
     reconnection: true,
@@ -29,8 +27,4 @@ socket.on("connect_error", (error) => {
 
 socket.on("disconnect", (reason) => {
     console.warn("[Socket] Disconnected:", reason);
-});
-
-socket.io.on("reconnect", (attempt) => {
-    console.log("[Socket] Reconnected after attempts:", attempt);
 });
