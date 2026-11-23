@@ -5,7 +5,7 @@ const socketOrigin = "https://care-oau-api.onrender.com";
 export const socket = window.io(socketOrigin, {
     withCredentials: true,
 
-    transports: ["polling", "websocket"],
+    transports: ["polling"],
     upgrade: true,
 
     reconnection: true,
