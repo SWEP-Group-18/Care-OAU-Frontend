@@ -1274,7 +1274,7 @@ async function submitAppointmentRequest() {
 			doctorName: docName,
 			appointmentDate: selectedDateStr,
 			timeSlot: selectedTimeStr,
-			reason: document.getElementById('booking-reason')?.value.trim() || 'General consultation',
+			reason: document.getElementById('booking-reason')?.value.trim() || 'No reason provided',
 			referralCode: document.getElementById('referral-code')?.value.trim()
 		});
 
