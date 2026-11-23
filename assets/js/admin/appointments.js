@@ -20,6 +20,7 @@ let activeFilter = 'all';
 let searchQuery = '';
 
 let adminAppointments = [];
+let pendingCancellationUpdateIds = new Set();
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!Navigation.requireAuth('admin')) return;
@@ -355,6 +356,10 @@ function renderAppointmentCard(apt) {
   const statusClass = getStatusClass(status);
   const id = escape(apt.id);
 
+  const showNewBadge =
+    (apt.isNew || apt.hasUnreadUpdate) &&
+    !['Checked In', 'Completed', 'Rejected'].includes(status);
+
   return `
     <article class="appointment-card ${statusClass}" data-appointment-id="${id}">
 
@@ -405,7 +410,7 @@ function renderAppointmentCard(apt) {
               </span>
             ` : ''}
 
-            ${apt.isNew ? `
+            ${showNewBadge ? `
               <span class="appointment-new-badge">New</span>
             ` : ''}
 
@@ -471,6 +476,7 @@ function initializeSocketListeners() {
       status: 'Pending',
 
       isNew: true,
+      hasUnreadUpdate: false,
 
       serviceId: null,
       doctorId: null,
@@ -483,6 +489,71 @@ function initializeSocketListeners() {
     renderAppointments();
 
     Toast.info('A new appointment has been booked.');
+  });
+
+  socket.on('appointment:updated', ({ appointment } = {}) => {
+    if (!appointment?.publicId) return;
+
+    const appointmentId = String(appointment.publicId);
+
+    const statusMap = {
+      pending: 'Pending',
+      approved: 'Approved',
+      checked_in: 'Checked In',
+      completed: 'Completed',
+      rejected: 'Rejected',
+      cancelled: 'Cancelled',
+      canceled: 'Cancelled'
+    };
+
+    const updatedStatus =
+      statusMap[String(appointment.status || '').toLowerCase()];
+
+    if (!updatedStatus) return;
+
+    const existingAppointment = getAppointmentById(appointmentId);
+
+    if (!existingAppointment) {
+      if (updatedStatus === 'Cancelled') {
+        pendingCancellationUpdateIds.add(appointmentId);
+      }
+
+      loadAppointments();
+      return;
+    }
+
+    const isCancellation = updatedStatus === 'Cancelled';
+
+    if (isCancellation) {
+      pendingCancellationUpdateIds.add(appointmentId);
+    }
+
+    const cancellationTimestamp = isCancellation
+      ? appointment.cancelledAt ||
+        appointment.updatedAt ||
+        new Date().toISOString()
+      : existingAppointment.cancelledAt;
+
+    updateAppointmentInState(appointmentId, {
+      ...appointment,
+      status: updatedStatus,
+
+      rejectionReason:
+        appointment.rejectionReason ?? existingAppointment.rejectionReason,
+
+      cancellationReason:
+        appointment.cancellationReason ?? existingAppointment.cancellationReason,
+
+      cancelledAt: cancellationTimestamp,
+
+      hasUnreadUpdate: isCancellation
+        ? true
+        : existingAppointment.hasUnreadUpdate
+    });
+
+    if (isCancellation) {
+      Toast.info('A student has cancelled an appointment.');
+    }
   });
 
   socket.on('connect', () => {
@@ -519,19 +590,55 @@ async function loadAppointments() {
       return;
     }
 
-    // Preserve NEW markers for untouched pending appointments.
+    // Preserve NEW markers for appointments already in New Bookings.
     const newAppointmentIds = new Set(
       adminAppointments
         .filter(apt => apt.isNew)
         .map(apt => String(apt.id))
     );
 
-    adminAppointments = appointments.map(apt => ({
-      ...apt,
-      isNew:
-        newAppointmentIds.has(String(apt.id)) &&
-        getAppointmentStatus(apt.status) === 'Pending'
-    }));
+    // Preserve cancellation updates and their timestamps.
+    const unreadUpdateIds = new Set([
+      ...adminAppointments
+        .filter(apt => apt.hasUnreadUpdate)
+        .map(apt => String(apt.id)),
+      ...pendingCancellationUpdateIds
+    ]);
+
+    const previousAppointments = new Map(
+      adminAppointments.map(apt => [
+        String(apt.id),
+        apt
+      ])
+    );
+
+    adminAppointments = appointments.map(apt => {
+      const previousAppointment = previousAppointments.get(String(apt.id));
+
+      const isCancelled =
+        getAppointmentStatus(apt.status) === 'Cancelled';
+
+      const hasUnreadUpdate =
+        unreadUpdateIds.has(String(apt.id)) && isCancelled;
+
+      return {
+        ...apt,
+
+        // Keep existing new bookings in their section regardless of status.
+        isNew: newAppointmentIds.has(String(apt.id)),
+
+        hasUnreadUpdate,
+
+        cancelledAt: hasUnreadUpdate
+          ? apt.cancelledAt ||
+            apt.updatedAt ||
+            previousAppointment?.cancelledAt ||
+            new Date().toISOString()
+          : apt.cancelledAt
+      };
+    });
+
+    pendingCancellationUpdateIds.clear();
 
     renderAppointments();
   } catch (error) {
@@ -616,12 +723,18 @@ function renderAppointments() {
     return;
   }
 
-  // Separate new pending bookings from regular appointments.
-  const newAppointments = filtered.filter(apt =>
-    apt.isNew && getAppointmentStatus(apt.status) === 'Pending'
+  // Separate cancellation updates.
+  const appointmentUpdates = filtered.filter(apt =>
+    apt.hasUnreadUpdate &&
+    getAppointmentStatus(apt.status) === 'Cancelled'
   );
 
+  // Keep all new bookings in their section regardless of appointment status.
+  const newAppointments = filtered.filter(apt => apt.isNew);
+
+  // Keep updates and new bookings out of the normal date groups.
   const regularAppointments = filtered.filter(apt =>
+    !appointmentUpdates.includes(apt) &&
     !newAppointments.includes(apt)
   );
 
@@ -678,6 +791,48 @@ function renderAppointments() {
 
   groups.upcoming.forEach(sortByTime);
   groups.past.forEach(sortByTime);
+
+  // Group cancellation updates by the date they were received.
+  const appointmentUpdatesByDate = new Map();
+
+  appointmentUpdates.forEach(apt => {
+    const updateDate = apt.cancelledAt || apt.updatedAt;
+    const dateKey = updateDate
+      ? getAppointmentDateKey(updateDate)
+      : 'unknown';
+
+    if (!appointmentUpdatesByDate.has(dateKey)) {
+      appointmentUpdatesByDate.set(dateKey, []);
+    }
+
+    appointmentUpdatesByDate.get(dateKey).push(apt);
+  });
+
+  // Render cancellation updates with a separate heading for each date.
+  const appointmentUpdatesSection = Array.from(appointmentUpdatesByDate.entries())
+    .sort(([dateA], [dateB]) => {
+      if (dateA === 'unknown') return 1;
+      if (dateB === 'unknown') return -1;
+
+      return dateB.localeCompare(dateA);
+    })
+    .map(([date, dateItems]) => `
+      <section class="appointment-period-group appointment-updates-section">
+
+        <div class="appointment-date-heading">
+          <h3>Appointment Updates · ${date === 'unknown' ? 'Date unavailable' : escape(getAppointmentDateLabel(date))}</h3>
+          <span>
+            ${dateItems.length}
+            ${dateItems.length === 1 ? 'appointment update' : 'appointment updates'}
+          </span>
+        </div>
+
+        <div class="appointment-date-cards">
+          ${dateItems.map(renderAppointmentCard).join('')}
+        </div>
+
+      </section>
+    `).join('');
 
   // Render new bookings, with a separate heading for each date.
   const newAppointmentsSection = Array.from(newAppointmentsByDate.entries())
@@ -739,6 +894,7 @@ function renderAppointments() {
 
   // Render all sections in order.
   container.innerHTML = `
+    ${appointmentUpdatesSection}
     ${newAppointmentsSection}
     ${todaySection}
     ${renderDateGroups(groups.upcoming, 'upcoming')}
@@ -757,12 +913,9 @@ window.adminApprove = async (id) => {
     return;
   }
 
-  clearNewAppointmentFlag(id);
-
   updateAppointmentInState(id, {
     status: 'Approved',
-    approvedAt: new Date().toISOString(),
-    isNew: false
+    approvedAt: new Date().toISOString()
   });
 
   Toast.success('Appointment approved. Patient is now eligible for on-site check-in.');
@@ -784,12 +937,9 @@ window.adminComplete = async (id) => {
         return false;
       }
 
-      clearNewAppointmentFlag(id);
-
       updateAppointmentInState(id, {
         status: 'Completed',
-        completedAt: new Date().toISOString(),
-        isNew: false
+        completedAt: new Date().toISOString()
       });
 
       Toast.success('Appointment marked as completed.');
@@ -820,13 +970,10 @@ window.adminReject = (id) => {
         return false;
       }
 
-      clearNewAppointmentFlag(id);
-
       updateAppointmentInState(id, {
         status: 'Rejected',
         rejectionReason: reason,
-        rejectedAt: new Date().toISOString(),
-        isNew: false
+        rejectedAt: new Date().toISOString()
       });
 
       Toast.warning('Appointment rejected.');
@@ -844,13 +991,10 @@ window.adminCheckIn = async (id) => {
     return;
   }
 
-  clearNewAppointmentFlag(id);
-
   updateAppointmentInState(id, {
     status: 'Checked In',
     queueNumber: res.queueNumber,
-    checkedInAt: new Date().toISOString(),
-    isNew: false
+    checkedInAt: new Date().toISOString()
   });
 
   Toast.success(`Patient ${res.queueItem.patientName} checked in! Queue Ticket ${res.queueNumber} issued.`);
@@ -898,13 +1042,10 @@ window.adminReschedule = async (id, currentDate, currentTime) => {
         return false;
       }
 
-      clearNewAppointmentFlag(id);
-
       updateAppointmentInState(id, {
         appointmentDate: newDate,
         timeSlot: newTime,
         status: 'Pending',
-        isNew: false,
         rescheduledAt: new Date().toISOString()
       });
 
@@ -1042,6 +1183,15 @@ window.adminViewDetails = (id) => {
             <span class="text-xs text-muted">Rejection Reason:</span>
             <div class="text-xs text-danger" style="background: #FEF2F2; padding: 8px; border-radius: 6px; margin-top: 4px;">
               ${Utils.escapeHtml(apt.rejectionReason)}
+            </div>
+          </div>
+        ` : ''}
+
+        ${getAppointmentStatus(apt.status) === 'Cancelled' && apt.cancellationReason ? `
+          <div>
+            <span class="text-xs text-muted">Cancellation Reason:</span>
+            <div class="text-xs text-danger" style="background: #FEF2F2; padding: 8px; border-radius: 6px; margin-top: 4px;">
+              ${Utils.escapeHtml(apt.cancellationReason)}
             </div>
           </div>
         ` : ''}
