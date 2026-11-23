@@ -6,11 +6,21 @@ const socketOrigin = APP_CONFIG.API_BASE_URL.startsWith("/")
 
 export const socket = window.io(socketOrigin, {
     withCredentials: true,
-    transports: ["polling"],
+
+    transports: ["websocket", "polling"],
+    upgrade: true,
+
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+
+    timeout: 20000
 });
 
-socket.on("connect", ()=> {
-    console.log(`[Socket] Connnected:`, socket.id)
+socket.on("connect", () => {
+    console.log("[Socket] Connected:", socket.id);
+    console.log("[Socket] Transport:", socket.io.engine.transport.name);
 });
 
 socket.on("connect_error", (error) => {
@@ -18,5 +28,9 @@ socket.on("connect_error", (error) => {
 });
 
 socket.on("disconnect", (reason) => {
-    console.log("[Socket] Disconnected:", reason);
+    console.warn("[Socket] Disconnected:", reason);
+});
+
+socket.io.on("reconnect", (attempt) => {
+    console.log("[Socket] Reconnected after attempts:", attempt);
 });
