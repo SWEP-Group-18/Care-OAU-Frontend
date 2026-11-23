@@ -325,6 +325,36 @@
 }
 
 /* =========================================
+   APPOINTMENT STATUS & QUEUE TICKET
+========================================= */
+
+.appointment-status-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 10px;
+}
+
+.appointment-queue-ticket {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-width: 0;
+    height: 26px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0 8px;
+    border-radius: 5px;
+    background: #E2F5ED;
+    color: #0E7A56;
+    font-size: 12px !important;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* =========================================
    SMALL MOBILE SCREENS
 ========================================= */
 

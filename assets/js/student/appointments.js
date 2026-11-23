@@ -71,9 +71,20 @@ function handleAppointmentUpdated(data) {
             Toast.info('Your appointment has been cancelled.');
             break;
 
-        case 'checked_in':
-            Toast.success('Your appointment has been checked in!');
-            break;
+        case 'checked_in': {
+          const queueNumber = appointment.queue?.queueNumber || appointment.queueNumber;
+
+          const queueTicket = queueNumber
+              ? `Q-${String(queueNumber).padStart(3, '0')}`
+              : null;
+
+          Toast.success(
+              queueTicket
+                  ? `Your appointment has been checked in! Your queue ticket is ${queueTicket}. Please wait for your turn.`
+                  : 'Your appointment has been checked in successfully!'
+          );
+          break;
+        }
 
         case 'completed':
             Toast.success('Your appointment has been completed!');
@@ -197,7 +208,19 @@ async function loadAppointments() {
           : '';
 
       return `<article class="appointment-list-card ${statusClass}">
-        <div class="appointment-list-top"><div>${Utils.getStatusBadge(apt.status)}<h2>${Utils.escapeHtml(apt.serviceName || 'General Medical Consultation')}</h2><p>Booking reference  -  ${Utils.escapeHtml(displayId)}</p></div>
+        <div class="appointment-list-top">
+          <div>
+              <div class="appointment-status-group">
+                  ${Utils.getStatusBadge(apt.status)}
+                  ${apt.queueNumber ? `
+                      <span class="appointment-queue-ticket">
+                          Q-${String(apt.queueNumber).padStart(3, '0')}
+                      </span>
+                  ` : ''}
+              </div>
+              <h2>${Utils.escapeHtml(apt.serviceName || 'General Medical Consultation')}</h2>
+              <p>Booking reference  -  ${Utils.escapeHtml(displayId)}</p>
+        </div>
         <div class="large-date"><strong>${date.getDate()}</strong><span>${date.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}<br>${date.toLocaleDateString('en-GB',{weekday:'long'})}</span></div></div>
         <div class="appointment-info-grid"><div><span>Scheduled time</span><strong>${Utils.escapeHtml(apt.timeSlot || '08:00 AM')}</strong></div><div><span>Doctor</span><strong>${Utils.escapeHtml(apt.doctorName || 'Assigned Physician')}</strong></div><div><span>Location</span><strong>${Utils.escapeHtml(apt.location || 'Care-OAU Health Centre')}</strong></div></div>
         ${apt.reason ? `
@@ -341,7 +364,7 @@ window.viewAppointmentDetails = async (appointmentId) => {
         ${apt.queueNumber ? `
           <div style="background: var(--color-mint); padding: 8px 12px; border-radius: 6px; text-align: center;">
             <span class="text-xs text-teal">Assigned Queue Ticket:</span>
-            <div style="font-size: 24px; font-weight: 800; color: var(--color-teal);">${apt.queueNumber}</div>
+            <div style="font-size: 24px; font-weight: 800; color: var(--color-teal);">Q-${String(apt.queueNumber).padStart(3, '0')}</div>
           </div>
         ` : `
           <div class="text-xs text-muted" style="border-top: 1px solid var(--color-divider); padding-top: 8px;">
