@@ -1,28 +1,220 @@
-body{
-    overflow-y: scroll;
+
+/* Queue roster heading */
+.queue-roster {
+    margin-top: var(--space-5);
 }
 
-#queue-table {
-    width: 100%;
-    table-layout: fixed;
-}
-
-/* Queue status badges */
-#queue-tbody td:nth-child(5) .badge {
-    display: inline-flex;
-    justify-content: center;
+.queue-roster-header {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    width: 100px;
-    padding: 6px 12px;
-    box-sizing: border-box;
-    border-radius: 5px;
-    border: none;
+    margin-bottom: 10px;
+    padding-top: var(--space-5);
 }
 
-/* Center Queue Status column */
-#queue-table thead th:nth-child(5),
-#queue-tbody td:nth-child(5) {
+.queue-roster-header h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+}
+
+/* Expandable queue cards */
+.queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.queue-item {
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+    border: 1px solid #E2E8F0;
+}
+
+/* Status accent */
+.queue-item::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: var(--status-color, var(--navy));
+}
+
+.queue-item[data-status="waiting"] {
+    --status-color: #D97706;
+}
+
+.queue-item[data-status="called"] {
+    --status-color: #2563EB;
+}
+
+.queue-item[data-status="in-consultation"] {
+    --status-color: #0F766E;
+}
+
+.queue-item[data-status="completed"] {
+    --status-color: #16A34A;
+}
+
+.queue-item[data-status="no-show"] {
+    --status-color: #DC2626;
+}
+
+.queue-item[data-status="cancelled"] {
+    --status-color: #64748B;
+}
+
+.queue-item-finished {
+    opacity: 0.75;
+}
+
+/* Collapsed row */
+.queue-item-header {
+    width: 100%;
+    min-height: 58px;
+    display: grid;
+    grid-template-columns: 78px minmax(140px, 1.2fr) minmax(140px, 1fr) 104px 24px;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 18px 12px 24px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+
+.queue-item-header:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: -3px;
+}
+
+.queue-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 78px;
+    min-height: 34px;
+    border: 1px solid var(--status-color);
+    border-radius: 10px;
+    color: var(--status-color);
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.queue-student,
+.queue-service {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.queue-student-name {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--navy);
+}
+
+.queue-service {
+    font-size: 13px;
+    color: var(--text-secondary, #64748B);
+}
+
+.queue-status {
+    display: flex;
+    justify-content: center;
+}
+
+.queue-status .badge {
+    width: 104px;
+    justify-content: center;
+}
+
+.queue-chevron {
+    display: flex;
+    justify-content: center;
+    color: #64748B;
+    transition: transform 0.2s ease;
+}
+
+.queue-item.expanded .queue-chevron {
+    transform: rotate(180deg);
+}
+
+/* Expanded patient details */
+.queue-item-details {
+    margin: 0 18px 14px 24px;
+    padding: 14px;
+    border-radius: 12px;
+    background: #F8FAFC;
+}
+
+.queue-item-details[hidden] {
+    display: none;
+}
+
+.queue-details-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.queue-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.queue-detail-label {
+    font-size: 12px;
+    color: #64748B;
+}
+
+.queue-detail-value {
+    overflow-wrap: anywhere;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+}
+
+/* Expanded actions */
+.queue-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed #CBD5E1;
+}
+
+.queue-item-actions button {
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.queue-item-actions button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.queue-no-actions {
+    font-size: 12px;
+    color: #64748B;
+}
+
+.queue-empty-state {
+    padding: 40px 16px;
     text-align: center;
+    color: #64748B;
+    font-size: 13px;
 }
 
 /* Queue filter container */
@@ -54,36 +246,61 @@ body{
     transform: translateY(-1px);
 }
 
-/* Mark No Show button */
-#qm-btn-noshow {
-    transition: all 0.2s ease;
+/* Mobile queue layout */
+@media (max-width: 640px) {
+    .queue-item-header {
+        grid-template-columns: 66px minmax(0, 1fr) auto 20px;
+        gap: 10px;
+        padding: 12px 12px 12px 18px;
+    }
+
+    .queue-number {
+        width: 66px;
+        font-size: 13px;
+    }
+
+    .queue-student {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .queue-service {
+        grid-column: 2;
+        grid-row: 2;
+        font-size: 12px;
+    }
+
+    .queue-status {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+    }
+
+    .queue-status .badge {
+        width: auto;
+        min-width: 88px;
+    }
+
+    .queue-chevron {
+        grid-column: 4;
+        grid-row: 1 / span 2;
+    }
+
+    .queue-item-header {
+        min-height: 66px;
+    }
+
+    .queue-details-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .queue-item-details {
+        margin-right: 10px;
+        margin-left: 18px;
+    }
 }
 
-/* Hover effect */
-#qm-btn-noshow:hover:not(:disabled) {
-    color: white !important;
-    background: #DC2626;
-    transform: translateY(-1px);
-}
-
-#queue-tbody thead tr{
-    border-radius: var(--clay-radius-card);
-}
-
-/* Preserve bottom table corners on hover */
-#queue-tbody tr:last-child td:first-child {
-    border-bottom-left-radius: var(--clay-radius-card);
-}
-
-#queue-tbody tr:last-child td:last-child {
-    border-bottom-right-radius: var(--clay-radius-card);
-}
-
-/* Queue table header corners */
-#queue-table thead th:first-child {
-    border-top-left-radius: var(--clay-radius-card);
-}
-
-#queue-table thead th:last-child {
-    border-top-right-radius: var(--clay-radius-card);
+@media (prefers-reduced-motion: reduce) {
+    .queue-chevron {
+        transition: none;
+    }
 }

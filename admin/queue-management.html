@@ -101,29 +101,23 @@
           <button type="button" class="tab-filter-btn" data-status="Completed">Completed</button>
         </div>
       </div>
-
-      <!-- QUEUE ROSTER TABLE -->
-      <div class="card">
-        <div class="card-body" style="padding: 0;">
-          <div class="table-responsive">
-            <table class="table" id="queue-table">
-              <thead>
-                <tr>
-                  <th>Queue Ticket</th>
-                  <th>Student / Patient</th>
-                  <th>Assigned Clinic</th>
-                  <th>Check-in Time</th>
-                  <th>Status</th>
-                  <th style="text-align: right;">Queue Action</th>
-                </tr>
-              </thead>
-              <tbody id="queue-tbody">
-                <!-- Rendered dynamically by queue.js -->
-              </tbody>
-            </table>
-          </div>
+      
+      <!-- QUEUE ROSTER -->
+      <section class="queue-roster">
+        <div class="queue-roster-header">
+          <h3>All Patients</h3>
+          <span id="qm-patient-count" class="text-sm text-secondary">0 patients</span>
         </div>
-      </div>
+
+        <div
+          id="queue-list"
+          class="queue-list"
+          aria-live="polite"
+        >
+          <!-- Patient cards rendered dynamically by queue.js -->
+        </div>
+      </section>
+
 
     </main>
   </div>
