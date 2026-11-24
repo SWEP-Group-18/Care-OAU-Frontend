@@ -1,8 +1,21 @@
-export const socket = window.io(window.location.origin, {
+import { APP_CONFIG } from "./config.js";
+
+const hostname = window.location.hostname;
+
+const isLocal =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1";
+
+const socketOrigin = new URL(
+    APP_CONFIG.API_BASE_URL,
+    window.location.origin
+).origin;
+
+export const socket = window.io(socketOrigin, {
     withCredentials: true,
 
     transports: ["polling"],
-    upgrade: false,
+    upgrade: isLocal,
 
     reconnection: true,
     reconnectionAttempts: Infinity,
