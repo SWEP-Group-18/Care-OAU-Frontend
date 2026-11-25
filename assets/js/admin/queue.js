@@ -306,7 +306,7 @@ function renderQueueTable(queue) {
     const studentName = Utils.escapeHtml(item.studentName || item.patientName || 'Student');
     const matricNo = Utils.escapeHtml(item.matricNo || 'Not available');
     const serviceName = Utils.escapeHtml(item.serviceName || 'General Consultation');
-    const doctorName = Utils.escapeHtml(item.doctorName || 'Not assigned');
+    const consultingRoom = Utils.escapeHtml(item.room || 'Not assigned');
     const queueNumber = Utils.escapeHtml(item.queueNumber || '---');
     const checkInTime = Utils.escapeHtml(Utils.formatTime(item.checkInTime) || 'Today');
 
@@ -355,8 +355,8 @@ function renderQueueTable(queue) {
             </div>
 
             <div class="queue-detail">
-              <span class="queue-detail-label">Assigned Doctor</span>
-              <span class="queue-detail-value">${doctorName}</span>
+              <span class="queue-detail-label">Consulting Room</span>
+              <span class="queue-detail-value">${consultingRoom}</span>
             </div>
 
             <div class="queue-detail">
