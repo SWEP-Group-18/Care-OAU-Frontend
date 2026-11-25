@@ -59,7 +59,7 @@ export const QueueService = {
     const queue = await this.getQueue();
     const patient = queue.find(q => q.id === queueId || q.publicId === queueId);
     if (!patient || patient.status !== 'Waiting') return { success: false, message: 'This patient is no longer waiting.' };
-    if (queue.some(q => ['Called', 'In Consultation'].includes(q.status))) return { success: false, message: 'Finish the active visit before calling another patient.' };
+    if (queue.some(q => ['Called', 'In Progress'].includes(q.status))) return { success: false, message: 'Finish the active visit before calling another patient.' };
     patient.status = APP_CONFIG.QUEUE_STATUS.CALLED;
     patient.calledAt = new Date().toISOString();
     Storage.set(APP_CONFIG.STORAGE_KEYS.QUEUE, queue);
@@ -113,7 +113,7 @@ export const QueueService = {
                 room: q.assignedClinic?.consultingRoom || q.room || 'Consulting Room',
                 status: q.status === 'waiting' ? APP_CONFIG.QUEUE_STATUS.WAITING :
                         q.status === 'called' ? APP_CONFIG.QUEUE_STATUS.CALLED :
-                        q.status === 'in_consultation' ? APP_CONFIG.QUEUE_STATUS.IN_CONSULTATION :
+                        q.status === 'in_progress' ? APP_CONFIG.QUEUE_STATUS.IN_PROGRESS :
                         q.status === 'completed' ? APP_CONFIG.QUEUE_STATUS.COMPLETED :
                         q.status === 'no_show' ? APP_CONFIG.QUEUE_STATUS.NO_SHOW : q.status,
                 checkInTime: q.checkInTime,
@@ -157,7 +157,7 @@ export const QueueService = {
             ticketNumber: t.ticketNumber,
             status: t.status === 'waiting' ? APP_CONFIG.QUEUE_STATUS.WAITING :
                     t.status === 'called' ? APP_CONFIG.QUEUE_STATUS.CALLED :
-                    t.status === 'in_consultation' ? APP_CONFIG.QUEUE_STATUS.IN_CONSULTATION : t.status,
+                    t.status === 'in_progress' ? APP_CONFIG.QUEUE_STATUS.IN_PROGRESS : t.status,
             doctorName: t.doctorName,
             serviceName: t.serviceName,
             checkInTime: t.checkInTime,
@@ -171,12 +171,12 @@ export const QueueService = {
     }
 
     const queue = await this.getQueue();
-    // Return most recent waiting or called or in-consultation ticket
+    // Return most recent waiting or called or in-progress ticket
     return queue.find(q => 
       q.matricNo === matricNo && 
       (q.status === APP_CONFIG.QUEUE_STATUS.WAITING || 
        q.status === APP_CONFIG.QUEUE_STATUS.CALLED || 
-       q.status === APP_CONFIG.QUEUE_STATUS.IN_CONSULTATION)
+       q.status === APP_CONFIG.QUEUE_STATUS.IN_PROGRESS)
     ) || null;
   },
 
@@ -186,7 +186,7 @@ export const QueueService = {
   async getCurrentlyServing() {
     const queue = await this.getQueue();
     return queue.find(q => 
-      q.status === APP_CONFIG.QUEUE_STATUS.IN_CONSULTATION || 
+      q.status === APP_CONFIG.QUEUE_STATUS.IN_PROGRESS || 
       q.status === APP_CONFIG.QUEUE_STATUS.CALLED
     ) || null;
   },
@@ -219,7 +219,7 @@ export const QueueService = {
     }
 
     const queue = await this.getQueue();
-    if (queue.some(q => ['Called', 'In Consultation'].includes(q.status))) {
+    if (queue.some(q => ['Called', 'In Progress'].includes(q.status))) {
       return { success: false, message: 'Finish the current visit or mark the called patient absent before calling the next patient.' };
     }
     const waitingIdx = queue.findIndex(q => q.status === APP_CONFIG.QUEUE_STATUS.WAITING);
@@ -255,7 +255,7 @@ export const QueueService = {
       if (q.id === queueId || q.publicId === queueId || q.queueNumber === queueId) {
         return {
           ...q,
-          status: APP_CONFIG.QUEUE_STATUS.IN_CONSULTATION,
+          status: APP_CONFIG.QUEUE_STATUS.IN_PROGRESS,
           consultationStartedAt: new Date().toISOString()
         };
       }
@@ -283,7 +283,7 @@ export const QueueService = {
 
     const queue = await this.getQueue();
     const target = queue.find(q => q.id === queueId || q.publicId === queueId || q.queueNumber === queueId);
-    if (!target || !['Called', 'In Consultation'].includes(target.status)) return { success: false, message: 'This patient has no active visit.' };
+    if (!target || !['Called', 'In Progress'].includes(target.status)) return { success: false, message: 'This patient has no active visit.' };
     const appointments = Storage.get(APP_CONFIG.STORAGE_KEYS.APPOINTMENTS, []);
 
     let completedItem = null;
