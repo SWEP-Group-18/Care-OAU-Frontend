@@ -1,7 +1,7 @@
 import { Navigation } from '../core/navigation.js';
 /**
  * Care-OAU - Admin Queue Management Logic
- * Controls outpatient queue callboard, patient transitions (Called, In Consultation, Completed, No-Show),
+ * Controls outpatient queue callboard, patient transitions (Called, In Progress, Completed, No-Show),
  * and emergency triage overrides.
  */
 
@@ -208,7 +208,7 @@ async function refreshQueue() {
   const queue = await QueueService.getQueue();
 
   // Find active caller item
-  currentActiveItem = queue.find(q => q.status === APP_CONFIG.QUEUE_STATUS.IN_CONSULTATION) ||
+  currentActiveItem = queue.find(q => q.status === APP_CONFIG.QUEUE_STATUS.IN_PROGRESS) ||
                       queue.find(q => q.status === APP_CONFIG.QUEUE_STATUS.CALLED) ||
                       null;
 
@@ -247,7 +247,7 @@ function updateCallerUI() {
     if (elRoom) elRoom.textContent = `${currentActiveItem.room || 'Room 2'}  -  ${currentActiveItem.serviceName}  -  Status: ${currentActiveItem.status}`;
 
     if (btnStart) {
-      btnStart.disabled = (currentActiveItem.status === APP_CONFIG.QUEUE_STATUS.IN_CONSULTATION);
+      btnStart.disabled = (currentActiveItem.status === APP_CONFIG.QUEUE_STATUS.IN_PROGRESS);
     }
     if (btnComplete) {
       btnComplete.disabled = false;

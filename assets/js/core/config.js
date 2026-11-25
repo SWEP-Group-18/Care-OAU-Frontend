@@ -120,8 +120,9 @@ export const APP_CONFIG = {
   QUEUE_STATUS: {
     WAITING: 'Waiting',
     CALLED: 'Called',
-    IN_CONSULTATION: 'In Consultation',
+    IN_PROGRESS: 'In Progress',
     COMPLETED: 'Completed',
-    NO_SHOW: 'No Show'
+    NO_SHOW: 'No Show',
+    CANCELLED: 'Cancelled'
   }
 };

@@ -135,7 +135,9 @@ export const Utils = {
       badgeClass = 'badge-success';
     } else if (normalized.includes('rejected') || normalized.includes('cancelled') || normalized.includes('no show')) {
       badgeClass = 'badge-rejected';
-    } else if (normalized.includes('consultation')) {
+    } else if (normalized.includes('in_progress') ||
+        normalized.includes('in progress')
+    ) {
       badgeClass = 'badge-info';
     }
 
