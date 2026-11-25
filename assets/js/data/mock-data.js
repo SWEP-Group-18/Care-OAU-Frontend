@@ -205,7 +205,7 @@ export const INITIAL_QUEUE = [
     doctorName: 'Dr. O. A. Adeleke',
     serviceName: 'General Medical Consultation',
     room: 'Consulting Room 2',
-    status: 'In Consultation',
+    status: 'In Progress',
     checkInTime: '08:15 AM'
   },
   {

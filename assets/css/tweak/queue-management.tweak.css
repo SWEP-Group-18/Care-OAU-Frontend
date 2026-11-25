@@ -305,8 +305,8 @@
     color: #1D4ED8 !important;
 }
 
-/* In Consultation */
-/* .queue-item[data-status="in-consultation"] .queue-status .badge {
+/* In Progress */
+/* .queue-item[data-status="in-progress"] .queue-status .badge {
     background: #CCFBF1 !important;
     color: #0F766E !important;
 } */
