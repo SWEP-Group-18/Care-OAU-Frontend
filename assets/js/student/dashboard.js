@@ -248,7 +248,7 @@ function renderQueueStatus(queue, appointments) {
   const userMatric = user ? user.matricNo : '21/SCI/1048';
 
   const checkedInEntry = queue.find(
-    (q) => (q.patientId === userMatric || q.matricNo === userMatric) && ['Waiting', 'Called', 'In Consultation'].includes(q.status)
+    (q) => (q.patientId === userMatric || q.matricNo === userMatric) && ['Waiting', 'Called', 'In Progress'].includes(q.status)
   );
 
   if (!checkedInEntry) {
@@ -277,7 +277,7 @@ function renderQueueStatus(queue, appointments) {
   let statusBadge = '<span class="badge badge-warning"><span class="badge-dot"></span>Waiting</span>';
   if (checkedInEntry.status === 'Called') {
     statusBadge = '<span class="badge badge-info"><span class="badge-dot"></span>Called</span>';
-  } else if (checkedInEntry.status === 'In Consultation') {
+  } else if (checkedInEntry.status === 'In Progress') {
     statusBadge = '<span class="badge badge-info"><span class="badge-dot"></span>In Progress</span>';
   } else if (checkedInEntry.status === 'completed') {
     statusBadge = '<span class="badge badge-success"><span class="badge-dot"></span>Completed</span>';
